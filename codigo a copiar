@@ -134,11 +134,31 @@ public class TaylorReport {
 
     public Object[] toObjectArrayFromInstance(TaylorReport obj) {
         return new Object[] {
-            obj.assetClass, obj.factorType, obj.name, obj.unit, obj.tenor, obj.proxyMethodology,
-            obj.proxyStatus, obj.startDate, obj.endDate, obj.alpha, obj.beta, obj.proxy1,
-            obj.proxyNroDays1, obj.proxyLabel1, obj.proxyMaturity1, obj.proxyOptionMaturity1,
-            obj.proxySwapMaturity1, obj.proxySkew1, obj.proxy2, obj.proxyNroDays2, obj.proxyLabel2,
-            obj.proxyMaturity2, obj.proxyOptionMaturity2, obj.proxySwapMaturity2, obj.proxySkew2
+             obj.getAssetClass(),
+        obj.getFactorType(),
+        obj.getName(),
+        obj.getUnit(),
+        obj.getTenor(),
+        obj.getProxyMethodology(),
+        obj.getProxyStatus(),
+        obj.getStartDate(),
+        obj.getEndDate(),
+        obj.getAlpha(),
+        obj.getBeta(),
+        obj.getProxy1(),
+        obj.getProxyNroDays1(),
+        obj.getProxyLabel1(),
+        obj.getProxyMaturity1(),
+        obj.getProxyOptionMaturity1(),
+        obj.getProxySwapMaturity1(),
+        obj.getProxySkew1(),
+        obj.getProxy2(),
+        obj.getProxyNroDays2(),
+        obj.getProxyLabel2(),
+        obj.getProxyMaturity2(),
+        obj.getProxyOptionMaturity2(),
+        obj.getProxySwapMaturity2(),
+        obj.getProxySkew2()
         };
     }
 }
