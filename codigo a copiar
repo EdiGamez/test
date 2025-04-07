@@ -1,22 +1,176 @@
-    this.unit = stream.readString();
-    this.tenor = stream.readString();
-    this.proxyMethodology = stream.readString();
-    this.proxyStatus = stream.readString();
-    this.startDate = stream.readString();
-    this.endDate = stream.readString();
-    this.alpha = stream.readString();
-    this.beta = stream.readString();
-    this.proxy1 = stream.readString();
-    this.proxyNroDays1 = stream.readString();
-    this.proxyLabel1 = stream.readString();
-    this.proxyMaturity1 = stream.readString();
-    this.proxyOptionMaturity1 = stream.readString();
-    this.proxySwapMaturity1 = stream.readString();
-    this.proxySkew1 = stream.readString();
-    this.proxy2 = stream.readString();
-    this.proxyNroDays2 = stream.readString();
-    this.proxyLabel2 = stream.readString();
-    this.proxyMaturity2 = stream.readString();
-    this.proxyOptionMaturity2 = stream.readString();
-    this.proxySwapMaturity2 = stream.readString();
-    this.proxySkew2 = stream.readString();
+import com.fasterxml.jackson.annotation.JsonProperty;
+import java.io.SQLInput;
+import java.io.SQLOutput;
+import java.sql.SQLException;
+import java.util.Date;
+
+public class TaylorReport {
+
+    // Atributos
+    private String assetClass;
+    private String factorType;
+    private String name;
+    private String unit;
+    private String tenor;
+    private String proxyMethodology;
+    private String proxyStatus;
+    private String startDate;
+    private String endDate;
+    private String alpha;
+    private String beta;
+    private String proxy1;
+    private String proxyNroDays1;
+    private String proxyLabel1;
+    private String proxyMaturity1;
+    private String proxyOptionMaturity1;
+    private String proxySwapMaturity1;
+    private String proxySkew1;
+    private String proxy2;
+    private String proxyNroDays2;
+    private String proxyLabel2;
+    private String proxyMaturity2;
+    private String proxyOptionMaturity2;
+    private String proxySwapMaturity2;
+    private String proxySkew2;
+
+    // Métodos readSQL / writeSQL
+    public void readSQL(SQLInput stream) throws SQLException {
+        assetClass = stream.readString();
+        factorType = stream.readString();
+        name = stream.readString();
+        unit = stream.readString();
+        tenor = stream.readString();
+        proxyMethodology = stream.readString();
+        proxyStatus = stream.readString();
+        startDate = stream.readString();
+        endDate = stream.readString();
+        alpha = stream.readString();
+        beta = stream.readString();
+        proxy1 = stream.readString();
+        proxyNroDays1 = stream.readString();
+        proxyLabel1 = stream.readString();
+        proxyMaturity1 = stream.readString();
+        proxyOptionMaturity1 = stream.readString();
+        proxySwapMaturity1 = stream.readString();
+        proxySkew1 = stream.readString();
+        proxy2 = stream.readString();
+        proxyNroDays2 = stream.readString();
+        proxyLabel2 = stream.readString();
+        proxyMaturity2 = stream.readString();
+        proxyOptionMaturity2 = stream.readString();
+        proxySwapMaturity2 = stream.readString();
+        proxySkew2 = stream.readString();
+    }
+
+    public void writeSQL(SQLOutput stream) throws SQLException {
+        stream.writeString(assetClass);
+        stream.writeString(factorType);
+        stream.writeString(name);
+        stream.writeString(unit);
+        stream.writeString(tenor);
+        stream.writeString(proxyMethodology);
+        stream.writeString(proxyStatus);
+        stream.writeString(startDate);
+        stream.writeString(endDate);
+        stream.writeString(alpha);
+        stream.writeString(beta);
+        stream.writeString(proxy1);
+        stream.writeString(proxyNroDays1);
+        stream.writeString(proxyLabel1);
+        stream.writeString(proxyMaturity1);
+        stream.writeString(proxyOptionMaturity1);
+        stream.writeString(proxySwapMaturity1);
+        stream.writeString(proxySkew1);
+        stream.writeString(proxy2);
+        stream.writeString(proxyNroDays2);
+        stream.writeString(proxyLabel2);
+        stream.writeString(proxyMaturity2);
+        stream.writeString(proxyOptionMaturity2);
+        stream.writeString(proxySwapMaturity2);
+        stream.writeString(proxySkew2);
+    }
+
+    public Object[] toObjectArray() {
+        return new Object[] {
+            assetClass, factorType, name, unit, tenor, proxyMethodology, proxyStatus,
+            startDate, endDate, alpha, beta, proxy1, proxyNroDays1, proxyLabel1,
+            proxyMaturity1, proxyOptionMaturity1, proxySwapMaturity1, proxySkew1,
+            proxy2, proxyNroDays2, proxyLabel2, proxyMaturity2, proxyOptionMaturity2,
+            proxySwapMaturity2, proxySkew2
+        };
+    }
+
+    public void setFromCsvBean(CsvBeanTaylorReport csvBean, Date date, Integer diff) {
+        assetClass = valueOrNull(csvBean.getAssetClass());
+        factorType = valueOrNull(csvBean.getFactorType());
+        name = valueOrNull(csvBean.getName());
+        unit = valueOrNull(csvBean.getUnit());
+        tenor = valueOrNull(csvBean.getTenor());
+        proxyMethodology = valueOrNull(csvBean.getProxyMethodology());
+        proxyStatus = valueOrNull(csvBean.getProxyStatus());
+        startDate = valueOrNull(csvBean.getStartDate());
+        endDate = valueOrNull(csvBean.getEndDate());
+        alpha = valueOrNull(csvBean.getAlpha());
+        beta = valueOrNull(csvBean.getBeta());
+        proxy1 = valueOrNull(csvBean.getProxy1());
+        proxyNroDays1 = valueOrNull(csvBean.getProxyNroDays1());
+        proxyLabel1 = valueOrNull(csvBean.getProxyLabel1());
+        proxyMaturity1 = valueOrNull(csvBean.getProxyMaturity1());
+        proxyOptionMaturity1 = valueOrNull(csvBean.getProxyOptionMaturity1());
+        proxySwapMaturity1 = valueOrNull(csvBean.getProxySwapMaturity1());
+        proxySkew1 = valueOrNull(csvBean.getProxySkew1());
+        proxy2 = valueOrNull(csvBean.getProxy2());
+        proxyNroDays2 = valueOrNull(csvBean.getProxyNroDays2());
+        proxyLabel2 = valueOrNull(csvBean.getProxyLabel2());
+        proxyMaturity2 = valueOrNull(csvBean.getProxyMaturity2());
+        proxyOptionMaturity2 = valueOrNull(csvBean.getProxyOptionMaturity2());
+        proxySwapMaturity2 = valueOrNull(csvBean.getProxySwapMaturity2());
+        proxySkew2 = valueOrNull(csvBean.getProxySkew2());
+    }
+
+    private String valueOrNull(String value) {
+        return value == null ? null : value.trim();
+    }
+
+    public Object[] toObjectArrayFromInstance(TaylorReport obj) {
+        return new Object[] {
+            obj.assetClass, obj.factorType, obj.name, obj.unit, obj.tenor, obj.proxyMethodology,
+            obj.proxyStatus, obj.startDate, obj.endDate, obj.alpha, obj.beta, obj.proxy1,
+            obj.proxyNroDays1, obj.proxyLabel1, obj.proxyMaturity1, obj.proxyOptionMaturity1,
+            obj.proxySwapMaturity1, obj.proxySkew1, obj.proxy2, obj.proxyNroDays2, obj.proxyLabel2,
+            obj.proxyMaturity2, obj.proxyOptionMaturity2, obj.proxySwapMaturity2, obj.proxySkew2
+        };
+    }
+}
+import com.fasterxml.jackson.annotation.JsonProperty;
+
+public class CsvBeanTaylorReport {
+
+    @JsonProperty("Asset Class") private String assetClass;
+    @JsonProperty("Factor Type") private String factorType;
+    @JsonProperty("Name") private String name;
+    @JsonProperty("Unit") private String unit;
+    @JsonProperty("Tenor") private String tenor;
+    @JsonProperty("Proxy Methodology") private String proxyMethodology;
+    @JsonProperty("Proxy Status") private String proxyStatus;
+    @JsonProperty("Start Date") private String startDate;
+    @JsonProperty("End Date") private String endDate;
+    @JsonProperty("Alpha") private String alpha;
+    @JsonProperty("Beta") private String beta;
+    @JsonProperty("Proxy 1") private String proxy1;
+    @JsonProperty("Proxy Nro Days 1") private String proxyNroDays1;
+    @JsonProperty("Proxy Label 1") private String proxyLabel1;
+    @JsonProperty("Proxy Maturity 1") private String proxyMaturity1;
+    @JsonProperty("Proxy Option Maturity 1") private String proxyOptionMaturity1;
+    @JsonProperty("Proxy Swap Maturity 1") private String proxySwapMaturity1;
+    @JsonProperty("Proxy Skew 1") private String proxySkew1;
+    @JsonProperty("Proxy 2") private String proxy2;
+    @JsonProperty("Proxy Nro Days 2") private String proxyNroDays2;
+    @JsonProperty("Proxy Label 2") private String proxyLabel2;
+    @JsonProperty("Proxy Maturity 2") private String proxyMaturity2;
+    @JsonProperty("Proxy Option Maturity 2") private String proxyOptionMaturity2;
+    @JsonProperty("Proxy Swap Maturity 2") private String proxySwapMaturity2;
+    @JsonProperty("Proxy Skew 2") private String proxySkew2;
+
+    // Getters aquí...
+}
