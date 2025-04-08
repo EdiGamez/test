@@ -1,19 +1,30 @@
-import com.fasterxml.jackson.annotation.JsonProperty;
-import java.io.SQLInput;
-import java.io.SQLOutput;
-import java.sql.SQLException;
-import java.util.Date;
-
-public class TaylorReport {
-
-    // Atributos
+public class TaylorReport implements SQLData {
     private String assetClass;
     private String factorType;
+    private String subtype;
     private String name;
+    private String ownerUnit;
+    private String status;
     private String unit;
-    private String tenor;
+    private String adoUnderlying;
+    private String returnModel;
+    private String template;
+    private String nroDays;
+    private String label;
+    private String swapMaturity;
+    private String optionMaturity;
+    private String skew;
+    private String interpolationFormula;
+    private String valueToInterpolate;
+    private String firstInterpolation;
+    private String lastInterpolation;
+    private String calibrationMethod;
+    private String rateConvention;
+    private String spreadCurve;
+    private String businessDays;
     private String proxyMethodology;
     private String proxyStatus;
+    private String proxyAdo;
     private String startDate;
     private String endDate;
     private String alpha;
@@ -22,26 +33,52 @@ public class TaylorReport {
     private String proxyNroDays1;
     private String proxyLabel1;
     private String proxyMaturity1;
-    private String proxyOptionMaturity1;
     private String proxySwapMaturity1;
+    private String proxyOptionMaturity1;
     private String proxySkew1;
     private String proxy2;
     private String proxyNroDays2;
     private String proxyLabel2;
     private String proxyMaturity2;
-    private String proxyOptionMaturity2;
     private String proxySwapMaturity2;
+    private String proxyOptionMaturity2;
     private String proxySkew2;
 
-    // Métodos readSQL / writeSQL
-    public void readSQL(SQLInput stream) throws SQLException {
+    private String sql_type = "RFR_STHISREP_OBJ";
+
+    @Override
+    public String getSQLTypeName() {
+        return sql_type;
+    }
+    @Override
+    public void readSQL(SQLInput stream, String typeName) throws SQLException {
+        sql_type = typeName;
         assetClass = stream.readString();
         factorType = stream.readString();
+        subtype = stream.readString();
         name = stream.readString();
+        ownerUnit = stream.readString();
+        status = stream.readString();
         unit = stream.readString();
-        tenor = stream.readString();
+        adoUnderlying = stream.readString();
+        returnModel = stream.readString();
+        template = stream.readString();
+        nroDays = stream.readString();
+        label = stream.readString();
+        swapMaturity = stream.readString();
+        optionMaturity = stream.readString();
+        skew = stream.readString();
+        interpolationFormula = stream.readString();
+        valueToInterpolate = stream.readString();
+        firstInterpolation = stream.readString();
+        lastInterpolation = stream.readString();
+        calibrationMethod = stream.readString();
+        rateConvention = stream.readString();
+        spreadCurve = stream.readString();
+        businessDays = stream.readString();
         proxyMethodology = stream.readString();
         proxyStatus = stream.readString();
+        proxyAdo = stream.readString();
         startDate = stream.readString();
         endDate = stream.readString();
         alpha = stream.readString();
@@ -50,26 +87,45 @@ public class TaylorReport {
         proxyNroDays1 = stream.readString();
         proxyLabel1 = stream.readString();
         proxyMaturity1 = stream.readString();
-        proxyOptionMaturity1 = stream.readString();
         proxySwapMaturity1 = stream.readString();
+        proxyOptionMaturity1 = stream.readString();
         proxySkew1 = stream.readString();
         proxy2 = stream.readString();
         proxyNroDays2 = stream.readString();
         proxyLabel2 = stream.readString();
         proxyMaturity2 = stream.readString();
-        proxyOptionMaturity2 = stream.readString();
         proxySwapMaturity2 = stream.readString();
+        proxyOptionMaturity2 = stream.readString();
         proxySkew2 = stream.readString();
     }
-
+    @Override
     public void writeSQL(SQLOutput stream) throws SQLException {
         stream.writeString(assetClass);
         stream.writeString(factorType);
+        stream.writeString(subtype);
         stream.writeString(name);
+        stream.writeString(ownerUnit);
+        stream.writeString(status);
         stream.writeString(unit);
-        stream.writeString(tenor);
+        stream.writeString(adoUnderlying);
+        stream.writeString(returnModel);
+        stream.writeString(template);
+        stream.writeString(nroDays);
+        stream.writeString(label);
+        stream.writeString(swapMaturity);
+        stream.writeString(optionMaturity);
+        stream.writeString(skew);
+        stream.writeString(interpolationFormula);
+        stream.writeString(valueToInterpolate);
+        stream.writeString(firstInterpolation);
+        stream.writeString(lastInterpolation);
+        stream.writeString(calibrationMethod);
+        stream.writeString(rateConvention);
+        stream.writeString(spreadCurve);
+        stream.writeString(businessDays);
         stream.writeString(proxyMethodology);
         stream.writeString(proxyStatus);
+        stream.writeString(proxyAdo);
         stream.writeString(startDate);
         stream.writeString(endDate);
         stream.writeString(alpha);
@@ -78,36 +134,58 @@ public class TaylorReport {
         stream.writeString(proxyNroDays1);
         stream.writeString(proxyLabel1);
         stream.writeString(proxyMaturity1);
-        stream.writeString(proxyOptionMaturity1);
         stream.writeString(proxySwapMaturity1);
+        stream.writeString(proxyOptionMaturity1);
         stream.writeString(proxySkew1);
         stream.writeString(proxy2);
         stream.writeString(proxyNroDays2);
         stream.writeString(proxyLabel2);
         stream.writeString(proxyMaturity2);
-        stream.writeString(proxyOptionMaturity2);
         stream.writeString(proxySwapMaturity2);
+        stream.writeString(proxyOptionMaturity2);
         stream.writeString(proxySkew2);
     }
-
     public Object[] toObjectArray() {
         return new Object[] {
-            assetClass, factorType, name, unit, tenor, proxyMethodology, proxyStatus,
-            startDate, endDate, alpha, beta, proxy1, proxyNroDays1, proxyLabel1,
-            proxyMaturity1, proxyOptionMaturity1, proxySwapMaturity1, proxySkew1,
-            proxy2, proxyNroDays2, proxyLabel2, proxyMaturity2, proxyOptionMaturity2,
-            proxySwapMaturity2, proxySkew2
+            assetClass, factorType, subtype, name, ownerUnit, status, unit,
+            adoUnderlying, returnModel, template, nroDays, label, swapMaturity,
+            optionMaturity, skew, interpolationFormula, valueToInterpolate,
+            firstInterpolation, lastInterpolation, calibrationMethod,
+            rateConvention, spreadCurve, businessDays, proxyMethodology,
+            proxyStatus, proxyAdo, startDate, endDate, alpha, beta, proxy1,
+            proxyNroDays1, proxyLabel1, proxyMaturity1, proxySwapMaturity1,
+            proxyOptionMaturity1, proxySkew1, proxy2, proxyNroDays2,
+            proxyLabel2, proxyMaturity2, proxySwapMaturity2,
+            proxyOptionMaturity2, proxySkew2
         };
     }
-
     public void setFromCsvBean(CsvBeanTaylorReport csvBean, Date date, Integer diff) {
         assetClass = valueOrNull(csvBean.getAssetClass());
         factorType = valueOrNull(csvBean.getFactorType());
+        subtype = valueOrNull(csvBean.getSubtype());
         name = valueOrNull(csvBean.getName());
+        ownerUnit = valueOrNull(csvBean.getOwnerUnit());
+        status = valueOrNull(csvBean.getStatus());
         unit = valueOrNull(csvBean.getUnit());
-        tenor = valueOrNull(csvBean.getTenor());
+        adoUnderlying = valueOrNull(csvBean.getAdoUnderlying());
+        returnModel = valueOrNull(csvBean.getReturnModel());
+        template = valueOrNull(csvBean.getTemplate());
+        nroDays = valueOrNull(csvBean.getNroDays());
+        label = valueOrNull(csvBean.getLabel());
+        swapMaturity = valueOrNull(csvBean.getSwapMaturity());
+        optionMaturity = valueOrNull(csvBean.getOptionMaturity());
+        skew = valueOrNull(csvBean.getSkew());
+        interpolationFormula = valueOrNull(csvBean.getInterpolationFormula());
+        valueToInterpolate = valueOrNull(csvBean.getValueToInterpolate());
+        firstInterpolation = valueOrNull(csvBean.getFirstInterpolation());
+        lastInterpolation = valueOrNull(csvBean.getLastInterpolation());
+        calibrationMethod = valueOrNull(csvBean.getCalibrationMethod());
+        rateConvention = valueOrNull(csvBean.getRateConvention());
+        spreadCurve = valueOrNull(csvBean.getSpreadCurve());
+        businessDays = valueOrNull(csvBean.getBusinessDays());
         proxyMethodology = valueOrNull(csvBean.getProxyMethodology());
         proxyStatus = valueOrNull(csvBean.getProxyStatus());
+        proxyAdo = valueOrNull(csvBean.getProxyAdo());
         startDate = valueOrNull(csvBean.getStartDate());
         endDate = valueOrNull(csvBean.getEndDate());
         alpha = valueOrNull(csvBean.getAlpha());
@@ -116,63 +194,44 @@ public class TaylorReport {
         proxyNroDays1 = valueOrNull(csvBean.getProxyNroDays1());
         proxyLabel1 = valueOrNull(csvBean.getProxyLabel1());
         proxyMaturity1 = valueOrNull(csvBean.getProxyMaturity1());
-        proxyOptionMaturity1 = valueOrNull(csvBean.getProxyOptionMaturity1());
         proxySwapMaturity1 = valueOrNull(csvBean.getProxySwapMaturity1());
+        proxyOptionMaturity1 = valueOrNull(csvBean.getProxyOptionMaturity1());
         proxySkew1 = valueOrNull(csvBean.getProxySkew1());
         proxy2 = valueOrNull(csvBean.getProxy2());
         proxyNroDays2 = valueOrNull(csvBean.getProxyNroDays2());
         proxyLabel2 = valueOrNull(csvBean.getProxyLabel2());
         proxyMaturity2 = valueOrNull(csvBean.getProxyMaturity2());
-        proxyOptionMaturity2 = valueOrNull(csvBean.getProxyOptionMaturity2());
         proxySwapMaturity2 = valueOrNull(csvBean.getProxySwapMaturity2());
+        proxyOptionMaturity2 = valueOrNull(csvBean.getProxyOptionMaturity2());
         proxySkew2 = valueOrNull(csvBean.getProxySkew2());
     }
-
-    private String valueOrNull(String value) {
-        return value == null ? null : value.trim();
-    }
-
-    public Object[] toObjectArrayFromInstance(TaylorReport obj) {
-        return new Object[] {
-             obj.getAssetClass(),
-        obj.getFactorType(),
-        obj.getName(),
-        obj.getUnit(),
-        obj.getTenor(),
-        obj.getProxyMethodology(),
-        obj.getProxyStatus(),
-        obj.getStartDate(),
-        obj.getEndDate(),
-        obj.getAlpha(),
-        obj.getBeta(),
-        obj.getProxy1(),
-        obj.getProxyNroDays1(),
-        obj.getProxyLabel1(),
-        obj.getProxyMaturity1(),
-        obj.getProxyOptionMaturity1(),
-        obj.getProxySwapMaturity1(),
-        obj.getProxySkew1(),
-        obj.getProxy2(),
-        obj.getProxyNroDays2(),
-        obj.getProxyLabel2(),
-        obj.getProxyMaturity2(),
-        obj.getProxyOptionMaturity2(),
-        obj.getProxySwapMaturity2(),
-        obj.getProxySkew2()
-        };
-    }
-}
-import com.fasterxml.jackson.annotation.JsonProperty;
-
 public class CsvBeanTaylorReport {
-
     @JsonProperty("Asset Class") private String assetClass;
     @JsonProperty("Factor Type") private String factorType;
+    @JsonProperty("Subtype") private String subtype;
     @JsonProperty("Name") private String name;
+    @JsonProperty("Owner Unit") private String ownerUnit;
+    @JsonProperty("Status") private String status;
     @JsonProperty("Unit") private String unit;
-    @JsonProperty("Tenor") private String tenor;
+    @JsonProperty("ADO Underlying") private String adoUnderlying;
+    @JsonProperty("Return Model") private String returnModel;
+    @JsonProperty("Template") private String template;
+    @JsonProperty("Nro Days") private String nroDays;
+    @JsonProperty("Label") private String label;
+    @JsonProperty("Swap Maturity") private String swapMaturity;
+    @JsonProperty("Option Maturity") private String optionMaturity;
+    @JsonProperty("Skew") private String skew;
+    @JsonProperty("interpolationFormula") private String interpolationFormula;
+    @JsonProperty("valueToInterpolate") private String valueToInterpolate;
+    @JsonProperty("firstInterpolation") private String firstInterpolation;
+    @JsonProperty("lastInterpolation") private String lastInterpolation;
+    @JsonProperty("calibrationMethod") private String calibrationMethod;
+    @JsonProperty("rateConvention") private String rateConvention;
+    @JsonProperty("spreadCurve") private String spreadCurve;
+    @JsonProperty("businessDays") private String businessDays;
     @JsonProperty("Proxy Methodology") private String proxyMethodology;
     @JsonProperty("Proxy Status") private String proxyStatus;
+    @JsonProperty("Proxy ADO") private String proxyAdo;
     @JsonProperty("Start Date") private String startDate;
     @JsonProperty("End Date") private String endDate;
     @JsonProperty("Alpha") private String alpha;
@@ -181,16 +240,35 @@ public class CsvBeanTaylorReport {
     @JsonProperty("Proxy Nro Days 1") private String proxyNroDays1;
     @JsonProperty("Proxy Label 1") private String proxyLabel1;
     @JsonProperty("Proxy Maturity 1") private String proxyMaturity1;
-    @JsonProperty("Proxy Option Maturity 1") private String proxyOptionMaturity1;
     @JsonProperty("Proxy Swap Maturity 1") private String proxySwapMaturity1;
+    @JsonProperty("Proxy Option Maturity 1") private String proxyOptionMaturity1;
     @JsonProperty("Proxy Skew 1") private String proxySkew1;
     @JsonProperty("Proxy 2") private String proxy2;
     @JsonProperty("Proxy Nro Days 2") private String proxyNroDays2;
     @JsonProperty("Proxy Label 2") private String proxyLabel2;
     @JsonProperty("Proxy Maturity 2") private String proxyMaturity2;
-    @JsonProperty("Proxy Option Maturity 2") private String proxyOptionMaturity2;
     @JsonProperty("Proxy Swap Maturity 2") private String proxySwapMaturity2;
+    @JsonProperty("Proxy Option Maturity 2") private String proxyOptionMaturity2;
     @JsonProperty("Proxy Skew 2") private String proxySkew2;
 
-    // Getters aquí...
+    // Getters...
+}
+public static Object[] fromObject(TaylorReport obj) {
+    return new Object[] {
+        obj.getAssetClass(), obj.getFactorType(), obj.getSubtype(), obj.getName(),
+        obj.getOwnerUnit(), obj.getStatus(), obj.getUnit(), obj.getAdoUnderlying(),
+        obj.getReturnModel(), obj.getTemplate(), obj.getNroDays(), obj.getLabel(),
+        obj.getSwapMaturity(), obj.getOptionMaturity(), obj.getSkew(),
+        obj.getInterpolationFormula(), obj.getValueToInterpolate(),
+        obj.getFirstInterpolation(), obj.getLastInterpolation(),
+        obj.getCalibrationMethod(), obj.getRateConvention(), obj.getSpreadCurve(),
+        obj.getBusinessDays(), obj.getProxyMethodology(), obj.getProxyStatus(),
+        obj.getProxyAdo(), obj.getStartDate(), obj.getEndDate(), obj.getAlpha(),
+        obj.getBeta(), obj.getProxy1(), obj.getProxyNroDays1(),
+        obj.getProxyLabel1(), obj.getProxyMaturity1(), obj.getProxySwapMaturity1(),
+        obj.getProxyOptionMaturity1(), obj.getProxySkew1(), obj.getProxy2(),
+        obj.getProxyNroDays2(), obj.getProxyLabel2(), obj.getProxyMaturity2(),
+        obj.getProxySwapMaturity2(), obj.getProxyOptionMaturity2(),
+        obj.getProxySkew2()
+    };
 }
