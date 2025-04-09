@@ -1,606 +1,144 @@
-package com.isb.rfrbatch.jobextracttaylorreport.jobextractaylorreportdb.batch.config;
+@RunWith(MockitoJUnitRunner.class)
+public class TaylorReportLoadDbRepositoryTest {
 
-import com.isb.rfrbatch.jobextracfullrevalreport.jobExtracFullRevalReportE2E.util.FullRevalReportCTES;
-import com.isb.rfrbatch.jobextracttaylorreport.jobextractaylorreport.util.CTES;
-import com.isb.rfrbatch.jobextracttaylorreport.jobextractaylorreportdb.batch.tasklets.TaskletTaylorReportLoadDatabase;
-import lombok.extern.slf4j.Slf4j;
-import org.springframework.batch.core.*;
-import org.springframework.batch.core.configuration.annotation.EnableBatchProcessing;
-import org.springframework.batch.core.configuration.annotation.JobBuilderFactory;
-import org.springframework.batch.core.configuration.annotation.StepBuilderFactory;
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.beans.factory.annotation.Value;
-import org.springframework.context.annotation.Bean;
-import org.springframework.context.annotation.Configuration;
-import org.springframework.context.annotation.Primary;
+    @InjectMocks
+    private TaylorReportLoadDbRepository repository;
 
-import java.text.MessageFormat;
-import java.time.Duration;
-import java.time.Instant;
-import java.util.ArrayList;
-import java.util.List;
+    @Mock
+    private JdbcTemplate jdbcTemplate;
 
-@Slf4j
-@Configuration
-@EnableBatchProcessing
-public class JobConfigExtractTaylorReportDb {
-
-    @Value("${rfr.dataDatePart:}")
-    private String dataDatePart;
-    @Value("${rfr.unit:}")
-    private String unit;
-    @Value("${rfr.path:}")
-    private String path;
-
-    private List<String> durationMessages = new ArrayList();
-
-    @Autowired
-    private TaskletTaylorReportLoadDatabase taskletTaylorReportLoadDatabase;
-
-    @Autowired
-    private StepBuilderFactory stepBuilderFactory;
-
-    @Primary
-    @Bean
-    public Job jobExtracFullRevalReportDb(JobBuilderFactory jobBuilderFactory) {
-        return jobBuilderFactory.get("jobExtracTaylorReportDb")
-                .listener(new jobListener())
-                .start(stepFrLoadDb())
-                .build();
-    }
-
-    @Bean
-    public Step stepFrLoadDb() {
-        return stepBuilderFactory.get("stepFrLoadDb")
-                .listener(new stepGenerarListener())
-                .tasklet(taskletTaylorReportLoadDatabase)
-                .build();
-    }
-
-    public class jobListener implements JobExecutionListener {
-
-        Instant init;
-        Instant end;
-
-        @Override
-        public void beforeJob(JobExecution jobExec) {
-            init = Instant.now();
-            log.info(MessageFormat.format(CTES.Messages.INFO_BATCH_INI, jobExec.getJobInstance().getJobName(), dataDatePart, unit));
-        }
-
-        @Override
-        public void afterJob(JobExecution jobExec) {
-            end = Instant.now();
-            long durationJob = Duration.between(init, end).getSeconds();
-
-            log.info(MessageFormat.format(CTES.Messages.INFO_BATCH_FIN, jobExec.getJobInstance().getJobName(), dataDatePart, unit));
-
-            String message = "DURATION JOB: " + jobExec.getJobInstance().getJobName() + " - " + durationJob;
-            durationMessages.add(message);
-
-            //Logging duration rest of entire process because this is the last step
-            log.info("DURATION entire process:");
-            durationMessages.stream().forEach(m -> log.info(m));
-            log.info("PROCESS Finished");
-
-        }
-    }
-
-    public class stepGenerarListener implements StepExecutionListener {
-
-        Instant init;
-        Instant end;
-
-        @Override
-        public void beforeStep(StepExecution stepExecution) {
-            init = Instant.now();
-            log.info(MessageFormat.format(CTES.Messages.INFO_STEP_GENERATE_INI, stepExecution.getStepName(), dataDatePart, unit));
-        }
-
-        @Override
-        public ExitStatus afterStep(StepExecution stepExecution) {
-            end = Instant.now();
-            long durationJob = Duration.between(init, end).getSeconds();
-            String message = "DURATION STEP: " + stepExecution.getStepName() + " - " + durationJob + " seconds";
-            durationMessages.add(message);
-
-            log.info(MessageFormat.format(CTES.Messages.INFO_STEP_GENERATE_FIN, stepExecution.getStepName(), dataDatePart, unit));
-            return null;
-        }
-    }
-}
-package com.isb.rfrbatch.jobextracttaylorreport.jobextractaylorreportdb.batch.tasklets;
-
-import com.isb.rfrbatch.jobextracfullrevalreport.jobExtracFullRevalReportE2E.services.buildcsv.beans.CsvBeanFullRevalReport;
-import com.isb.rfrbatch.jobextracttaylorreport.jobextractaylorreport.services.buildcsv.CsvBeanTaylorReport;
-import com.isb.rfrbatch.jobextracttaylorreport.jobextractaylorreportdb.services.database.TaylorReportLoadDbRepository;
-import com.isb.rfrbatch.jobextracttaylorreport.jobextractaylorreportdb.services.database.beans.RFRLoadTaylorObj;
-import com.isb.rfrbatch.jobextracttaylorreport.jobextractaylorreportdb.services.files.ExtractTaylorFileService;
-import com.isb.rfrutils.exception.RfrException;
-import com.isb.rfrutils.util.RfrCommonCTES;
-import lombok.extern.slf4j.Slf4j;
-import org.springframework.batch.core.StepContribution;
-import org.springframework.batch.core.scope.context.ChunkContext;
-import org.springframework.batch.core.step.tasklet.Tasklet;
-import org.springframework.batch.repeat.RepeatStatus;
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.beans.factory.annotation.Value;
-import org.springframework.stereotype.Component;
-
-import java.io.File;
-import java.sql.Date;
-import java.text.SimpleDateFormat;
-import java.util.List;
-import java.util.stream.Collectors;
-
-@Slf4j
-@Component
-public class TaskletTaylorReportLoadDatabase implements Tasklet {
-
-    @Value("${rfr.dataDatePart:}")
-    private String dataDatePart;
-    @Value("${rfr.unit:}")
-    private String unit;
-    @Value("${rfr.path:}")
-    private String path;
-
-
-    private static final String formatDateOutput = RfrCommonCTES.DATEFORMAT_YYYYMMDD;
-
-    @Autowired
-    private TaylorReportLoadDbRepository taylorReportLoadDbRepository;
-    @Autowired
-    private ExtractTaylorFileService extractTaylorFileService;
-
-    @Override
-    public RepeatStatus execute(StepContribution stepContribution, ChunkContext chunkContext) throws Exception {
-        try {
-            java.util.Date utilDate = new SimpleDateFormat(formatDateOutput).parse(dataDatePart);
-            Date sqlDate = new Date(utilDate.getTime());
-            File report = new File(path);
-
-            String pathGaps = path.replace("ExtractTaylorReport_", "ExtractTaylorReportGap_");
-            File reportGaps = new File(pathGaps);
-            insertReport(report, path, sqlDate, unit, 0);
-            insertReport(reportGaps, pathGaps, sqlDate, unit, 1);
-        } catch (Exception e) {
-            log.error(e.getMessage(), e);
-            throw new Exception("There was an error during TaskletExecuteTaylor (repo.generateReport)");
-        }
-        return RepeatStatus.FINISHED;
-    }
-
-    private void insertReport(File file, String path, Date date, String unit, Integer diff) throws RfrException {
-        log.info("Borramos registros previos de la tabla para: " + dataDatePart + "/" + unit + "/" + diff);
-        taylorReportLoadDbRepository.deleteFromTaylorDb(date, unit, diff);
-        log.info("Borra terminado");
-        log.info("Recuperar contenido del fichero: " + file.getAbsolutePath());
-
-        List<CsvBeanTaylorReport> csvBeanTaylorReport = extractTaylorFileService.readShatReportCsv(file, path, CsvBeanTaylorReport.class);
-        if (csvBeanTaylorReport != null && !csvBeanTaylorReport.isEmpty()) {
-            List<RFRLoadTaylorObj> list = csvBeanTaylorReport.stream()
-                    .map(csvBeanTaylorReport1 -> {
-                        RFRLoadTaylorObj r = new RFRLoadTaylorObj();
-                            r.setFromCsvBean(csvBeanTaylorReport1, date, diff);
-                            return r;
-                    }).collect(Collectors.toList());
-            log.info("Empezamos a insertar los registros en bbdd");
-            taylorReportLoadDbRepository.callLoadTaylorProcedure(list);
-            log.info("Finalizada insercion");
-        } else {
-            log.error("No se han recuperado datos del fichero.");
-        }
-
-    }
-
-
-
-}
-package com.isb.rfrbatch.jobextracttaylorreport.jobextractaylorreportdb.services.database.beans;
-
-import com.isb.rfrbatch.jobextracttaylorreport.jobextractaylorreport.services.buildcsv.CsvBeanTaylorReport;
-import lombok.Getter;
-import lombok.Setter;
-
-import java.sql.*;
-@Getter @Setter
-public class RFRLoadTaylorObj implements SQLData {
-
-    private Date dataDatePart;
-
-    private String assetClass;
-    private String factorType;
-    private String subtype;
-    private String name;
-    private String ownerUnit;
-    private String status;
-    private String unit;
-    private String adoUnderlying;
-    private String returnModel;
-    private String template;
-    private String nroDays;
-    private String label;
-    private String swapMaturity;
-    private String optionMaturity;
-    private String skew;
-    private String interpolationFormula;
-    private String valueToInterpolate;
-    private String firstInterpolation;
-    private String lastInterpolation;
-    private String calibrationMethod;
-    private String rateConvention;
-    private String spreadCurve;
-    private String businessDays;
-    private String proxyMethodology;
-    private String proxyStatus;
-    private String proxyAdo;
-    private String startDate;
-    private String endDate;
-    private String alpha;
-    private String beta;
-    private String proxy1;
-    private String proxyNroDays1;
-    private String proxyLabel1;
-    private String proxyMaturity1;
-    private String proxySwapMaturity1;
-    private String proxyOptionMaturity1;
-    private String proxySkew1;
-    private String proxy2;
-    private String proxyNroDays2;
-    private String proxyLabel2;
-    private String proxyMaturity2;
-    private String proxySwapMaturity2;
-    private String proxyOptionMaturity2;
-    private String proxySkew2;
-
-    private double diff;
-    private String underlcrv;
-    private double pk;
-    private double fkParent;
-    private double fkExtension;
-    private double fkOwnerObj;
-
-    public static final String SQL_TYPE = "RFR.RFR_TAYLORREPORT_OBJ";
-
-    @Override
-    public String getSQLTypeName() {
-        return SQL_TYPE;
-    }
-
-    @Override
-    public void readSQL(SQLInput stream, String typeName) throws SQLException {
-        dataDatePart = stream.readDate();
-
-        assetClass = stream.readString();
-        factorType = stream.readString();
-        subtype = stream.readString();
-        name = stream.readString();
-        ownerUnit = stream.readString();
-        status = stream.readString();
-        unit = stream.readString();
-        adoUnderlying = stream.readString();
-        returnModel = stream.readString();
-        template = stream.readString();
-        nroDays = stream.readString();
-        label = stream.readString();
-        swapMaturity = stream.readString();
-        optionMaturity = stream.readString();
-        skew = stream.readString();
-        interpolationFormula = stream.readString();
-        valueToInterpolate = stream.readString();
-        firstInterpolation = stream.readString();
-        lastInterpolation = stream.readString();
-        calibrationMethod = stream.readString();
-        rateConvention = stream.readString();
-        spreadCurve = stream.readString();
-        businessDays = stream.readString();
-        proxyMethodology = stream.readString();
-        proxyStatus = stream.readString();
-        proxyAdo = stream.readString();
-        startDate = stream.readString();
-        endDate = stream.readString();
-        alpha = stream.readString();
-        beta = stream.readString();
-        proxy1 = stream.readString();
-        proxyNroDays1 = stream.readString();
-        proxyLabel1 = stream.readString();
-        proxyMaturity1 = stream.readString();
-        proxySwapMaturity1 = stream.readString();
-        proxyOptionMaturity1 = stream.readString();
-        proxySkew1 = stream.readString();
-        proxy2 = stream.readString();
-        proxyNroDays2 = stream.readString();
-        proxyLabel2 = stream.readString();
-        proxyMaturity2 = stream.readString();
-        proxySwapMaturity2 = stream.readString();
-        proxyOptionMaturity2 = stream.readString();
-        proxySkew2 = stream.readString();
-    }
-
-    @Override
-    public void writeSQL(SQLOutput stream) throws SQLException {
-        stream.writeDate(dataDatePart);
-        stream.writeString(assetClass);
-        stream.writeString(factorType);
-        stream.writeString(subtype);
-        stream.writeString(name);
-        stream.writeString(ownerUnit);
-        stream.writeString(status);
-        stream.writeString(unit);
-        stream.writeString(adoUnderlying);
-        stream.writeString(returnModel);
-        stream.writeString(template);
-        stream.writeString(nroDays);
-        stream.writeString(label);
-        stream.writeString(swapMaturity);
-        stream.writeString(optionMaturity);
-        stream.writeString(skew);
-        stream.writeString(interpolationFormula);
-        stream.writeString(valueToInterpolate);
-        stream.writeString(firstInterpolation);
-        stream.writeString(lastInterpolation);
-        stream.writeString(calibrationMethod);
-        stream.writeString(rateConvention);
-        stream.writeString(spreadCurve);
-        stream.writeString(businessDays);
-        stream.writeString(proxyMethodology);
-        stream.writeString(proxyStatus);
-        stream.writeString(proxyAdo);
-        stream.writeString(startDate);
-        stream.writeString(endDate);
-        stream.writeString(alpha);
-        stream.writeString(beta);
-        stream.writeString(proxy1);
-        stream.writeString(proxyNroDays1);
-        stream.writeString(proxyLabel1);
-        stream.writeString(proxyMaturity1);
-        stream.writeString(proxySwapMaturity1);
-        stream.writeString(proxyOptionMaturity1);
-        stream.writeString(proxySkew1);
-        stream.writeString(proxy2);
-        stream.writeString(proxyNroDays2);
-        stream.writeString(proxyLabel2);
-        stream.writeString(proxyMaturity2);
-        stream.writeString(proxySwapMaturity2);
-        stream.writeString(proxyOptionMaturity2);
-        stream.writeString(proxySkew2);
-        stream.writeDouble(diff);
-        stream.writeString(underlcrv);
-        stream.writeDouble(pk);
-        stream.writeDouble(fkParent);
-        stream.writeDouble(fkExtension);
-        stream.writeDouble(fkOwnerObj);
-    }
-
-    public Object[] toObjectArray() {
-        return new Object[] {
-                this.dataDatePart,
-                assetClass, factorType, subtype, name, ownerUnit, status, unit,
-                adoUnderlying, returnModel, template, nroDays, label, swapMaturity,
-                optionMaturity, skew, interpolationFormula, valueToInterpolate,
-                firstInterpolation, lastInterpolation, calibrationMethod,
-                rateConvention, spreadCurve, businessDays, proxyMethodology,
-                proxyStatus, proxyAdo, startDate, endDate, alpha, beta, proxy1,
-                proxyNroDays1, proxyLabel1, proxyMaturity1, proxySwapMaturity1,
-                proxyOptionMaturity1, proxySkew1, proxy2, proxyNroDays2,
-                proxyLabel2, proxyMaturity2, proxySwapMaturity2,
-                proxyOptionMaturity2, proxySkew2,
-                this.diff,
-                this.underlcrv,
-                this.pk,
-                this.fkParent,
-                this.fkExtension,
-                this.fkOwnerObj
-        };
-    }
-
-    // Getters y setters para cada atributo
-
-    public void setFromCsvBean(CsvBeanTaylorReport csvBean, Date date, Integer diff) {
-        dataDatePart = date;
-        assetClass = valueOrNull(csvBean.getAssetClass());
-        factorType = valueOrNull(csvBean.getFactorType());
-        subtype = valueOrNull(csvBean.getSubtype());
-        name = valueOrNull(csvBean.getName());
-        ownerUnit = valueOrNull(csvBean.getOwnerUnit());
-        status = valueOrNull(csvBean.getStatus());
-        unit = valueOrNull(csvBean.getUnit());
-        adoUnderlying = valueOrNull(csvBean.getAdoUnderlying());
-        returnModel = valueOrNull(csvBean.getReturnModel());
-        template = valueOrNull(csvBean.getTemplate());
-        nroDays = valueOrNull(csvBean.getNroDays());
-        label = valueOrNull(csvBean.getLabel());
-        swapMaturity = valueOrNull(csvBean.getSwapMaturity());
-        optionMaturity = valueOrNull(csvBean.getOptionMaturity());
-        skew = valueOrNull(csvBean.getSkew());
-        interpolationFormula = valueOrNull(csvBean.getInterpolationFormula());
-        valueToInterpolate = valueOrNull(csvBean.getValueToInterpolate());
-        firstInterpolation = valueOrNull(csvBean.getFirstInterpolation());
-        lastInterpolation = valueOrNull(csvBean.getLastInterpolation());
-        calibrationMethod = valueOrNull(csvBean.getCalibrationMethod());
-        rateConvention = valueOrNull(csvBean.getRateConvention());
-        spreadCurve = valueOrNull(csvBean.getSpreadCurve());
-        businessDays = valueOrNull(csvBean.getBusinessDays());
-        proxyMethodology = valueOrNull(csvBean.getProxyMethodology());
-        proxyStatus = valueOrNull(csvBean.getProxyStatus());
-        proxyAdo = valueOrNull(csvBean.getProxyAdo());
-        startDate = valueOrNull(csvBean.getStartDate());
-        endDate = valueOrNull(csvBean.getEndDate());
-        alpha = valueOrNull(csvBean.getAlpha());
-        beta = valueOrNull(csvBean.getBeta());
-        proxy1 = valueOrNull(csvBean.getProxy1());
-        proxyNroDays1 = valueOrNull(csvBean.getProxyNroDays1());
-        proxyLabel1 = valueOrNull(csvBean.getProxyLabel1());
-        proxyMaturity1 = valueOrNull(csvBean.getProxyMaturity1());
-        proxySwapMaturity1 = valueOrNull(csvBean.getProxySwapMaturity1());
-        proxyOptionMaturity1 = valueOrNull(csvBean.getProxyOptionMaturity1());
-        proxySkew1 = valueOrNull(csvBean.getProxySkew1());
-        proxy2 = valueOrNull(csvBean.getProxy2());
-        proxyNroDays2 = valueOrNull(csvBean.getProxyNroDays2());
-        proxyLabel2 = valueOrNull(csvBean.getProxyLabel2());
-        proxyMaturity2 = valueOrNull(csvBean.getProxyMaturity2());
-        proxySwapMaturity2 = valueOrNull(csvBean.getProxySwapMaturity2());
-        proxyOptionMaturity2 = valueOrNull(csvBean.getProxyOptionMaturity2());
-        proxySkew2 = valueOrNull(csvBean.getProxySkew2());
-        this.diff = diff;
-        this.pk = 1.0;
-        this.fkParent = 1.0;
-        this.fkExtension = 1.0;
-        this.fkOwnerObj = 1.0;
-        // Para los campos que no tienen correspondencia directa, necesitarás decidir cómo manejarlos.
-    }
-    private String valueOrNull(Object o) {
-        return (null != o) ? o.toString() : null;
-    }
-}
-package com.isb.rfrbatch.jobextracttaylorreport.jobextractaylorreportdb.services.database;
-
-import com.isb.rfrbatch.jobextracttaylorreport.jobextractaylorreportdb.services.database.beans.RFRLoadTaylorObj;
-import com.isb.rfrutils.exception.RfrException;
-import com.sgt.rfr.rfrinventorylib.database.util.UtilDbRepository;
-import lombok.extern.slf4j.Slf4j;
-import oracle.jdbc.OracleConnection;
-import oracle.jdbc.OracleTypes;
-import oracle.sql.ARRAY;
-import oracle.sql.ArrayDescriptor;
-import oracle.sql.STRUCT;
-import oracle.sql.StructDescriptor;
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.jdbc.core.JdbcTemplate;
-import org.springframework.jdbc.core.SqlParameter;
-import org.springframework.jdbc.object.StoredProcedure;
-import org.springframework.stereotype.Repository;
-import org.springframework.transaction.annotation.Transactional;
-
-import javax.sql.DataSource;
-import java.sql.Connection;
-import java.sql.Date;
-import java.sql.SQLException;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-
-@Repository
-@Transactional("transactionManager")
-@Slf4j
-public class TaylorReportLoadDbRepository {
-
-    private final JdbcTemplate jdbcTemplate;
-
-    private static final int BATCH_SIZE = 1000; // Tamaño del lote
-
-
-    @Autowired
+    @Mock
     private UtilDbRepository utilDbRepository;
 
-    @Autowired
-    public TaylorReportLoadDbRepository(DataSource dataSource) {
-        this.jdbcTemplate = new JdbcTemplate(dataSource);
-        jdbcTemplate.execute("ALTER SESSION SET NLS_LANGUAGE = 'AMERICAN'");
-        jdbcTemplate.execute("ALTER SESSION SET NLS_TERRITORY = 'AMERICA'");
+    @Mock
+    private DataSource dataSource;
+
+    @Mock
+    private Connection connection;
+
+    @Mock
+    private OracleConnection oracleConnection;
+
+    @Mock
+    private StructDescriptor structDescriptor;
+
+    @Mock
+    private ArrayDescriptor arrayDescriptor;
+
+    @Mock
+    private STRUCT struct;
+
+    @Mock
+    private ARRAY array;
+
+    @Before
+    public void setUp() throws Exception {
+        when(jdbcTemplate.getDataSource()).thenReturn(dataSource);
+        when(dataSource.getConnection()).thenReturn(connection);
+        when(connection.unwrap(OracleConnection.class)).thenReturn(oracleConnection);
+
+        // Evitar que se ejecuten sentencias al construir el repositorio
+        doNothing().when(jdbcTemplate).execute(anyString());
     }
 
-    public void deleteFromTaylorDb(Date dataDatePart, String unit, Integer diff) {
-        String sql = "DELETE FROM RFR.T_RFR_TAYLORREPORT_S WHERE data_datepart = ? AND unit = ? AND diff = ?";
-        int registersDeleted = jdbcTemplate.update(sql, dataDatePart, unit, diff);
-        log.info("Registers deleted: " + registersDeleted);
+    @Test
+    public void deleteFromTaylorDb_shouldExecuteSqlWithCorrectParams() {
+        Date date = Date.valueOf("2024-04-01");
+        String unit = "UNIT1";
+        int diff = 0;
+
+        when(jdbcTemplate.update(anyString(), eq(date), eq(unit), eq(diff))).thenReturn(1);
+
+        repository.deleteFromTaylorDb(date, unit, diff);
+
+        verify(jdbcTemplate).update(
+                eq("DELETE FROM RFR.T_RFR_TAYLORREPORT_S WHERE data_datepart = ? AND unit = ? AND diff = ?"),
+                eq(date), eq(unit), eq(diff)
+        );
     }
 
-    public void callLoadTaylorProcedure(List<RFRLoadTaylorObj> list) throws RfrException {
-        int i = 1;
-        try (Connection conn = jdbcTemplate.getDataSource().getConnection()) {
-            OracleConnection oracleConnection = conn.unwrap(OracleConnection.class);
-            StructDescriptor structDescriptor = StructDescriptor.createDescriptor(RFRLoadTaylorObj.SQL_TYPE, oracleConnection);
+    @Test
+    public void callLoadTaylorProcedure_shouldExecuteStoredProcedureSuccessfully() throws Exception {
+        // Arrange
+        RFRLoadTaylorObj obj = new RFRLoadTaylorObj();
+        obj.setDataDatePart(Date.valueOf("2024-04-01"));
+        obj.setAssetClass("Asset");
+        obj.setFactorType("Factor");
+        obj.setSubtype("Subtype");
+        obj.setName("Name");
+        obj.setOwnerUnit("Owner");
+        obj.setStatus("Status");
+        obj.setUnit("UNIT1");
+        obj.setAdoUnderlying("Underlying");
+        obj.setReturnModel("Model");
+        obj.setTemplate("Template");
+        obj.setNroDays("10");
+        obj.setLabel("Label");
+        obj.setSwapMaturity("2025");
+        obj.setOptionMaturity("2026");
+        obj.setSkew("Skew");
+        obj.setInterpolationFormula("IF");
+        obj.setValueToInterpolate("123");
+        obj.setFirstInterpolation("A");
+        obj.setLastInterpolation("B");
+        obj.setCalibrationMethod("Method");
+        obj.setRateConvention("Rate");
+        obj.setSpreadCurve("Curve");
+        obj.setBusinessDays("5");
+        obj.setProxyMethodology("Meth");
+        obj.setProxyStatus("OK");
+        obj.setProxyAdo("ProxyAdo");
+        obj.setStartDate("2024-04-01");
+        obj.setEndDate("2025-04-01");
+        obj.setAlpha("1");
+        obj.setBeta("2");
+        obj.setProxy1("P1");
+        obj.setProxyNroDays1("10");
+        obj.setProxyLabel1("PL1");
+        obj.setProxyMaturity1("M1");
+        obj.setProxySwapMaturity1("SM1");
+        obj.setProxyOptionMaturity1("OM1");
+        obj.setProxySkew1("S1");
+        obj.setProxy2("P2");
+        obj.setProxyNroDays2("20");
+        obj.setProxyLabel2("PL2");
+        obj.setProxyMaturity2("M2");
+        obj.setProxySwapMaturity2("SM2");
+        obj.setProxyOptionMaturity2("OM2");
+        obj.setProxySkew2("S2");
+        obj.setDiff(0);
+        obj.setUnderlcrv("UC");
+        obj.setPk(1);
+        obj.setFkParent(1);
+        obj.setFkExtension(1);
+        obj.setFkOwnerObj(1);
 
-            ArrayDescriptor arrayDescriptor = ArrayDescriptor.createDescriptor("RFR.RFR_TAYLORREPORT_OBJ_ARRAY", oracleConnection);
-            int totalSize = list.size();
-            for (int start = 0; start < totalSize; start += BATCH_SIZE) {
-                int end = Math.min(totalSize, start + BATCH_SIZE);
-                List<RFRLoadTaylorObj> batchList = list.subList(start, end);
-                Object[] structArray = new Object[batchList.size()];
-                for (int j = 0; j < batchList.size(); j++) {
-                    RFRLoadTaylorObj obj = batchList.get(j);
-                    Object[] attributes = new Object[]{
-                            obj.getDataDatePart(),
-                            obj.getAssetClass(), obj.getFactorType(), obj.getSubtype(), obj.getName(),
-                            obj.getOwnerUnit(), obj.getStatus(), obj.getUnit(), obj.getAdoUnderlying(),
-                            obj.getReturnModel(), obj.getTemplate(), obj.getNroDays(), obj.getLabel(),
-                            obj.getSwapMaturity(), obj.getOptionMaturity(), obj.getSkew(),
-                            obj.getInterpolationFormula(), obj.getValueToInterpolate(),
-                            obj.getFirstInterpolation(), obj.getLastInterpolation(),
-                            obj.getCalibrationMethod(), obj.getRateConvention(), obj.getSpreadCurve(),
-                            obj.getBusinessDays(), obj.getProxyMethodology(), obj.getProxyStatus(),
-                            obj.getProxyAdo(), obj.getStartDate(), obj.getEndDate(), obj.getAlpha(),
-                            obj.getBeta(), obj.getProxy1(), obj.getProxyNroDays1(),
-                            obj.getProxyLabel1(), obj.getProxyMaturity1(), obj.getProxySwapMaturity1(),
-                            obj.getProxyOptionMaturity1(), obj.getProxySkew1(), obj.getProxy2(),
-                            obj.getProxyNroDays2(), obj.getProxyLabel2(), obj.getProxyMaturity2(),
-                            obj.getProxySwapMaturity2(), obj.getProxyOptionMaturity2(),
-                            obj.getProxySkew2(),
-                            obj.getDiff(),
-                            obj.getUnderlcrv(),
-                            obj.getPk(),
-                            obj.getFkParent(),
-                            obj.getFkExtension(),
-                            obj.getFkOwnerObj()
-                    };
-                    STRUCT struct = new STRUCT(structDescriptor, oracleConnection, attributes);
-                    structArray[j] = struct;
-                }
-                ARRAY array = new ARRAY(arrayDescriptor, oracleConnection, structArray);
-                // Llamar al procedimiento almacenado usando JdbcTemplate
-                Map<String, Object> params = new HashMap<>();
+        List<RFRLoadTaylorObj> list = Collections.singletonList(obj);
 
-                params.put("REC_DATA_ARRAY", array);
+        when(jdbcTemplate.getDataSource()).thenReturn(dataSource);
+        when(dataSource.getConnection()).thenReturn(connection);
+        when(connection.unwrap(OracleConnection.class)).thenReturn(oracleConnection);
 
-                StoredProcedure procedure = new StoredProcedure(jdbcTemplate, "RFR.PKG_LOADTAYLORRP.p_LoadTaylorReport") {
-                    {
-                        declareParameter(new SqlParameter("REC_DATA_ARRAY", OracleTypes.ARRAY, "RFR.RFR_TAYLORREPORT_OBJ_ARRAY"));
-                        compile();
-                    }
-                };
-                procedure.execute(params);
-                log.info("OK: " + i + " - " + (i + batchList.size() - 1));
-                i += batchList.size();
-            }
-        } catch (SQLException e) {
-            log.error("KO: " + i);
-            log.error("Error en la carga de bbdd.", e);
-            throw new RfrException("Error en la carga de bbdd.", e);
-        }
-    }
+        when(StructDescriptor.createDescriptor(anyString(), eq(oracleConnection)))
+                .thenReturn(structDescriptor);
 
+        when(ArrayDescriptor.createDescriptor(anyString(), eq(oracleConnection)))
+                .thenReturn(arrayDescriptor);
 
-}
-package com.isb.rfrbatch.jobextracttaylorreport.jobextractaylorreportdb.services.files;
+        whenNew(STRUCT.class).withAnyArguments().thenReturn(struct);
+        whenNew(ARRAY.class).withAnyArguments().thenReturn(array);
 
-import com.fasterxml.jackson.databind.MapperFeature;
-import com.fasterxml.jackson.databind.MappingIterator;
-import com.fasterxml.jackson.dataformat.csv.CsvMapper;
-import com.fasterxml.jackson.dataformat.csv.CsvSchema;
-import lombok.extern.slf4j.Slf4j;
-import org.springframework.stereotype.Service;
-
-import java.io.File;
-import java.util.Collection;
-
-@Slf4j
-@Service
-public class ExtractTaylorFileService {
-
-    private static final char SEMICOLON = ';';
-
-    public <C extends Collection<?>> C readShatReportCsv(File file, String path, Class<?> pojoType) {
-        try {
-            log.info("Reading file: " + path);
-            CsvMapper mapper = new CsvMapper();
-            mapper.disable(MapperFeature.SORT_PROPERTIES_ALPHABETICALLY);
-            CsvSchema csvSchema = mapper.schemaFor(pojoType).withHeader().withoutQuoteChar().withColumnSeparator(SEMICOLON);
-            MappingIterator<?> iterator = mapper.readerFor(pojoType).with(csvSchema).readValues(file);
-            return (C) iterator.readAll();
-        } catch (Exception e) {
-            log.error(e.getMessage(), e);
+        // Stub del procedimiento almacenado
+        doAnswer(invocation -> {
+            Map<String, Object> params = invocation.getArgument(0);
+            assertTrue(params.containsKey("REC_DATA_ARRAY"));
             return null;
-        }
+        }).when(jdbcTemplate).call(any(StoredProcedure.class), anyMap());
+
+        // Act
+        repository.callLoadTaylorProcedure(list);
+
+        // Assert
+        verify(jdbcTemplate.getDataSource(), atLeastOnce()).getConnection();
     }
 }
