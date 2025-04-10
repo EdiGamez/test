@@ -1,20 +1,22 @@
-@Before
-public void setUp() {
-    MockitoAnnotations.openMocks(this);
 
-    // Usamos el constructor con JdbcTemplate directamente
-    repository = new TaylorReportLoadDbRepository(jdbcTemplate) {
-        @Override
-        protected void initSession() {
-            // no ejecutar sentencias reales
-        }
+public void callLoadInventoryOperation(List<RPGLoadInventoryOpDTO> list) throws RPGException {
+    try (Connection conn = Objects.requireNonNull(getJdbcTemplate().getDataSource()).getConnection()) {
+        for (RPGLoadInventoryOpDTO dto : list) {
+            Struct[] structArray = new Struct[list.size()];
+            Object[] objArray = new Object[2];
+            objArray[0] = dto.getId();
+            objArray[1] = conn.createArrayOf("OBJ_ARRAY", dto.getArray());
 
-        @Override
-        protected ARRAY buildArray(List<RFRLoadTaylorObj> batchList, OracleConnection conn) {
-            return mockArray;
-        }
-    };
+            structArray[i] = conn.createStruct("OBJ_STRUCT", objArray);
 
-    // Mock de update para evitar el error "No statement specified"
-    when(jdbcTemplate.update(anyString(), any(), any(), any())).thenReturn(1);
+            StoredProcedure procedure = new StoredProcedure(conn);
+            procedure.executeStoredProcedure("pkg_name.sp_name", structArray[i]);
+        }
+    } catch (SQLException e) {
+        throw new RPGException(e.getMessage(), e);
+    }
+}
+
+protected java.sql.Array buildVarChar(Connection oracleConnection, List<String> attributes) throws SQLException {
+    return oracleConnection.createArrayOf("VARCHAR2_ARRAY", attributes.toArray(new String[0]));
 }
