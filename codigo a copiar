@@ -1,22 +1,21 @@
-
 public void callLoadInventoryOperation(List<RPGLoadInventoryOpDTO> list) throws RPGException {
-    try (Connection conn = Objects.requireNonNull(getJdbcTemplate().getDataSource()).getConnection()) {
-        for (RPGLoadInventoryOpDTO dto : list) {
-            Struct[] structArray = new Struct[list.size()];
-            Object[] objArray = new Object[2];
-            objArray[0] = dto.getId();
-            objArray[1] = conn.createArrayOf("OBJ_ARRAY", dto.getArray());
+    try (Connection conn = Objects.requireNonNull(getJdbcTemplate().getDataSource()).getConnection()) {
+        for (RPGLoadInventoryOpDTO dto : list) {
+            Struct[] structArray = new Struct[list.size()];
+            Object[] objArray = new Object[2];
+            objArray[0] = dto.getId();
+            objArray[1] = conn.createArrayOf("OBJ_ARRAY", dto.getArray());
 
-            structArray[i] = conn.createStruct("OBJ_STRUCT", objArray);
+            structArray[i] = conn.createStruct("OBJ_STRUCT", objArray);
 
-            StoredProcedure procedure = new StoredProcedure(conn);
-            procedure.executeStoredProcedure("pkg_name.sp_name", structArray[i]);
-        }
-    } catch (SQLException e) {
-        throw new RPGException(e.getMessage(), e);
-    }
+            StoredProcedure procedure = new StoredProcedure(conn);
+            procedure.executeStoredProcedure("pkg_name.sp_name", structArray[i]);
+        }
+    } catch (SQLException e) {
+        throw new RPGException(e.getMessage(), e);
+    }
 }
 
 protected java.sql.Array buildVarChar(Connection oracleConnection, List<String> attributes) throws SQLException {
-    return oracleConnection.createArrayOf("VARCHAR2_ARRAY", attributes.toArray(new String[0]));
+    return oracleConnection.createArrayOf("VARCHAR2_ARRAY", attributes.toArray(new String[0]));
 }
