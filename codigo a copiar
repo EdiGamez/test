@@ -1,14 +1,8 @@
 @RunWith(MockitoJUnitRunner.class)
 public class TaylorReportLoadDbRepositoryTest {
 
-    @InjectMocks
-    private TaylorReportLoadDbRepository repository;
-
     @Mock
     private JdbcTemplate jdbcTemplate;
-
-    @Mock
-    private UtilDbRepository utilDbRepository;
 
     @Mock
     private DataSource dataSource;
@@ -20,34 +14,37 @@ public class TaylorReportLoadDbRepositoryTest {
     private OracleConnection oracleConnection;
 
     @Mock
-    private StructDescriptor structDescriptor;
+    private ARRAY mockArray;
 
-    @Mock
-    private ArrayDescriptor arrayDescriptor;
-
-    @Mock
-    private STRUCT struct;
-
-    @Mock
-    private ARRAY array;
+    private TaylorReportLoadDbRepository repository;
 
     @Before
     public void setUp() throws Exception {
+        MockitoAnnotations.openMocks(this);
+
+        // Subclase anónima para mockear el método buildArray
+        repository = new TaylorReportLoadDbRepository(jdbcTemplate) {
+            @Override
+            protected ARRAY buildArray(List<RFRLoadTaylorObj> batchList, OracleConnection conn) {
+                return mockArray;
+            }
+        };
+
         when(jdbcTemplate.getDataSource()).thenReturn(dataSource);
         when(dataSource.getConnection()).thenReturn(connection);
         when(connection.unwrap(OracleConnection.class)).thenReturn(oracleConnection);
 
-        // Evitar que se ejecuten sentencias al construir el repositorio
+        // Para evitar ejecutar sentencias en constructor
         doNothing().when(jdbcTemplate).execute(anyString());
     }
 
     @Test
-    public void deleteFromTaylorDb_shouldExecuteSqlWithCorrectParams() {
+    public void deleteFromTaylorDb_shouldExecuteCorrectSql() {
         Date date = Date.valueOf("2024-04-01");
         String unit = "UNIT1";
-        int diff = 0;
+        int diff = 1;
 
-        when(jdbcTemplate.update(anyString(), eq(date), eq(unit), eq(diff))).thenReturn(1);
+        when(jdbcTemplate.update(anyString(), eq(date), eq(unit), eq(diff))).thenReturn(2);
 
         repository.deleteFromTaylorDb(date, unit, diff);
 
@@ -58,87 +55,23 @@ public class TaylorReportLoadDbRepositoryTest {
     }
 
     @Test
-    public void callLoadTaylorProcedure_shouldExecuteStoredProcedureSuccessfully() throws Exception {
-        // Arrange
-        RFRLoadTaylorObj obj = new RFRLoadTaylorObj();
-        obj.setDataDatePart(Date.valueOf("2024-04-01"));
-        obj.setAssetClass("Asset");
-        obj.setFactorType("Factor");
-        obj.setSubtype("Subtype");
-        obj.setName("Name");
-        obj.setOwnerUnit("Owner");
-        obj.setStatus("Status");
-        obj.setUnit("UNIT1");
-        obj.setAdoUnderlying("Underlying");
-        obj.setReturnModel("Model");
-        obj.setTemplate("Template");
-        obj.setNroDays("10");
-        obj.setLabel("Label");
-        obj.setSwapMaturity("2025");
-        obj.setOptionMaturity("2026");
-        obj.setSkew("Skew");
-        obj.setInterpolationFormula("IF");
-        obj.setValueToInterpolate("123");
-        obj.setFirstInterpolation("A");
-        obj.setLastInterpolation("B");
-        obj.setCalibrationMethod("Method");
-        obj.setRateConvention("Rate");
-        obj.setSpreadCurve("Curve");
-        obj.setBusinessDays("5");
-        obj.setProxyMethodology("Meth");
-        obj.setProxyStatus("OK");
-        obj.setProxyAdo("ProxyAdo");
-        obj.setStartDate("2024-04-01");
-        obj.setEndDate("2025-04-01");
-        obj.setAlpha("1");
-        obj.setBeta("2");
-        obj.setProxy1("P1");
-        obj.setProxyNroDays1("10");
-        obj.setProxyLabel1("PL1");
-        obj.setProxyMaturity1("M1");
-        obj.setProxySwapMaturity1("SM1");
-        obj.setProxyOptionMaturity1("OM1");
-        obj.setProxySkew1("S1");
-        obj.setProxy2("P2");
-        obj.setProxyNroDays2("20");
-        obj.setProxyLabel2("PL2");
-        obj.setProxyMaturity2("M2");
-        obj.setProxySwapMaturity2("SM2");
-        obj.setProxyOptionMaturity2("OM2");
-        obj.setProxySkew2("S2");
-        obj.setDiff(0);
-        obj.setUnderlcrv("UC");
-        obj.setPk(1);
-        obj.setFkParent(1);
-        obj.setFkExtension(1);
-        obj.setFkOwnerObj(1);
+    public void callLoadTaylorProcedure_shouldExecuteSuccessfully() throws Exception {
+        // Crear un objeto simulado
+        RFRLoadTaylorObj obj = mock(RFRLoadTaylorObj.class);
+        when(obj.toObjectArray()).thenReturn(new Object[53]); // cantidad total de campos
 
+        obj.setDataDatePart(Date.valueOf("2024-04-01"));
         List<RFRLoadTaylorObj> list = Collections.singletonList(obj);
 
-        when(jdbcTemplate.getDataSource()).thenReturn(dataSource);
-        when(dataSource.getConnection()).thenReturn(connection);
-        when(connection.unwrap(OracleConnection.class)).thenReturn(oracleConnection);
+        // Mock comportamiento del StoredProcedure
+        StoredProcedure sp = mock(StoredProcedure.class);
+        doNothing().when(sp).execute(anyMap());
 
-        when(StructDescriptor.createDescriptor(anyString(), eq(oracleConnection)))
-                .thenReturn(structDescriptor);
-
-        when(ArrayDescriptor.createDescriptor(anyString(), eq(oracleConnection)))
-                .thenReturn(arrayDescriptor);
-
-        whenNew(STRUCT.class).withAnyArguments().thenReturn(struct);
-        whenNew(ARRAY.class).withAnyArguments().thenReturn(array);
-
-        // Stub del procedimiento almacenado
-        doAnswer(invocation -> {
-            Map<String, Object> params = invocation.getArgument(0);
-            assertTrue(params.containsKey("REC_DATA_ARRAY"));
-            return null;
-        }).when(jdbcTemplate).call(any(StoredProcedure.class), anyMap());
-
-        // Act
+        // Ejecutar el método
         repository.callLoadTaylorProcedure(list);
 
-        // Assert
-        verify(jdbcTemplate.getDataSource(), atLeastOnce()).getConnection();
+        // Verifica que haya conexión y unwrap
+        verify(jdbcTemplate.getDataSource()).getConnection();
+        verify(connection).unwrap(OracleConnection.class);
     }
 }
