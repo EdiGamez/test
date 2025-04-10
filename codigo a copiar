@@ -1,79 +1,218 @@
-import com.fasterxml.jackson.databind.ObjectMapper;
-import org.junit.Test;
-import static org.junit.Assert.*;
+package com.isb.rfrbatch.jobextractstresstestreport.jobstresstestreportcsv.services.buildcsv.beans;
 
-public class CsvBeanTaylorReportTest {
+import com.fasterxml.jackson.annotation.JsonProperty;
+import lombok.Data;
 
-    @Test
-    public void testSetterAndGetter() {
-        // Crear una nueva instancia de la clase
-        CsvBeanTaylorReport report = new CsvBeanTaylorReport();
+@Data
+public class CsvBeanStressTestHipoteticReport {
 
-        // Asignar valores usando los setters
-        report.setAssetClass("Equity");
-        report.setFactorType("Risk");
-        report.setSubtype("Subtype1");
-        report.setName("SampleName");
-        report.setOwnerUnit("Unit1");
-        report.setStatus("Active");
-        report.setUnit("Unit1");
-        report.setAdoUnderlying("Underlying1");
-        report.setReturnModel("Model1");
-        report.setTemplate("Template1");
-        report.setNroDays("30");
-        report.setLabel("Label1");
-        report.setSwapMaturity("2025-01-01");
-        report.setOptionMaturity("2025-12-31");
-        report.setSkew("0.5");
+    @JsonProperty("Asset Class")
+    private String assetClass; //Asset Class
+    @JsonProperty("Factor Type")
+    private String factorType; //Factor Type
+    @JsonProperty("Subtype")
+    private String subType; //Subtype
+    @JsonProperty("Name")
+    private String name; //Name
+    @JsonProperty("Unit")
+    private String unit;//Unit
+    @JsonProperty("ADO")
+    private String ado;//ADO Underlying
+    @JsonProperty("Return Model")
+    private String returnModel;//Return Model
+    @JsonProperty("Reference Name")
+    private String refName;
+    @JsonProperty("Currency")
+    private String currency;
+    @JsonProperty("Market")
+    private String market;
+    @JsonProperty("Template")
+    private String template;//Template
+    @JsonProperty("Tenor")
+    private String tenor; //Label
+    @JsonProperty("Nro Days")
+    private String nroDays;//Nro Days
+    @JsonProperty("Skew")
+    private String skew;//Skew
+    @JsonProperty("Proxy Methodology")
+    private String proxyMethodology;//Proxy Methodology
+    @JsonProperty("Proxy Status")
+    private String proxyStatus;//Proxy Status
+    @JsonProperty("Start Date")
+    private String startDate;//Start Date
+    @JsonProperty("End Date")
+    private String endDate;//End Date
+    @JsonProperty("Alpha")
+    private String alpha;//Alpha
+    @JsonProperty("Beta")
+    private String beta;//Beta
+    @JsonProperty("Proxy 1")
+    private String proxy1;//Proxy 1
+    @JsonProperty("Proxy ADO 1")
+    private String proxyAdo1;//Proxy Ado 1
+    @JsonProperty("Proxy Nro Days 1")
+    private String proxyNrDays1;//Proxy Nro Days 1
+    @JsonProperty("Proxy Label 1")
+    private String proxyLabel1;//Proxy Label 1
+    @JsonProperty("Proxy Maturity 1")
+    private String proxyMaturity1;//Proxy Maturity 1
+    @JsonProperty("Proxy Swap Maturity 1")
+    private String proxySwapMaturity1;//Proxy Swap Maturity 1
+    @JsonProperty("Proxy Option Maturity 1")
+    private String proxyOptionMaturity1;//Proxy Option Maturity 1
+    @JsonProperty("Proxy Skew 1")
+    private String proxySkew1;//Proxy Skew 1
+    @JsonProperty("Proxy 2")
+    private String proxy2;//Proxy 2
+    @JsonProperty("Proxy ADO 2")
+    private String proxyAdo2;//Proxy Ado 1
+    @JsonProperty("Proxy Nro Days 2")
+    private String proxyNrDays2;//Proxy Nro Days 2
+    @JsonProperty("Proxy Label 2")
+    private String proxyLabel2;//Proxy Label 2
+    @JsonProperty("Proxy Maturity 2")
+    private String proxyMaturity2;//Proxy Maturity 2
+    @JsonProperty("Proxy Swap Maturity 2")
+    private String proxySwapMaturity2;//Proxy Swap Maturity 2
+    @JsonProperty("Proxy Option Maturity 2")
+    private String proxyOptionMaturity2;//Proxy Option Maturity 2
+    @JsonProperty("Proxy Skew 2")
+    private String proxySkew2;//Proxy Skew 2
+    
+}
+package com.isb.rfrbatch.jobextractstresstestreport.jobstresstestreportcsv.services.buildcsv.beans;
 
-        // Verificar que los valores se asignen correctamente usando los getters
-        assertEquals("Equity", report.getAssetClass());
-        assertEquals("Risk", report.getFactorType());
-        assertEquals("Subtype1", report.getSubtype());
-        assertEquals("SampleName", report.getName());
-        assertEquals("Unit1", report.getOwnerUnit());
-        assertEquals("Active", report.getStatus());
-        assertEquals("Unit1", report.getUnit());
-        assertEquals("Underlying1", report.getAdoUnderlying());
-        assertEquals("Model1", report.getReturnModel());
-        assertEquals("Template1", report.getTemplate());
-        assertEquals("30", report.getNroDays());
-        assertEquals("Label1", report.getLabel());
-        assertEquals("2025-01-01", report.getSwapMaturity());
-        assertEquals("2025-12-31", report.getOptionMaturity());
-        assertEquals("0.5", report.getSkew());
-    }
+import com.fasterxml.jackson.annotation.JsonProperty;
+import lombok.Data;
 
-    @Test
-    public void testJsonSerialization() throws Exception {
-        // Crear una nueva instancia de la clase y asignar valores
-        CsvBeanTaylorReport report = new CsvBeanTaylorReport();
-        report.setAssetClass("Equity");
-        report.setFactorType("Risk");
-        report.setSubtype("Subtype1");
+@Data
+public class CsvBeanStressTestHistoricReport {
 
-        // Serializar el objeto a JSON
-        ObjectMapper objectMapper = new ObjectMapper();
-        String json = objectMapper.writeValueAsString(report);
-
-        // Verificar que la serialización contenga los valores esperados
-        assertTrue(json.contains("\"Asset Class\":\"Equity\""));
-        assertTrue(json.contains("\"Factor Type\":\"Risk\""));
-        assertTrue(json.contains("\"Subtype\":\"Subtype1\""));
-    }
-
-    @Test
-    public void testJsonDeserialization() throws Exception {
-        // JSON de prueba
-        String json = "{\"Asset Class\":\"Equity\",\"Factor Type\":\"Risk\",\"Subtype\":\"Subtype1\"}";
-
-        // Deserializar el JSON a un objeto CsvBeanTaylorReport
-        ObjectMapper objectMapper = new ObjectMapper();
-        CsvBeanTaylorReport report = objectMapper.readValue(json, CsvBeanTaylorReport.class);
-
-        // Verificar que los valores del objeto coincidan con los del JSON
-        assertEquals("Equity", report.getAssetClass());
-        assertEquals("Risk", report.getFactorType());
-        assertEquals("Subtype1", report.getSubtype());
-    }
+    @JsonProperty("Asset Class")
+    private String assetClass; //Asset Class
+    @JsonProperty("Factor Type")
+    private String factorType; //Factor Type
+    @JsonProperty("Subtype")
+    private String subType; //Subtype
+    @JsonProperty("Name")
+    private String name; //Name
+    @JsonProperty("Unit")
+    private String unit;//Unit
+    @JsonProperty("ADO")
+    private String ado;//ADO Underlying
+    @JsonProperty("Return Model")
+    private String returnModel;//Return Model
+    @JsonProperty("Reference Name")
+    private String refName;
+    @JsonProperty("Currency")
+    private String currency;
+    @JsonProperty("Market")
+    private String market;
+    @JsonProperty("Template")
+    private String template;//Template
+    @JsonProperty("Nro Days")
+    private String nroDays;//Nro Days
+    @JsonProperty("Label")
+    private String label; //Label
+    @JsonProperty("Swap Maturity")
+    private String swapMaturity;//Swap Maturity
+    @JsonProperty("Option Maturity")
+    private String optionMaturity;//Option Maturity
+    @JsonProperty("Skew")
+    private String skew;//Skew
+    @JsonProperty("Proxy Methodology")
+    private String proxyMethodology;//Proxy Methodology
+    @JsonProperty("Proxy Status")
+    private String proxyStatus;//Proxy Status
+    @JsonProperty("Start Date")
+    private String startDate;//Start Date
+    @JsonProperty("End Date")
+    private String endDate;//End Date
+    @JsonProperty("Alpha")
+    private String alpha;//Alpha
+    @JsonProperty("Beta")
+    private String beta;//Beta
+    @JsonProperty("Proxy 1")
+    private String proxy1;//Proxy 1
+    @JsonProperty("Proxy ADO 1")
+    private String proxyAdo1;//Proxy Ado 1
+    @JsonProperty("Proxy Nro Days 1")
+    private String proxyNrDays1;//Proxy Nro Days 1
+    @JsonProperty("Proxy Label 1")
+    private String proxyLabel1;//Proxy Label 1
+    @JsonProperty("Proxy Maturity 1")
+    private String proxyMaturity1;//Proxy Maturity 1
+    @JsonProperty("Proxy Swap Maturity 1")
+    private String proxySwapMaturity1;//Proxy Swap Maturity 1
+    @JsonProperty("Proxy Option Maturity 1")
+    private String proxyOptionMaturity1;//Proxy Option Maturity 1
+    @JsonProperty("Proxy Skew 1")
+    private String proxySkew1;//Proxy Skew 1
+    @JsonProperty("Proxy 2")
+    private String proxy2;//Proxy 2
+    @JsonProperty("Proxy ADO 2")
+    private String proxyAdo2;//Proxy Ado 2
+    @JsonProperty("Proxy Nro Days 2")
+    private String proxyNrDays2;//Proxy Nro Days 2
+    @JsonProperty("Proxy Label 2")
+    private String proxyLabel2;//Proxy Label 2
+    @JsonProperty("Proxy Maturity 2")
+    private String proxyMaturity2;//Proxy Maturity 2
+    @JsonProperty("Proxy Swap Maturity 2")
+    private String proxySwapMaturity2;//Proxy Swap Maturity 2
+    @JsonProperty("Proxy Option Maturity 2")
+    private String proxyOptionMaturity2;//Proxy Option Maturity 2
+    @JsonProperty("Proxy Skew 2")
+    private String proxySkew2;//Proxy Skew 2
+    @JsonProperty("interpolationFormula")
+    private String interpolationFormula; //interpolationFormula
+    @JsonProperty("valueToInterpolate")
+    private String valueToInterpolate;
+    @JsonProperty("firstInterpolation")
+    private String firstInterpolation;
+    @JsonProperty("lastInterpolation")
+    private String lastInterpolation;
+    @JsonProperty("calibrationMethod")
+    private String calibrationMethod;
+    @JsonProperty("rateConvention")
+    private String rateConvention;
+    @JsonProperty("spreadCurve")
+    private String spreadCurve;
+    @JsonProperty("businessDays")
+    private String businessDays;
+    
+}
+@Data
+public class CsvBeanFullRevalReport extends CsvBeanBase {
+    @JsonProperty("Subtype")
+    private String subType; //Subtype
+    @JsonProperty("Proxy 1")
+    private String proxy1;
+    @JsonProperty("Proxy Nro Days 1")
+    private String proxyNrDays1;
+    @JsonProperty("Proxy Label 1")
+    private String proxyLabel1;
+    @JsonProperty("Proxy Maturity 1")
+    private String proxyMaturity1;
+    @JsonProperty("Proxy Swap Maturity 1")
+    private String proxySwapMaturity1;
+    @JsonProperty("Proxy Option Maturity 1")
+    private String proxyOptionMaturity1;
+    @JsonProperty("Proxy Skew 1")
+    private String proxySkew1;
+    @JsonProperty("Proxy 2")
+    private String proxy2;
+    @JsonProperty("Proxy Nro Days 2")
+    private String proxyNrDays2;
+    @JsonProperty("Proxy Label 2")
+    private String proxyLabel2;
+    @JsonProperty("Proxy Maturity 2")
+    private String proxyMaturity2;
+    @JsonProperty("Proxy Swap Maturity 2")
+    private String proxySwapMaturity2;
+    @JsonProperty("Proxy Option Maturity 2")
+    private String proxyOptionMaturity2;
+    @JsonProperty("Proxy Skew 2")
+    private String proxySkew2;
+    
 }
