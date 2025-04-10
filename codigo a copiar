@@ -1,77 +1,20 @@
-@RunWith(MockitoJUnitRunner.class)
-public class TaylorReportLoadDbRepositoryTest {
+@Before
+public void setUp() {
+    MockitoAnnotations.openMocks(this);
 
-    @Mock
-    private JdbcTemplate jdbcTemplate;
+    // Usamos el constructor con JdbcTemplate directamente
+    repository = new TaylorReportLoadDbRepository(jdbcTemplate) {
+        @Override
+        protected void initSession() {
+            // no ejecutar sentencias reales
+        }
 
-    @Mock
-    private DataSource dataSource;
+        @Override
+        protected ARRAY buildArray(List<RFRLoadTaylorObj> batchList, OracleConnection conn) {
+            return mockArray;
+        }
+    };
 
-    @Mock
-    private Connection connection;
-
-    @Mock
-    private OracleConnection oracleConnection;
-
-    @Mock
-    private ARRAY mockArray;
-
-    private TaylorReportLoadDbRepository repository;
-
-    @Before
-    public void setUp() throws Exception {
-        MockitoAnnotations.openMocks(this);
-
-        // Subclase anónima para mockear el método buildArray
-        repository = new TaylorReportLoadDbRepository(jdbcTemplate) {
-            @Override
-            protected ARRAY buildArray(List<RFRLoadTaylorObj> batchList, OracleConnection conn) {
-                return mockArray;
-            }
-        };
-
-        when(jdbcTemplate.getDataSource()).thenReturn(dataSource);
-        when(dataSource.getConnection()).thenReturn(connection);
-        when(connection.unwrap(OracleConnection.class)).thenReturn(oracleConnection);
-
-        // Para evitar ejecutar sentencias en constructor
-        doNothing().when(jdbcTemplate).execute(anyString());
-    }
-
-    @Test
-    public void deleteFromTaylorDb_shouldExecuteCorrectSql() {
-        Date date = Date.valueOf("2024-04-01");
-        String unit = "UNIT1";
-        int diff = 1;
-
-        when(jdbcTemplate.update(anyString(), eq(date), eq(unit), eq(diff))).thenReturn(2);
-
-        repository.deleteFromTaylorDb(date, unit, diff);
-
-        verify(jdbcTemplate).update(
-                eq("DELETE FROM RFR.T_RFR_TAYLORREPORT_S WHERE data_datepart = ? AND unit = ? AND diff = ?"),
-                eq(date), eq(unit), eq(diff)
-        );
-    }
-
-    @Test
-    public void callLoadTaylorProcedure_shouldExecuteSuccessfully() throws Exception {
-        // Crear un objeto simulado
-        RFRLoadTaylorObj obj = mock(RFRLoadTaylorObj.class);
-        when(obj.toObjectArray()).thenReturn(new Object[53]); // cantidad total de campos
-
-        obj.setDataDatePart(Date.valueOf("2024-04-01"));
-        List<RFRLoadTaylorObj> list = Collections.singletonList(obj);
-
-        // Mock comportamiento del StoredProcedure
-        StoredProcedure sp = mock(StoredProcedure.class);
-        doNothing().when(sp).execute(anyMap());
-
-        // Ejecutar el método
-        repository.callLoadTaylorProcedure(list);
-
-        // Verifica que haya conexión y unwrap
-        verify(jdbcTemplate.getDataSource()).getConnection();
-        verify(connection).unwrap(OracleConnection.class);
-    }
+    // Mock de update para evitar el error "No statement specified"
+    when(jdbcTemplate.update(anyString(), any(), any(), any())).thenReturn(1);
 }
