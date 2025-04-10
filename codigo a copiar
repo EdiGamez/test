@@ -1,48 +1,42 @@
-    public void callLoadTaylorProcedure(List<RFRLoadTaylorObj> list) throws RfrException {
-        int i = 1;
-        try (Connection conn = Objects.requireNonNull(jdbcTemplate.getDataSource()).getConnection()) {
-            OracleConnection oracleConnection = conn.unwrap(OracleConnection.class);
+public void callLoadTaylorProcedure(List<RFRLoadTaylorObj> list) throws RfrException {
+    int i = 1;
+    try (Connection conn = Objects.requireNonNull(jdbcTemplate.getDataSource()).getConnection()) {
+        OracleConnection oracleConnection = conn.unwrap(OracleConnection.class);
 
-            int totalSize = list.size();
-            for (int start = 0; start < totalSize; start += BATCH_SIZE) {
-                int end = Math.min(totalSize, start + BATCH_SIZE);
-                List<RFRLoadTaylorObj> batchList = list.subList(start, end);
-                Object[] structArray = new Object[batchList.size()];
+        int totalSize = list.size();
+        for (int start = 0; start < totalSize; start += BATCH_SIZE) {
+            int end = Math.min(totalSize, start + BATCH_SIZE);
+            List<RFRLoadTaylorObj> batchList = list.subList(start, end);
+            Object[] structArray = new Object[batchList.size()];
 
-                ARRAY array = buildArray(batchList, oracleConnection);
-                // Llamar al procedimiento almacenado usando JdbcTemplate
-                Map<String, Object> params = new HashMap<>();
+            java.sql.Array array = buildArray(batchList, oracleConnection);
+            // Llamar al procedimiento almacenado usando JdbcTemplate
+            Map<String, Object> params = new HashMap<>();
 
-                params.put("REC_DATA_ARRAY", array);
+            params.put("REC_DATA_ARRAY", array);
 
-                StoredProcedure procedure = new StoredProcedure(jdbcTemplate, "RFR.PKG_LOADTAYLORRP.p_LoadTaylorReport") {
-                    {
-                        declareParameter(new SqlParameter("REC_DATA_ARRAY", OracleTypes.ARRAY, "RFR.RFR_TAYLORREPORT_OBJ_ARRAY"));
-                        compile();
-                    }
-                };
-                procedure.execute(params);
-                log.info("OK: " + i + " - " + (i + batchList.size() - 1));
-                i += batchList.size();
-            }
-        } catch (SQLException e) {
-            log.error("KO: " + i);
-            log.error("Error en la carga de bbdd.", e);
-            throw new RfrException("Error en la carga de bbdd.", e);
+            StoredProcedure procedure = new StoredProcedure(jdbcTemplate, "RFR.PKG_LOADTAYLORRP.p_LoadTaylorReport") {
+                {
+                    declareParameter(new SqlParameter("REC_DATA_ARRAY", OracleTypes.ARRAY, "RFR.RFR_TAYLORREPORT_OBJ_ARRAY"));
+                    compile();
+                }
+            };
+            procedure.execute(params);
+            log.info("OK: " + i + " - " + (i + batchList.size() - 1));
+            i += batchList.size();
         }
+    } catch (SQLException e) {
+        log.error("KO: " + i);
+        log.error("Error en la carga de bbdd.", e);
+        throw new RfrException("Error en la carga de bbdd.", e);
     }
+}
 
-    protected ARRAY buildArray(List<RFRLoadTaylorObj> batchList, OracleConnection oracleConnection) throws SQLException {
-
-        StructDescriptor structDescriptor = StructDescriptor.createDescriptor(RFRLoadTaylorObj.SQL_TYPE, oracleConnection);
-
-        ArrayDescriptor arrayDescriptor = ArrayDescriptor.createDescriptor("RFR.RFR_TAYLORREPORT_OBJ_ARRAY", oracleConnection);
-        Object[] structArray = new Object[batchList.size()];
-        for (int j = 0; j < batchList.size(); j++) {
-            Object[] attributes = batchList.get(j).toObjectArray();
-            STRUCT struct = new STRUCT(structDescriptor, oracleConnection, attributes);
-            structArray[j] = struct;
-
-        }
-        return new ARRAY(arrayDescriptor, oracleConnection, structArray);
+protected java.sql.Array buildArray(List<RFRLoadTaylorObj> batchList, OracleConnection oracleConnection) throws SQLException {
+    Struct[] structArray = new Struct[batchList.size()];
+    for (int j = 0; j < batchList.size(); j++) {
+        Object[] attributes = batchList.get(j).toObjectArray();
+        structArray[j] = oracleConnection.createStruct(RFRLoadTaylorObj.SQL_TYPE, attributes);
     }
+    return oracleConnection.createOracleArray("RFR.RFR_TAYLORREPORT_OBJ_ARRAY", structArray);
+}
