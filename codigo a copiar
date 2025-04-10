@@ -248,3 +248,67 @@ public class CsvBeanTaylorReport extends CsvBeanBase {
     @JsonProperty("Proxy Skew 2")
     private String proxySkew2;
 }
+@Data
+public class CsvBeanBase {
+    @JsonProperty("Asset Class")
+    private String assetClass;
+    @JsonProperty("Factor Type")
+    private String factorType;
+    @JsonProperty("Subtype")
+    private String subtype;
+    @JsonProperty("Name")
+    private String name;
+    @JsonProperty("Owner Unit")
+    private String ownerUnit;
+    @JsonProperty("Status")
+    private String status;
+    @JsonProperty("Unit")
+    private String unit;
+    @JsonProperty("ADO Underlying")
+    private String adoUnderlying;
+    @JsonProperty("Return Model")
+    private String returnModel;
+    @JsonProperty("Template")
+    private String template;
+    @JsonProperty("Nro Days")
+    private String nroDays;
+    @JsonProperty("Label")
+    private String label;
+    @JsonProperty("Swap Maturity")
+    private String swapMaturity;
+    @JsonProperty("Option Maturity")
+    private String optionMaturity;
+    @JsonProperty("Skew")
+    private String skew;
+    @JsonProperty("interpolationFormula")
+    private String interpolationFormula;
+    @JsonProperty("valueToInterpolate")
+    private String valueToInterpolate;
+    @JsonProperty("firstInterpolation")
+    private String firstInterpolation;
+    @JsonProperty("lastInterpolation")
+    private String lastInterpolation;
+    @JsonProperty("calibrationMethod")
+    private String calibrationMethod;
+    @JsonProperty("rateConvention")
+    private String rateConvention;
+    @JsonProperty("spreadCurve")
+    private String spreadCurve;
+    @JsonProperty("businessDays")
+    private String businessDays;
+    @JsonProperty("Proxy Methodology")
+    private String proxyMethodology;
+    @JsonProperty("Proxy Status")
+    private String proxyStatus;
+    @JsonProperty("Proxy ADO")
+    private String proxyAdo;
+    @JsonProperty("Start Date")
+    private String startDate;
+    @JsonProperty("End Date")
+    private String endDate;
+    @JsonProperty("Alpha")
+    private String alpha;
+    @JsonProperty("Beta")
+    private String beta;
+}
+
