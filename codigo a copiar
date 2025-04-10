@@ -1,258 +1,100 @@
-package com.isb.rfrbatch.jobextracttaylorreport.jobextractaylorreportdb.services.database.beans;
-
-import com.isb.rfrbatch.jobextracttaylorreport.jobextractaylorreportcsv.services.buildcsv.CsvBeanTaylorReport;
-import lombok.Getter;
-import lombok.Setter;
-
+import org.junit.Before;
+import org.junit.Test;
+import static org.junit.Assert.*;
+import org.mockito.*;
 import java.sql.*;
-@Getter @Setter
-public class RFRLoadTaylorObj implements SQLData {
 
-    private Date dataDatePart;
+public class RFRLoadTaylorObjTest {
 
-    private String assetClass;
-    private String factorType;
-    private String subtype;
-    private String name;
-    private String ownerUnit;
-    private String status;
-    private String unit;
-    private String adoUnderlying;
-    private String returnModel;
-    private String template;
-    private String nroDays;
-    private String label;
-    private String swapMaturity;
-    private String optionMaturity;
-    private String skew;
-    private String interpolationFormula;
-    private String valueToInterpolate;
-    private String firstInterpolation;
-    private String lastInterpolation;
-    private String calibrationMethod;
-    private String rateConvention;
-    private String spreadCurve;
-    private String businessDays;
-    private String proxyMethodology;
-    private String proxyStatus;
-    private String proxyAdo;
-    private String startDate;
-    private String endDate;
-    private String alpha;
-    private String beta;
-    private String proxy1;
-    private String proxyNroDays1;
-    private String proxyLabel1;
-    private String proxyMaturity1;
-    private String proxySwapMaturity1;
-    private String proxyOptionMaturity1;
-    private String proxySkew1;
-    private String proxy2;
-    private String proxyNroDays2;
-    private String proxyLabel2;
-    private String proxyMaturity2;
-    private String proxySwapMaturity2;
-    private String proxyOptionMaturity2;
-    private String proxySkew2;
+    private RFRLoadTaylorObj rfrLoadTaylorObj;
+    private SQLInput sqlInput;
+    private SQLOutput sqlOutput;
+    private CsvBeanTaylorReport csvBean;
 
-    private double diff;
-    private String underlcrv;
-    private double pk;
-    private double fkParent;
-    private double fkExtension;
-    private double fkOwnerObj;
-
-    public static final String SQL_TYPE = "RFR.RFR_TAYLORREPORT_OBJ";
-
-    @Override
-    public String getSQLTypeName() {
-        return SQL_TYPE;
+    @Before
+    public void setUp() {
+        rfrLoadTaylorObj = new RFRLoadTaylorObj();
+        sqlInput = Mockito.mock(SQLInput.class);
+        sqlOutput = Mockito.mock(SQLOutput.class);
+        csvBean = Mockito.mock(CsvBeanTaylorReport.class);
     }
 
-    @Override
-    public void readSQL(SQLInput stream, String typeName) throws SQLException {
-        dataDatePart = stream.readDate();
-
-        assetClass = stream.readString();
-        factorType = stream.readString();
-        subtype = stream.readString();
-        name = stream.readString();
-        ownerUnit = stream.readString();
-        status = stream.readString();
-        unit = stream.readString();
-        adoUnderlying = stream.readString();
-        returnModel = stream.readString();
-        template = stream.readString();
-        nroDays = stream.readString();
-        label = stream.readString();
-        swapMaturity = stream.readString();
-        optionMaturity = stream.readString();
-        skew = stream.readString();
-        interpolationFormula = stream.readString();
-        valueToInterpolate = stream.readString();
-        firstInterpolation = stream.readString();
-        lastInterpolation = stream.readString();
-        calibrationMethod = stream.readString();
-        rateConvention = stream.readString();
-        spreadCurve = stream.readString();
-        businessDays = stream.readString();
-        proxyMethodology = stream.readString();
-        proxyStatus = stream.readString();
-        proxyAdo = stream.readString();
-        startDate = stream.readString();
-        endDate = stream.readString();
-        alpha = stream.readString();
-        beta = stream.readString();
-        proxy1 = stream.readString();
-        proxyNroDays1 = stream.readString();
-        proxyLabel1 = stream.readString();
-        proxyMaturity1 = stream.readString();
-        proxySwapMaturity1 = stream.readString();
-        proxyOptionMaturity1 = stream.readString();
-        proxySkew1 = stream.readString();
-        proxy2 = stream.readString();
-        proxyNroDays2 = stream.readString();
-        proxyLabel2 = stream.readString();
-        proxyMaturity2 = stream.readString();
-        proxySwapMaturity2 = stream.readString();
-        proxyOptionMaturity2 = stream.readString();
-        proxySkew2 = stream.readString();
+    @Test
+    public void testReadSQL() throws SQLException {
+        // Setup mock data
+        Mockito.when(sqlInput.readDate()).thenReturn(Date.valueOf("2025-04-10"));
+        Mockito.when(sqlInput.readString()).thenReturn("mockValue");
+        
+        // Test readSQL method
+        rfrLoadTaylorObj.readSQL(sqlInput, "RFR.RFR_TAYLORREPORT_OBJ");
+        
+        assertNotNull(rfrLoadTaylorObj.getDataDatePart());
+        assertEquals("mockValue", rfrLoadTaylorObj.getAssetClass());
+        assertEquals("mockValue", rfrLoadTaylorObj.getFactorType());
+        // Puedes agregar más aserciones para verificar otros campos...
     }
 
-    @Override
-    public void writeSQL(SQLOutput stream) throws SQLException {
-        stream.writeDate(dataDatePart);
-        stream.writeString(assetClass);
-        stream.writeString(factorType);
-        stream.writeString(subtype);
-        stream.writeString(name);
-        stream.writeString(ownerUnit);
-        stream.writeString(status);
-        stream.writeString(unit);
-        stream.writeString(adoUnderlying);
-        stream.writeString(returnModel);
-        stream.writeString(template);
-        stream.writeString(nroDays);
-        stream.writeString(label);
-        stream.writeString(swapMaturity);
-        stream.writeString(optionMaturity);
-        stream.writeString(skew);
-        stream.writeString(interpolationFormula);
-        stream.writeString(valueToInterpolate);
-        stream.writeString(firstInterpolation);
-        stream.writeString(lastInterpolation);
-        stream.writeString(calibrationMethod);
-        stream.writeString(rateConvention);
-        stream.writeString(spreadCurve);
-        stream.writeString(businessDays);
-        stream.writeString(proxyMethodology);
-        stream.writeString(proxyStatus);
-        stream.writeString(proxyAdo);
-        stream.writeString(startDate);
-        stream.writeString(endDate);
-        stream.writeString(alpha);
-        stream.writeString(beta);
-        stream.writeString(proxy1);
-        stream.writeString(proxyNroDays1);
-        stream.writeString(proxyLabel1);
-        stream.writeString(proxyMaturity1);
-        stream.writeString(proxySwapMaturity1);
-        stream.writeString(proxyOptionMaturity1);
-        stream.writeString(proxySkew1);
-        stream.writeString(proxy2);
-        stream.writeString(proxyNroDays2);
-        stream.writeString(proxyLabel2);
-        stream.writeString(proxyMaturity2);
-        stream.writeString(proxySwapMaturity2);
-        stream.writeString(proxyOptionMaturity2);
-        stream.writeString(proxySkew2);
-        stream.writeDouble(diff);
-        stream.writeString(underlcrv);
-        stream.writeDouble(pk);
-        stream.writeDouble(fkParent);
-        stream.writeDouble(fkExtension);
-        stream.writeDouble(fkOwnerObj);
+    @Test
+    public void testWriteSQL() throws SQLException {
+        // Setup mock data
+        rfrLoadTaylorObj.setDataDatePart(Date.valueOf("2025-04-10"));
+        rfrLoadTaylorObj.setAssetClass("mockValue");
+        
+        // Test writeSQL method
+        rfrLoadTaylorObj.writeSQL(sqlOutput);
+        
+        // Verify writeSQL calls
+        Mockito.verify(sqlOutput).writeDate(rfrLoadTaylorObj.getDataDatePart());
+        Mockito.verify(sqlOutput).writeString(rfrLoadTaylorObj.getAssetClass());
+        // Puedes agregar más verificaciones para otros campos...
     }
 
-    public Object[] toObjectArray() {
-        return new Object[] {
-                this.dataDatePart,
-                assetClass, factorType, subtype, name, ownerUnit, status, unit,
-                adoUnderlying, returnModel, template, nroDays, label, swapMaturity,
-                optionMaturity, skew, interpolationFormula, valueToInterpolate,
-                firstInterpolation, lastInterpolation, calibrationMethod,
-                rateConvention, spreadCurve, businessDays, proxyMethodology,
-                proxyStatus, proxyAdo, startDate, endDate, alpha, beta, proxy1,
-                proxyNroDays1, proxyLabel1, proxyMaturity1, proxySwapMaturity1,
-                proxyOptionMaturity1, proxySkew1, proxy2, proxyNroDays2,
-                proxyLabel2, proxyMaturity2, proxySwapMaturity2,
-                proxyOptionMaturity2, proxySkew2,
-                this.diff,
-                this.underlcrv,
-                this.pk,
-                this.fkParent,
-                this.fkExtension,
-                this.fkOwnerObj
-        };
+    @Test
+    public void testToObjectArray() {
+        // Setup mock data
+        rfrLoadTaylorObj.setDataDatePart(Date.valueOf("2025-04-10"));
+        rfrLoadTaylorObj.setAssetClass("mockValue");
+        
+        // Test toObjectArray method
+        Object[] result = rfrLoadTaylorObj.toObjectArray();
+        
+        // Verify the result array length and values
+        assertEquals(45, result.length);  // Asumiendo que hay 45 campos en total
+        assertEquals(Date.valueOf("2025-04-10"), result[0]);
+        assertEquals("mockValue", result[1]);
+        // Puedes agregar más verificaciones para otros campos...
     }
 
-    // Getters y setters para cada atributo
-
-    public void setFromCsvBean(CsvBeanTaylorReport csvBean, Date date, Integer diff) {
-        dataDatePart = date;
-        assetClass = valueOrNull(csvBean.getAssetClass());
-        factorType = valueOrNull(csvBean.getFactorType());
-        subtype = valueOrNull(csvBean.getSubtype());
-        name = valueOrNull(csvBean.getName());
-        ownerUnit = valueOrNull(csvBean.getOwnerUnit());
-        status = valueOrNull(csvBean.getStatus());
-        unit = valueOrNull(csvBean.getUnit());
-        adoUnderlying = valueOrNull(csvBean.getAdoUnderlying());
-        returnModel = valueOrNull(csvBean.getReturnModel());
-        template = valueOrNull(csvBean.getTemplate());
-        nroDays = valueOrNull(csvBean.getNroDays());
-        label = valueOrNull(csvBean.getLabel());
-        swapMaturity = valueOrNull(csvBean.getSwapMaturity());
-        optionMaturity = valueOrNull(csvBean.getOptionMaturity());
-        skew = valueOrNull(csvBean.getSkew());
-        interpolationFormula = valueOrNull(csvBean.getInterpolationFormula());
-        valueToInterpolate = valueOrNull(csvBean.getValueToInterpolate());
-        firstInterpolation = valueOrNull(csvBean.getFirstInterpolation());
-        lastInterpolation = valueOrNull(csvBean.getLastInterpolation());
-        calibrationMethod = valueOrNull(csvBean.getCalibrationMethod());
-        rateConvention = valueOrNull(csvBean.getRateConvention());
-        spreadCurve = valueOrNull(csvBean.getSpreadCurve());
-        businessDays = valueOrNull(csvBean.getBusinessDays());
-        proxyMethodology = valueOrNull(csvBean.getProxyMethodology());
-        proxyStatus = valueOrNull(csvBean.getProxyStatus());
-        proxyAdo = valueOrNull(csvBean.getProxyAdo());
-        startDate = valueOrNull(csvBean.getStartDate());
-        endDate = valueOrNull(csvBean.getEndDate());
-        alpha = valueOrNull(csvBean.getAlpha());
-        beta = valueOrNull(csvBean.getBeta());
-        proxy1 = valueOrNull(csvBean.getProxy1());
-        proxyNroDays1 = valueOrNull(csvBean.getProxyNroDays1());
-        proxyLabel1 = valueOrNull(csvBean.getProxyLabel1());
-        proxyMaturity1 = valueOrNull(csvBean.getProxyMaturity1());
-        proxySwapMaturity1 = valueOrNull(csvBean.getProxySwapMaturity1());
-        proxyOptionMaturity1 = valueOrNull(csvBean.getProxyOptionMaturity1());
-        proxySkew1 = valueOrNull(csvBean.getProxySkew1());
-        proxy2 = valueOrNull(csvBean.getProxy2());
-        proxyNroDays2 = valueOrNull(csvBean.getProxyNroDays2());
-        proxyLabel2 = valueOrNull(csvBean.getProxyLabel2());
-        proxyMaturity2 = valueOrNull(csvBean.getProxyMaturity2());
-        proxySwapMaturity2 = valueOrNull(csvBean.getProxySwapMaturity2());
-        proxyOptionMaturity2 = valueOrNull(csvBean.getProxyOptionMaturity2());
-        proxySkew2 = valueOrNull(csvBean.getProxySkew2());
-        this.diff = diff;
-        this.pk = 1.0;
-        this.fkParent = 1.0;
-        this.fkExtension = 1.0;
-        this.fkOwnerObj = 1.0;
-        // Para los campos que no tienen correspondencia directa, necesitarás decidir cómo manejarlos.
+    @Test
+    public void testSetFromCsvBean() {
+        // Setup mock data for CsvBeanTaylorReport
+        Mockito.when(csvBean.getAssetClass()).thenReturn("mockAssetClass");
+        Mockito.when(csvBean.getFactorType()).thenReturn("mockFactorType");
+        
+        // Test setFromCsvBean method
+        rfrLoadTaylorObj.setFromCsvBean(csvBean, Date.valueOf("2025-04-10"), 5);
+        
+        // Verify that the fields have been correctly set
+        assertEquals("mockAssetClass", rfrLoadTaylorObj.getAssetClass());
+        assertEquals("mockFactorType", rfrLoadTaylorObj.getFactorType());
+        assertEquals(Date.valueOf("2025-04-10"), rfrLoadTaylorObj.getDataDatePart());
+        assertEquals(5, rfrLoadTaylorObj.getDiff(), 0.01);
     }
-    private String valueOrNull(Object o) {
-        return (null != o) ? o.toString() : null;
+
+    @Test
+    public void testValueOrNull() {
+        // Test valueOrNull method with non-null input
+        String result = rfrLoadTaylorObj.valueOrNull("test");
+        assertEquals("test", result);
+        
+        // Test valueOrNull method with null input
+        result = rfrLoadTaylorObj.valueOrNull(null);
+        assertNull(result);
+    }
+
+    @Test
+    public void testGetSQLTypeName() {
+        // Test getSQLTypeName method
+        assertEquals("RFR.RFR_TAYLORREPORT_OBJ", rfrLoadTaylorObj.getSQLTypeName());
     }
 }
-
