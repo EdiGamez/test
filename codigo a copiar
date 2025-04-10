@@ -216,3 +216,35 @@ public class CsvBeanFullRevalReport extends CsvBeanBase {
     private String proxySkew2;
     
 }
+@EqualsAndHashCode(callSuper = true)
+@Data
+public class CsvBeanTaylorReport extends CsvBeanBase {
+    @JsonProperty("Proxy 1")
+    private String proxy1;
+    @JsonProperty("Proxy Nro Days 1")
+    private String proxyNroDays1;
+    @JsonProperty("Proxy Label 1")
+    private String proxyLabel1;
+    @JsonProperty("Proxy Maturity 1")
+    private String proxyMaturity1;
+    @JsonProperty("Proxy Swap Maturity 1")
+    private String proxySwapMaturity1;
+    @JsonProperty("Proxy Option Maturity 1")
+    private String proxyOptionMaturity1;
+    @JsonProperty("Proxy Skew 1")
+    private String proxySkew1;
+    @JsonProperty("Proxy 2")
+    private String proxy2;
+    @JsonProperty("Proxy Nro Days 2")
+    private String proxyNroDays2;
+    @JsonProperty("Proxy Label 2")
+    private String proxyLabel2;
+    @JsonProperty("Proxy Maturity 2")
+    private String proxyMaturity2;
+    @JsonProperty("Proxy Swap Maturity 2")
+    private String proxySwapMaturity2;
+    @JsonProperty("Proxy Option Maturity 2")
+    private String proxyOptionMaturity2;
+    @JsonProperty("Proxy Skew 2")
+    private String proxySkew2;
+}
