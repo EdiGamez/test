@@ -1,54 +1,279 @@
-package com.isb.rfrbatch.jobextracfullrevalreport.jobExtracFullRevalReportE2E.services.buildcsv.beans;
+import static org.junit.Assert.assertEquals;
 
-import com.fasterxml.jackson.annotation.JsonProperty;
-import lombok.Data;
+import org.junit.Before;
+import org.junit.Test;
 
-@Data
-public class CsvBeanFullRevalReport {
+public class CsvBeanFullRevalReportTest {
 
-    @JsonProperty("Asset Class")  private String assetclass; //Asset Class
-    @JsonProperty("Factor Type")  private String factortype; //Factor Type
-    @JsonProperty("Subtype") private String subtype; //Subtype
-    @JsonProperty("Name") private String name; //Name
-    @JsonProperty("Owner Unit") private String ownUnit; //Owner Unit
-    @JsonProperty("Status") private String stats;//Status
-    @JsonProperty("Unit") private String unit_;//Unit
-    @JsonProperty("ADO Underlying") private String adounderlying;//ADO Underlying
-    @JsonProperty("Return Model") private String return_model;//Return Model
-    @JsonProperty("Template") private String templte;//Template
-    @JsonProperty("Nro Days") private String numDays;//Nro Days
-    @JsonProperty("Label") private String labl; //Label
-    @JsonProperty("Swap Maturity") private String swapmaturity;//Swap Maturity
-    @JsonProperty("Option Maturity") private String optionmaturity;//Option Maturity
-    @JsonProperty("Skew") private String skw;//Skew
-    @JsonProperty("interpolationFormula") private String interpolationformula; //interpolationFormula
-    @JsonProperty("valueToInterpolate") private String valuetointerpolate;
-    @JsonProperty("firstInterpolation") private String firstinterpolation;
-    @JsonProperty("lastInterpolation") private String lastinterpolation;
-    @JsonProperty("calibrationMethod") private String calibrationmethod;
-    @JsonProperty("rateConvention") private String rateconvention;
-    @JsonProperty("spreadCurve") private String spreadcurve;
-    @JsonProperty("businessDays") private String businessdays;
-    @JsonProperty("Proxy Methodology") private String proxymethodology;//Proxy Methodology
-    @JsonProperty("Proxy Status") private String proxystatus;//Proxy Status
-    @JsonProperty("Proxy ADO") private String proxAdo;//Proxy ADO
-    @JsonProperty("Start Date") private String startingDate;//Start Date
-    @JsonProperty("End Date") private String endingDate;//End Date
-    @JsonProperty("Alpha") private String alpha;//Alpha
-    @JsonProperty("Beta") private String beta;//Beta
-    @JsonProperty("Proxy 1") private String prox1;//Proxy 1
-    @JsonProperty("Proxy Nro Days 1") private String proxynrdays1;//Proxy Nro Days 1
-    @JsonProperty("Proxy Label 1") private String proxylabel1;//Proxy Label 1
-    @JsonProperty("Proxy Maturity 1") private String proxymaturity1;//Proxy Maturity 1
-    @JsonProperty("Proxy Swap Maturity 1") private String proxyswapmaturity1;//Proxy Swap Maturity 1
-    @JsonProperty("Proxy Option Maturity 1") private String proxyoptionmaturity1;//Proxy Option Maturity 1
-    @JsonProperty("Proxy Skew 1") private String proxyskew1;//Proxy Skew 1
-    @JsonProperty("Proxy 2") private String prox2;//Proxy 2
-    @JsonProperty("Proxy Nro Days 2") private String proxynrdays2;//Proxy Nro Days 2
-    @JsonProperty("Proxy Label 2") private String proxylabel2;//Proxy Label 2
-    @JsonProperty("Proxy Maturity 2") private String proxymaturity2;//Proxy Maturity 2
-    @JsonProperty("Proxy Swap Maturity 2") private String proxyswapmaturity2;//Proxy Swap Maturity 2
-    @JsonProperty("Proxy Option Maturity 2") private String proxyoptionmaturity2;//Proxy Option Maturity 2
-    @JsonProperty("Proxy Skew 2") private String proxyskew2;//Proxy Skew 2
+    private CsvBeanFullRevalReport csvBean;
 
+    @Before
+    public void setUp() {
+        // Crear una nueva instancia antes de cada test
+        csvBean = new CsvBeanFullRevalReport();
+    }
+
+    @Test
+    public void testAssetClass() {
+        csvBean.setAssetclass("Equity");
+        assertEquals("Equity", csvBean.getAssetclass());
+    }
+
+    @Test
+    public void testFactorType() {
+        csvBean.setFactortype("Risk");
+        assertEquals("Risk", csvBean.getFactortype());
+    }
+
+    @Test
+    public void testSubtype() {
+        csvBean.setSubtype("High");
+        assertEquals("High", csvBean.getSubtype());
+    }
+
+    @Test
+    public void testName() {
+        csvBean.setName("John Doe");
+        assertEquals("John Doe", csvBean.getName());
+    }
+
+    @Test
+    public void testOwnUnit() {
+        csvBean.setOwnUnit("Unit 1");
+        assertEquals("Unit 1", csvBean.getOwnUnit());
+    }
+
+    @Test
+    public void testStats() {
+        csvBean.setStats("Active");
+        assertEquals("Active", csvBean.getStats());
+    }
+
+    @Test
+    public void testUnit() {
+        csvBean.setUnit_("Unit A");
+        assertEquals("Unit A", csvBean.getUnit_());
+    }
+
+    @Test
+    public void testAdoUnderlying() {
+        csvBean.setAdounderlying("A1");
+        assertEquals("A1", csvBean.getAdounderlying());
+    }
+
+    @Test
+    public void testReturnModel() {
+        csvBean.setReturn_model("Model X");
+        assertEquals("Model X", csvBean.getReturn_model());
+    }
+
+    @Test
+    public void testTemplate() {
+        csvBean.setTemplte("Template Y");
+        assertEquals("Template Y", csvBean.getTemplte());
+    }
+
+    @Test
+    public void testNumDays() {
+        csvBean.setNumDays("365");
+        assertEquals("365", csvBean.getNumDays());
+    }
+
+    @Test
+    public void testLabl() {
+        csvBean.setLabl("Label A");
+        assertEquals("Label A", csvBean.getLabl());
+    }
+
+    @Test
+    public void testSwapMaturity() {
+        csvBean.setSwapmaturity("2025-12-31");
+        assertEquals("2025-12-31", csvBean.getSwapmaturity());
+    }
+
+    @Test
+    public void testOptionMaturity() {
+        csvBean.setOptionmaturity("2024-06-30");
+        assertEquals("2024-06-30", csvBean.getOptionmaturity());
+    }
+
+    @Test
+    public void testSkew() {
+        csvBean.setSkw("0.1");
+        assertEquals("0.1", csvBean.getSkw());
+    }
+
+    @Test
+    public void testInterpolationFormula() {
+        csvBean.setInterpolationformula("linear");
+        assertEquals("linear", csvBean.getInterpolationformula());
+    }
+
+    @Test
+    public void testValueToInterpolate() {
+        csvBean.setValuetointerpolate("100");
+        assertEquals("100", csvBean.getValuetointerpolate());
+    }
+
+    @Test
+    public void testFirstInterpolation() {
+        csvBean.setFirstinterpolation("2025-01-01");
+        assertEquals("2025-01-01", csvBean.getFirstinterpolation());
+    }
+
+    @Test
+    public void testLastInterpolation() {
+        csvBean.setLastinterpolation("2025-12-31");
+        assertEquals("2025-12-31", csvBean.getLastinterpolation());
+    }
+
+    @Test
+    public void testCalibrationMethod() {
+        csvBean.setCalibrationmethod("Method 1");
+        assertEquals("Method 1", csvBean.getCalibrationmethod());
+    }
+
+    @Test
+    public void testRateConvention() {
+        csvBean.setRateconvention("Annual");
+        assertEquals("Annual", csvBean.getRateconvention());
+    }
+
+    @Test
+    public void testSpreadCurve() {
+        csvBean.setSpreadcurve("Curve X");
+        assertEquals("Curve X", csvBean.getSpreadcurve());
+    }
+
+    @Test
+    public void testBusinessDays() {
+        csvBean.setBusinessdays("250");
+        assertEquals("250", csvBean.getBusinessdays());
+    }
+
+    @Test
+    public void testProxyMethodology() {
+        csvBean.setProxymethodology("Methodology Y");
+        assertEquals("Methodology Y", csvBean.getProxymethodology());
+    }
+
+    @Test
+    public void testProxyStatus() {
+        csvBean.setProxystatus("Active");
+        assertEquals("Active", csvBean.getProxystatus());
+    }
+
+    @Test
+    public void testProxyAdo() {
+        csvBean.setProxAdo("A2");
+        assertEquals("A2", csvBean.getProxAdo());
+    }
+
+    @Test
+    public void testStartingDate() {
+        csvBean.setStartingDate("2025-01-01");
+        assertEquals("2025-01-01", csvBean.getStartingDate());
+    }
+
+    @Test
+    public void testEndingDate() {
+        csvBean.setEndingDate("2025-12-31");
+        assertEquals("2025-12-31", csvBean.getEndingDate());
+    }
+
+    @Test
+    public void testAlpha() {
+        csvBean.setAlpha("0.5");
+        assertEquals("0.5", csvBean.getAlpha());
+    }
+
+    @Test
+    public void testBeta() {
+        csvBean.setBeta("1.2");
+        assertEquals("1.2", csvBean.getBeta());
+    }
+
+    @Test
+    public void testProxy1() {
+        csvBean.setProx1("Proxy 1");
+        assertEquals("Proxy 1", csvBean.getProx1());
+    }
+
+    @Test
+    public void testProxyNroDays1() {
+        csvBean.setProxynrdays1("30");
+        assertEquals("30", csvBean.getProxynrdays1());
+    }
+
+    @Test
+    public void testProxyLabel1() {
+        csvBean.setProxylabel1("Label 1");
+        assertEquals("Label 1", csvBean.getProxylabel1());
+    }
+
+    @Test
+    public void testProxyMaturity1() {
+        csvBean.setProxymaturity1("2025-12-31");
+        assertEquals("2025-12-31", csvBean.getProxymaturity1());
+    }
+
+    @Test
+    public void testProxySwapMaturity1() {
+        csvBean.setProxyswapmaturity1("2025-06-30");
+        assertEquals("2025-06-30", csvBean.getProxyswapmaturity1());
+    }
+
+    @Test
+    public void testProxyOptionMaturity1() {
+        csvBean.setProxyoptionmaturity1("2025-12-31");
+        assertEquals("2025-12-31", csvBean.getProxyoptionmaturity1());
+    }
+
+    @Test
+    public void testProxySkew1() {
+        csvBean.setProxyskew1("0.2");
+        assertEquals("0.2", csvBean.getProxyskew1());
+    }
+
+    @Test
+    public void testProxy2() {
+        csvBean.setProx2("Proxy 2");
+        assertEquals("Proxy 2", csvBean.getProx2());
+    }
+
+    @Test
+    public void testProxyNroDays2() {
+        csvBean.setProxynrdays2("60");
+        assertEquals("60", csvBean.getProxynrdays2());
+    }
+
+    @Test
+    public void testProxyLabel2() {
+        csvBean.setProxylabel2("Label 2");
+        assertEquals("Label 2", csvBean.getProxylabel2());
+    }
+
+    @Test
+    public void testProxyMaturity2() {
+        csvBean.setProxymaturity2("2026-12-31");
+        assertEquals("2026-12-31", csvBean.getProxymaturity2());
+    }
+
+    @Test
+    public void testProxySwapMaturity2() {
+        csvBean.setProxyswapmaturity2("2026-06-30");
+        assertEquals("2026-06-30", csvBean.getProxyswapmaturity2());
+    }
+
+    @Test
+    public void testProxyOptionMaturity2() {
+        csvBean.setProxyoptionmaturity2("2026-12-31");
+        assertEquals("2026-12-31", csvBean.getProxyoptionmaturity2());
+    }
+
+    @Test
+    public void testProxySkew2() {
+        csvBean.setProxyskew2("0.3");
+        assertEquals("0.3", csvBean.getProxyskew2());
+    }
 }
