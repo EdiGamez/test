@@ -1,8 +1,8 @@
 import com.yourpackage.JobConfigExtractTaylorReportDb;
 import com.yourpackage.tasklets.TaskletTaylorReportLoadDatabase;
 import lombok.extern.slf4j.Slf4j;
-import org.junit.jupiter.api.BeforeEach;
-import org.junit.jupiter.api.Test;
+import org.junit.Before;
+import org.junit.Test;
 import org.mockito.Mock;
 import org.mockito.MockitoAnnotations;
 import org.springframework.batch.core.ExitStatus;
@@ -13,15 +13,10 @@ import org.springframework.batch.core.Step;
 import org.springframework.batch.core.StepExecution;
 import org.springframework.batch.core.configuration.annotation.JobBuilderFactory;
 import org.springframework.batch.core.configuration.annotation.StepBuilderFactory;
-import org.springframework.batch.core.scope.context.ChunkContext;
-import org.springframework.batch.repeat.RepeatStatus;
 
-import java.text.MessageFormat;
-import java.time.Duration;
-import java.time.Instant;
-
-import static org.junit.jupiter.api.Assertions.*;
-import static org.mockito.Mockito.*;
+import static org.junit.Assert.assertNotNull;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.when;
 
 @Slf4j
 public class JobConfigExtractTaylorReportDbTest {
@@ -35,26 +30,26 @@ public class JobConfigExtractTaylorReportDbTest {
 
     private JobConfigExtractTaylorReportDb config;
 
-    @BeforeEach
-    void setUp() {
-        MockitoAnnotations.openMocks(this);
+    @Before
+    public void setUp() {
+        MockitoAnnotations.initMocks(this);
         config = new JobConfigExtractTaylorReportDb();
     }
 
     @Test
-    void testStepFrLoadDbNotNull() {
+    public void testStepFrLoadDbNotNull() {
         Step step = config.stepFrLoadDb(tasklet, stepBuilderFactory);
-        assertNotNull(step, "Step debe estar correctamente configurado");
+        assertNotNull("Step debe estar correctamente configurado", step);
     }
 
     @Test
-    void testJobExtracFullRevalReportDbNotNull() {
+    public void testJobExtracFullRevalReportDbNotNull() {
         Job job = config.jobExtracFullRevalReportDb(jobBuilderFactory, tasklet, stepBuilderFactory);
-        assertNotNull(job, "Job debe estar correctamente creado");
+        assertNotNull("Job debe estar correctamente creado", job);
     }
 
     @Test
-    void testJobListener() {
+    public void testJobListener() {
         JobConfigExtractTaylorReportDb.JobListener listener = config.new JobListener();
 
         JobExecution jobExecution = mock(JobExecution.class);
@@ -73,7 +68,7 @@ public class JobConfigExtractTaylorReportDbTest {
     }
 
     @Test
-    void testStepGenerarListener() {
+    public void testStepGenerarListener() {
         JobConfigExtractTaylorReportDb.StepGenerarListener listener = config.new StepGenerarListener();
 
         StepExecution stepExecution = mock(StepExecution.class);
@@ -86,7 +81,7 @@ public class JobConfigExtractTaylorReportDbTest {
         sleep(1);  // Simula duración del step
         ExitStatus status = listener.afterStep(stepExecution);
 
-        assertNull(status, "Debe devolver null (comportamiento esperado en la clase original)");
+        assertNull("Debe devolver null (comportamiento esperado en la clase original)", status);
     }
 
     private void sleep(int seconds) {
