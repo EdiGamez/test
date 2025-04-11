@@ -1,279 +1,887 @@
-import static org.junit.Assert.assertEquals;
+package com.isb.rfrbatch.jobextracfullrevalreport.jobextractfullrevalreportdb.services.database.beans;
 
-import org.junit.Before;
-import org.junit.Test;
+import com.isb.rfrbatch.jobextracfullrevalreport.jobExtracFullRevalReportE2E.services.buildcsv.beans.CsvBeanFullRevalReport;
 
-public class CsvBeanFullRevalReportTest {
+import java.sql.Date;
+import java.sql.SQLData;
+import java.sql.SQLInput;
+import java.sql.SQLException;
+import java.sql.SQLOutput;
 
-    private CsvBeanFullRevalReport csvBean;
+public class RFRLoadFullRevalObj implements SQLData {
 
-    @Before
-    public void setUp() {
-        // Crear una nueva instancia antes de cada test
-        csvBean = new CsvBeanFullRevalReport();
+    private Date dataDatePart;
+    private String asset;
+    private String factor;
+    private String subtype;
+    private String name;
+    private String owner;
+    private String status;
+    private String unit;
+    private String uado;
+    private String retmodel;
+    private String template;
+    private String nrdays;
+    private String tenor;
+    private String swptenor;
+    private String opttenor;
+    private String strike;
+    private String interpolform;
+    private String valueinterpol;
+    private String interpolfpillar;
+    private String interpollpillar;
+    private String calmethod;
+    private String rateconv;
+    private String spreadcrvty;
+    private String businessdays;
+    private String pmethodology;
+    private String pstatus;
+    private String pado;
+    private String pstartd;
+    private String pendd;
+    private String palpha;
+    private String pbeta;
+    private String pproxy1;
+    private String pnrdays1;
+    private String plabel1;
+    private String pmaturity1;
+    private String psmaturity1;
+    private String pomaturity1;
+    private String pskew1;
+    private String pproxy2;
+    private String pnrdays2;
+    private String plabel2;
+    private String pmaturity2;
+    private String psmaturity2;
+    private String pomaturity2;
+    private String pskew2;
+    private double diff;
+    private String underlcrv;
+    private double pk;
+    private double fkParent;
+    private double fkExtension;
+    private double fkOwnerObj;
+
+    public static final String SQL_TYPE = "RFR.RFR_LOADFULLREVAL_OBJ";
+
+    @Override
+    public String getSQLTypeName() {
+        return SQL_TYPE;
     }
 
-    @Test
-    public void testAssetClass() {
-        csvBean.setAssetclass("Equity");
-        assertEquals("Equity", csvBean.getAssetclass());
+    @Override
+    public void readSQL(SQLInput stream, String typeName) throws SQLException {
+        dataDatePart = stream.readDate();
+        asset = stream.readString();
+        factor = stream.readString();
+        subtype = stream.readString();
+        name = stream.readString();
+        owner = stream.readString();
+        status = stream.readString();
+        unit = stream.readString();
+        uado = stream.readString();
+        retmodel = stream.readString();
+        template = stream.readString();
+        nrdays = stream.readString();
+        tenor = stream.readString();
+        swptenor = stream.readString();
+        opttenor = stream.readString();
+        strike = stream.readString();
+        interpolform = stream.readString();
+        valueinterpol = stream.readString();
+        interpolfpillar = stream.readString();
+        interpollpillar = stream.readString();
+        calmethod = stream.readString();
+        rateconv = stream.readString();
+        spreadcrvty = stream.readString();
+        businessdays = stream.readString();
+        pmethodology = stream.readString();
+        pstatus = stream.readString();
+        pado = stream.readString();
+        pstartd = stream.readString();
+        pendd = stream.readString();
+        palpha = stream.readString();
+        pbeta = stream.readString();
+        pproxy1 = stream.readString();
+        pnrdays1 = stream.readString();
+        plabel1 = stream.readString();
+        pmaturity1 = stream.readString();
+        psmaturity1 = stream.readString();
+        pomaturity1 = stream.readString();
+        pskew1 = stream.readString();
+        pproxy2 = stream.readString();
+        pnrdays2 = stream.readString();
+        plabel2 = stream.readString();
+        pmaturity2 = stream.readString();
+        psmaturity2 = stream.readString();
+        pomaturity2 = stream.readString();
+        pskew2 = stream.readString();
+        diff = stream.readDouble();
+        underlcrv = stream.readString();
+        pk = stream.readDouble();
+        fkParent = stream.readDouble();
+        fkExtension = stream.readDouble();
+        fkOwnerObj = stream.readDouble();
     }
 
-    @Test
-    public void testFactorType() {
-        csvBean.setFactortype("Risk");
-        assertEquals("Risk", csvBean.getFactortype());
+    @Override
+    public void writeSQL(SQLOutput stream) throws SQLException {
+        stream.writeDate(dataDatePart);
+        stream.writeString(asset);
+        stream.writeString(factor);
+        stream.writeString(subtype);
+        stream.writeString(name);
+        stream.writeString(owner);
+        stream.writeString(status);
+        stream.writeString(unit);
+        stream.writeString(uado);
+        stream.writeString(retmodel);
+        stream.writeString(template);
+        stream.writeString(nrdays);
+        stream.writeString(tenor);
+        stream.writeString(swptenor);
+        stream.writeString(opttenor);
+        stream.writeString(strike);
+        stream.writeString(interpolform);
+        stream.writeString(valueinterpol);
+        stream.writeString(interpolfpillar);
+        stream.writeString(interpollpillar);
+        stream.writeString(calmethod);
+        stream.writeString(rateconv);
+        stream.writeString(spreadcrvty);
+        stream.writeString(businessdays);
+        stream.writeString(pmethodology);
+        stream.writeString(pstatus);
+        stream.writeString(pado);
+        stream.writeString(pstartd);
+        stream.writeString(pendd);
+        stream.writeString(palpha);
+        stream.writeString(pbeta);
+        stream.writeString(pproxy1);
+        stream.writeString(pnrdays1);
+        stream.writeString(plabel1);
+        stream.writeString(pmaturity1);
+        stream.writeString(psmaturity1);
+        stream.writeString(pomaturity1);
+        stream.writeString(pskew1);
+        stream.writeString(pproxy2);
+        stream.writeString(pnrdays2);
+        stream.writeString(plabel2);
+        stream.writeString(pmaturity2);
+        stream.writeString(psmaturity2);
+        stream.writeString(pomaturity2);
+        stream.writeString(pskew2);
+        stream.writeDouble(diff);
+        stream.writeString(underlcrv);
+        stream.writeDouble(pk);
+        stream.writeDouble(fkParent);
+        stream.writeDouble(fkExtension);
+        stream.writeDouble(fkOwnerObj);
     }
 
-    @Test
-    public void testSubtype() {
-        csvBean.setSubtype("High");
-        assertEquals("High", csvBean.getSubtype());
+    public Object[] toObjectArray() {
+        return new Object[] {
+                this.dataDatePart,
+                this.asset,
+                this.factor,
+                this.subtype,
+                this.name,
+                this.owner,
+                this.status,
+                this.unit,
+                this.uado,
+                this.retmodel,
+                this.template,
+                this.nrdays,
+                this.tenor,
+                this.swptenor,
+                this.opttenor,
+                this.strike,
+                this.interpolform,
+                this.valueinterpol,
+                this.interpolfpillar,
+                this.interpollpillar,
+                this.calmethod,
+                this.rateconv,
+                this.spreadcrvty,
+                this.businessdays,
+                this.pmethodology,
+                this.pstatus,
+                this.pado,
+                this.pstartd,
+                this.pendd,
+                this.palpha,
+                this.pbeta,
+                this.pproxy1,
+                this.pnrdays1,
+                this.plabel1,
+                this.pmaturity1,
+                this.psmaturity1,
+                this.pomaturity1,
+                this.pskew1,
+                this.pproxy2,
+                this.pnrdays2,
+                this.plabel2,
+                this.pmaturity2,
+                this.psmaturity2,
+                this.pomaturity2,
+                this.pskew2,
+                this.diff,
+                this.underlcrv,
+                this.pk,
+                this.fkParent,
+                this.fkExtension,
+                this.fkOwnerObj
+        };
     }
 
-    @Test
-    public void testName() {
-        csvBean.setName("John Doe");
-        assertEquals("John Doe", csvBean.getName());
+    // Getters y setters para cada atributo
+
+    public Date getDataDatePart() {
+        return dataDatePart;
     }
 
-    @Test
-    public void testOwnUnit() {
-        csvBean.setOwnUnit("Unit 1");
-        assertEquals("Unit 1", csvBean.getOwnUnit());
+    public void setDataDatePart(Date dataDatePart) {
+        this.dataDatePart = dataDatePart;
     }
 
-    @Test
-    public void testStats() {
-        csvBean.setStats("Active");
-        assertEquals("Active", csvBean.getStats());
+    public String getAsset() {
+        return asset;
     }
 
-    @Test
-    public void testUnit() {
-        csvBean.setUnit_("Unit A");
-        assertEquals("Unit A", csvBean.getUnit_());
+    public void setAsset(String asset) {
+        this.asset = asset;
     }
 
-    @Test
-    public void testAdoUnderlying() {
-        csvBean.setAdounderlying("A1");
-        assertEquals("A1", csvBean.getAdounderlying());
+    public String getFactor() {
+        return factor;
     }
 
-    @Test
-    public void testReturnModel() {
-        csvBean.setReturn_model("Model X");
-        assertEquals("Model X", csvBean.getReturn_model());
+    public void setFactor(String factor) {
+        this.factor = factor;
     }
 
-    @Test
-    public void testTemplate() {
-        csvBean.setTemplte("Template Y");
-        assertEquals("Template Y", csvBean.getTemplte());
+    public String getSubtype() {
+        return subtype;
     }
 
-    @Test
-    public void testNumDays() {
-        csvBean.setNumDays("365");
-        assertEquals("365", csvBean.getNumDays());
+    public void setSubtype(String subtype) {
+        this.subtype = subtype;
     }
 
-    @Test
-    public void testLabl() {
-        csvBean.setLabl("Label A");
-        assertEquals("Label A", csvBean.getLabl());
+    public String getName() {
+        return name;
     }
 
-    @Test
-    public void testSwapMaturity() {
-        csvBean.setSwapmaturity("2025-12-31");
-        assertEquals("2025-12-31", csvBean.getSwapmaturity());
+    public void setName(String name) {
+        this.name = name;
     }
 
-    @Test
-    public void testOptionMaturity() {
-        csvBean.setOptionmaturity("2024-06-30");
-        assertEquals("2024-06-30", csvBean.getOptionmaturity());
+    public String getOwner() {
+        return owner;
     }
 
-    @Test
-    public void testSkew() {
-        csvBean.setSkw("0.1");
-        assertEquals("0.1", csvBean.getSkw());
+    public void setOwner(String owner) {
+        this.owner = owner;
     }
 
-    @Test
-    public void testInterpolationFormula() {
-        csvBean.setInterpolationformula("linear");
-        assertEquals("linear", csvBean.getInterpolationformula());
+    public String getStatus() {
+        return status;
     }
 
-    @Test
-    public void testValueToInterpolate() {
-        csvBean.setValuetointerpolate("100");
-        assertEquals("100", csvBean.getValuetointerpolate());
+    public void setStatus(String status) {
+        this.status = status;
     }
 
-    @Test
-    public void testFirstInterpolation() {
-        csvBean.setFirstinterpolation("2025-01-01");
-        assertEquals("2025-01-01", csvBean.getFirstinterpolation());
+    public String getUnit() {
+        return unit;
     }
 
-    @Test
-    public void testLastInterpolation() {
-        csvBean.setLastinterpolation("2025-12-31");
-        assertEquals("2025-12-31", csvBean.getLastinterpolation());
+    public void setUnit(String unit) {
+        this.unit = unit;
     }
 
-    @Test
-    public void testCalibrationMethod() {
-        csvBean.setCalibrationmethod("Method 1");
-        assertEquals("Method 1", csvBean.getCalibrationmethod());
+    public String getUado() {
+        return uado;
     }
 
-    @Test
-    public void testRateConvention() {
-        csvBean.setRateconvention("Annual");
-        assertEquals("Annual", csvBean.getRateconvention());
+    public void setUado(String uado) {
+        this.uado = uado;
     }
 
-    @Test
-    public void testSpreadCurve() {
-        csvBean.setSpreadcurve("Curve X");
-        assertEquals("Curve X", csvBean.getSpreadcurve());
+    public String getRetmodel() {
+        return retmodel;
     }
 
-    @Test
-    public void testBusinessDays() {
-        csvBean.setBusinessdays("250");
-        assertEquals("250", csvBean.getBusinessdays());
+    public void setRetmodel(String retmodel) {
+        this.retmodel = retmodel;
     }
 
-    @Test
-    public void testProxyMethodology() {
-        csvBean.setProxymethodology("Methodology Y");
-        assertEquals("Methodology Y", csvBean.getProxymethodology());
+    public String getTemplate() {
+        return template;
     }
 
-    @Test
-    public void testProxyStatus() {
-        csvBean.setProxystatus("Active");
-        assertEquals("Active", csvBean.getProxystatus());
+    public void setTemplate(String template) {
+        this.template = template;
     }
 
-    @Test
-    public void testProxyAdo() {
-        csvBean.setProxAdo("A2");
-        assertEquals("A2", csvBean.getProxAdo());
+    public String getNrdays() {
+        return nrdays;
     }
 
-    @Test
-    public void testStartingDate() {
-        csvBean.setStartingDate("2025-01-01");
-        assertEquals("2025-01-01", csvBean.getStartingDate());
+    public void setNrdays(String nrdays) {
+        this.nrdays = nrdays;
     }
 
-    @Test
-    public void testEndingDate() {
-        csvBean.setEndingDate("2025-12-31");
-        assertEquals("2025-12-31", csvBean.getEndingDate());
+    public String getTenor() {
+        return tenor;
     }
 
-    @Test
-    public void testAlpha() {
-        csvBean.setAlpha("0.5");
-        assertEquals("0.5", csvBean.getAlpha());
+    public void setTenor(String tenor) {
+        this.tenor = tenor;
     }
 
-    @Test
-    public void testBeta() {
-        csvBean.setBeta("1.2");
-        assertEquals("1.2", csvBean.getBeta());
+    public String getSwptenor() {
+        return swptenor;
     }
 
-    @Test
-    public void testProxy1() {
-        csvBean.setProx1("Proxy 1");
-        assertEquals("Proxy 1", csvBean.getProx1());
+    public void setSwptenor(String swptenor) {
+        this.swptenor = swptenor;
     }
 
-    @Test
-    public void testProxyNroDays1() {
-        csvBean.setProxynrdays1("30");
-        assertEquals("30", csvBean.getProxynrdays1());
+    public String getOpttenor() {
+        return opttenor;
     }
 
-    @Test
-    public void testProxyLabel1() {
-        csvBean.setProxylabel1("Label 1");
-        assertEquals("Label 1", csvBean.getProxylabel1());
+    public void setOpttenor(String opttenor) {
+        this.opttenor = opttenor;
     }
 
-    @Test
-    public void testProxyMaturity1() {
-        csvBean.setProxymaturity1("2025-12-31");
-        assertEquals("2025-12-31", csvBean.getProxymaturity1());
+    public String getStrike() {
+        return strike;
     }
 
-    @Test
-    public void testProxySwapMaturity1() {
-        csvBean.setProxyswapmaturity1("2025-06-30");
-        assertEquals("2025-06-30", csvBean.getProxyswapmaturity1());
+    public void setStrike(String strike) {
+        this.strike = strike;
     }
 
-    @Test
-    public void testProxyOptionMaturity1() {
-        csvBean.setProxyoptionmaturity1("2025-12-31");
-        assertEquals("2025-12-31", csvBean.getProxyoptionmaturity1());
+    public String getInterpolform() {
+        return interpolform;
     }
 
-    @Test
-    public void testProxySkew1() {
-        csvBean.setProxyskew1("0.2");
-        assertEquals("0.2", csvBean.getProxyskew1());
+    public void setInterpolform(String interpolform) {
+        this.interpolform = interpolform;
     }
 
-    @Test
-    public void testProxy2() {
-        csvBean.setProx2("Proxy 2");
-        assertEquals("Proxy 2", csvBean.getProx2());
+    public String getValueinterpol() {
+        return valueinterpol;
     }
 
-    @Test
-    public void testProxyNroDays2() {
-        csvBean.setProxynrdays2("60");
-        assertEquals("60", csvBean.getProxynrdays2());
+    public void setValueinterpol(String valueinterpol) {
+        this.valueinterpol = valueinterpol;
     }
 
-    @Test
-    public void testProxyLabel2() {
-        csvBean.setProxylabel2("Label 2");
-        assertEquals("Label 2", csvBean.getProxylabel2());
+    public String getInterpolfpillar() {
+        return interpolfpillar;
     }
 
-    @Test
-    public void testProxyMaturity2() {
-        csvBean.setProxymaturity2("2026-12-31");
-        assertEquals("2026-12-31", csvBean.getProxymaturity2());
+    public void setInterpolfpillar(String interpolfpillar) {
+        this.interpolfpillar = interpolfpillar;
     }
 
-    @Test
-    public void testProxySwapMaturity2() {
-        csvBean.setProxyswapmaturity2("2026-06-30");
-        assertEquals("2026-06-30", csvBean.getProxyswapmaturity2());
+    public String getInterpollpillar() {
+        return interpollpillar;
     }
 
-    @Test
-    public void testProxyOptionMaturity2() {
-        csvBean.setProxyoptionmaturity2("2026-12-31");
-        assertEquals("2026-12-31", csvBean.getProxyoptionmaturity2());
+    public void setInterpollpillar(String interpollpillar) {
+        this.interpollpillar = interpollpillar;
     }
 
-    @Test
-    public void testProxySkew2() {
-        csvBean.setProxyskew2("0.3");
-        assertEquals("0.3", csvBean.getProxyskew2());
+    public String getCalmethod() {
+        return calmethod;
+    }
+
+    public void setCalmethod(String calmethod) {
+        this.calmethod = calmethod;
+    }
+
+    public String getRateconv() {
+        return rateconv;
+    }
+
+    public void setRateconv(String rateconv) {
+        this.rateconv = rateconv;
+    }
+
+    public String getSpreadcrvty() {
+        return spreadcrvty;
+    }
+
+    public void setSpreadcrvty(String spreadcrvty) {
+        this.spreadcrvty = spreadcrvty;
+    }
+
+    public String getBusinessdays() {
+        return businessdays;
+    }
+
+    public void setBusinessdays(String businessdays) {
+        this.businessdays = businessdays;
+    }
+
+    public String getPmethodology() {
+        return pmethodology;
+    }
+
+    public void setPmethodology(String pmethodology) {
+        this.pmethodology = pmethodology;
+    }
+
+    public String getPstatus() {
+        return pstatus;
+    }
+
+    public void setPstatus(String pstatus) {
+        this.pstatus = pstatus;
+    }
+
+    public String getPado() {
+        return pado;
+    }
+
+    public void setPado(String pado) {
+        this.pado = pado;
+    }
+
+    public String getPstartd() {
+        return pstartd;
+    }
+
+    public void setPstartd(String pstartd) {
+        this.pstartd = pstartd;
+    }
+
+    public String getPendd() {
+        return pendd;
+    }
+
+    public void setPendd(String pendd) {
+        this.pendd = pendd;
+    }
+
+    public String getPalpha() {
+        return palpha;
+    }
+
+    public void setPalpha(String palpha) {
+        this.palpha = palpha;
+    }
+
+    public String getPbeta() {
+        return pbeta;
+    }
+
+    public void setPbeta(String pbeta) {
+        this.pbeta = pbeta;
+    }
+
+    public String getPproxy1() {
+        return pproxy1;
+    }
+
+    public void setPproxy1(String pproxy1) {
+        this.pproxy1 = pproxy1;
+    }
+
+    public String getPnrdays1() {
+        return pnrdays1;
+    }
+
+    public void setPnrdays1(String pnrdays1) {
+        this.pnrdays1 = pnrdays1;
+    }
+
+    public String getPlabel1() {
+        return plabel1;
+    }
+
+    public void setPlabel1(String plabel1) {
+        this.plabel1 = plabel1;
+    }
+
+    public String getPmaturity1() {
+        return pmaturity1;
+    }
+
+    public void setPmaturity1(String pmaturity1) {
+        this.pmaturity1 = pmaturity1;
+    }
+
+    public String getPsmaturity1() {
+        return psmaturity1;
+    }
+
+    public void setPsmaturity1(String psmaturity1) {
+        this.psmaturity1 = psmaturity1;
+    }
+
+    public String getPomaturity1() {
+        return pomaturity1;
+    }
+
+    public void setPomaturity1(String pomaturity1) {
+        this.pomaturity1 = pomaturity1;
+    }
+
+    public String getPskew1() {
+        return pskew1;
+    }
+
+    public void setPskew1(String pskew1) {
+        this.pskew1 = pskew1;
+    }
+
+    public String getPproxy2() {
+        return pproxy2;
+    }
+
+    public void setPproxy2(String pproxy2) {
+        this.pproxy2 = pproxy2;
+    }
+
+    public String getPnrdays2() {
+        return pnrdays2;
+    }
+
+    public void setPnrdays2(String pnrdays2) {
+        this.pnrdays2 = pnrdays2;
+    }
+
+    public String getPlabel2() {
+        return plabel2;
+    }
+
+    public void setPlabel2(String plabel2) {
+        this.plabel2 = plabel2;
+    }
+
+    public String getPmaturity2() {
+        return pmaturity2;
+    }
+
+    public void setPmaturity2(String pmaturity2) {
+        this.pmaturity2 = pmaturity2;
+    }
+
+    public String getPsmaturity2() {
+        return psmaturity2;
+    }
+
+    public void setPsmaturity2(String psmaturity2) {
+        this.psmaturity2 = psmaturity2;
+    }
+
+    public String getPomaturity2() {
+        return pomaturity2;
+    }
+
+    public void setPomaturity2(String pomaturity2) {
+        this.pomaturity2 = pomaturity2;
+    }
+
+    public String getPskew2() {
+        return pskew2;
+    }
+
+    public void setPskew2(String pskew2) {
+        this.pskew2 = pskew2;
+    }
+
+    public double getDiff() {
+        return diff;
+    }
+
+    public void setDiff(double diff) {
+        this.diff = diff;
+    }
+
+    public String getUnderlcrv() {
+        return underlcrv;
+    }
+
+    public void setUnderlcrv(String underlcrv) {
+        this.underlcrv = underlcrv;
+    }
+
+    public double getFkParent() {
+        return fkParent;
+    }
+
+    public void setFkParent(double fkParent) {
+        this.fkParent = fkParent;
+    }
+
+    public double getFkExtension() {
+        return fkExtension;
+    }
+
+    public void setFkExtension(double fkExtension) {
+        this.fkExtension = fkExtension;
+    }
+
+    public double getPk() {
+        return pk;
+    }
+
+    public void setPk(double pk) {
+        this.pk = pk;
+    }
+
+    public double getFkOwnerObj() {
+        return fkOwnerObj;
+    }
+
+    public void setFkOwnerObj(double fkOwnerObj) {
+        this.fkOwnerObj = fkOwnerObj;
+    }
+
+    public void setFromCsvBean(CsvBeanFullRevalReport csvBean, Date date, Integer diff) {
+        this.dataDatePart = date;
+        this.asset = valueOrNull(csvBean.getAssetclass());
+        this.factor = valueOrNull(csvBean.getFactortype());
+        this.subtype = valueOrNull(csvBean.getSubtype());
+        this.name = valueOrNull(csvBean.getName());
+        this.owner = valueOrNull(csvBean.getOwnUnit());
+        this.status = valueOrNull(csvBean.getStats());
+        this.unit = valueOrNull(csvBean.getUnit_());
+        this.uado = valueOrNull(csvBean.getAdounderlying());
+        this.retmodel = valueOrNull(csvBean.getReturn_model());
+        this.template = valueOrNull(csvBean.getTemplte());
+        this.nrdays = valueOrNull(csvBean.getNumDays());
+        this.tenor = valueOrNull(csvBean.getLabl());
+        this.swptenor = valueOrNull(csvBean.getSwapmaturity());
+        this.opttenor = valueOrNull(csvBean.getOptionmaturity());
+        this.strike = valueOrNull(csvBean.getSkw());
+        this.interpolform = valueOrNull(csvBean.getInterpolationformula());
+        this.valueinterpol = valueOrNull(csvBean.getValuetointerpolate());
+        this.interpolfpillar = valueOrNull(csvBean.getFirstinterpolation());
+        this.interpollpillar = valueOrNull(csvBean.getLastinterpolation());
+        this.calmethod = valueOrNull(csvBean.getCalibrationmethod());
+        this.rateconv = valueOrNull(csvBean.getRateconvention());
+        this.spreadcrvty = valueOrNull(csvBean.getSpreadcurve());
+        this.businessdays = valueOrNull(csvBean.getBusinessdays());
+        this.pmethodology = valueOrNull(csvBean.getProxymethodology());
+        this.pstatus = valueOrNull(csvBean.getProxystatus());
+        this.pado = valueOrNull(csvBean.getProxAdo());
+        this.pstartd = valueOrNull(csvBean.getStartingDate());
+        this.pendd = valueOrNull(csvBean.getEndingDate());
+        this.palpha = valueOrNull(csvBean.getAlpha());
+        this.pbeta = valueOrNull(csvBean.getBeta());
+        this.pproxy1 = valueOrNull(csvBean.getProx1());
+        this.pnrdays1 = valueOrNull(csvBean.getProxynrdays1());
+        this.plabel1 = valueOrNull(csvBean.getProxylabel1());
+        this.pmaturity1 = valueOrNull(csvBean.getProxymaturity1());
+        this.psmaturity1 = valueOrNull(csvBean.getProxyswapmaturity1());
+        this.pomaturity1 = valueOrNull(csvBean.getProxyoptionmaturity1());
+        this.pskew1 = valueOrNull(csvBean.getProxyskew1());
+        this.pproxy2 = valueOrNull(csvBean.getProx2());
+        this.pnrdays2 = valueOrNull(csvBean.getProxynrdays2());
+        this.plabel2 = valueOrNull(csvBean.getProxylabel2());
+        this.pmaturity2 = valueOrNull(csvBean.getProxymaturity2());
+        this.psmaturity2 = valueOrNull(csvBean.getProxyswapmaturity2());
+        this.pomaturity2 = valueOrNull(csvBean.getProxyoptionmaturity2());
+        this.pskew2 = valueOrNull(csvBean.getProxyskew2());
+        this.diff = diff;
+        this.pk = 1.0;
+        this.fkParent = 1.0;
+        this.fkExtension = 1.0;
+        this.fkOwnerObj = 1.0;
+        // Para los campos que no tienen correspondencia directa, necesitarás decidir cómo manejarlos.
+    }
+    private String valueOrNull(Object o) {
+        return (null != o) ? o.toString() : null;
     }
 }
+
+
+/*
+import com.isb.rfrbatch.jobextracfullrevalreport.jobExtracFullRevalReportE2E.services.buildcsv.beans.CsvBeanFullRevalReport;
+import lombok.Data;
+
+import java.math.BigDecimal;
+import java.sql.*;
+
+@Data
+public class RFR_LOADFULLREVAL_OBJ {
+
+    public static final String SQL_TYPE = "RFR.RFR_LOADFULLREVAL_OBJ";
+
+    //private Date DATA_DATEPART;
+    private String ASSET;
+    //private String FACTOR;
+    //private String SUBTYPE;
+    //private String NAME;
+    //private String OWNER;
+    //private String STATUS;
+    //private String UNIT;
+    //private String UADO;
+    //private String RETMODEL;
+    //private String TEMPLATE;
+    //private String NRDAYS;
+    //private String TENOR;
+    //private String SWPTENOR;
+    //private String OPTTENOR;
+    //private String STRIKE;
+    //private String INTERPOLFORM;
+    //private String VALUEINTERPOL;
+    //private String INTERPOLFPILLAR;
+    //private String INTERPOLLPILLAR;
+    //private String CALMETHOD;
+    //private String RATECONV;
+    //private String SPREADCRVTY;
+    //private String BUSINESSDAYS;
+    //private String PMETHODOLOGY;
+    //private String PSTATUS;
+    //private String PADO;
+    //private String PSTARTD;
+    //private String PENDD;
+    //private String PALPHA;
+    //private String PBETA;
+    //private String PPROXY1;
+    //private String PNRDAYS1;
+    //private String PLABEL1;
+    //private String PMATURITY1;
+    //private String PSMATURITY1;
+    //private String POMATURITY1;
+    //private String PSKEW1;
+    //private String PPROXY2;
+    //private String PNRDAYS2;
+    //private String PLABEL2;
+    //private String PMATURITY2;
+    //private String PSMATURITY2;
+    //private String POMATURITY2;
+    //private String PSKEW2;
+    //private Integer DIFF;
+    //private String UNDERLCRV;
+    //private BigDecimal PK;
+    //private BigDecimal FK_PARENT;
+    //private BigDecimal FK_EXTENSION;
+    //private BigDecimal FK_OWNER_OBJ;
+
+    public void setFromCsvBean(CsvBeanFullRevalReport csvBean, Date date, Integer diff) {
+        //this.DATA_DATEPART = date;
+        this.ASSET = valueOrNull(csvBean.getAssetClass());
+        //this.FACTOR = valueOrNull(csvBean.getFactorType());
+        //this.SUBTYPE = valueOrNull(csvBean.getSubType());
+        //this.NAME = valueOrNull(csvBean.getName());
+        //this.OWNER = valueOrNull(csvBean.getOwnerUnit());
+        //this.STATUS = valueOrNull(csvBean.getStatus());
+        //this.UNIT = valueOrNull(csvBean.getUnit());
+        //this.UADO = valueOrNull(csvBean.getAdoUnderlying());
+        //this.RETMODEL = valueOrNull(csvBean.getReturnModel());
+        //this.TEMPLATE = valueOrNull(csvBean.getTemplate());
+        //this.NRDAYS = valueOrNull(csvBean.getNroDays());
+        //this.TENOR = valueOrNull(csvBean.getLabel());
+        //this.SWPTENOR = valueOrNull(csvBean.getSwapMaturity());
+        //this.OPTTENOR = valueOrNull(csvBean.getOptionMaturity());
+        //this.STRIKE = valueOrNull(csvBean.getSkew());
+        //this.INTERPOLFORM = valueOrNull(csvBean.getInterpolationFormula());
+        //this.VALUEINTERPOL = valueOrNull(csvBean.getValueToInterpolate());
+        //this.INTERPOLFPILLAR = valueOrNull(csvBean.getFirstInterpolation());
+        //this.INTERPOLLPILLAR = valueOrNull(csvBean.getLastInterpolation());
+        //this.CALMETHOD = valueOrNull(csvBean.getCalibrationMethod());
+        //this.RATECONV = valueOrNull(csvBean.getRateConvention());
+        //this.SPREADCRVTY = valueOrNull(csvBean.getSpreadCurve());
+        //this.BUSINESSDAYS = valueOrNull(csvBean.getBusinessDays());
+        //this.PMETHODOLOGY = valueOrNull(csvBean.getProxyMethodology());
+        //this.PSTATUS = valueOrNull(csvBean.getProxyStatus());
+        //this.PADO = valueOrNull(csvBean.getProxyAdo());
+        //this.PSTARTD = valueOrNull(csvBean.getStartDate());
+        //this.PENDD = valueOrNull(csvBean.getEndDate());
+        //this.PALPHA = valueOrNull(csvBean.getAlpha());
+        //this.PBETA = valueOrNull(csvBean.getBeta());
+        //this.PPROXY1 = valueOrNull(csvBean.getProxy1());
+        //this.PNRDAYS1 = valueOrNull(csvBean.getProxyNrDays1());
+        //this.PLABEL1 = valueOrNull(csvBean.getProxyLabel1());
+        //this.PMATURITY1 = valueOrNull(csvBean.getProxyMaturity1());
+        //this.PSMATURITY1 = valueOrNull(csvBean.getProxySwapMaturity1());
+        //this.POMATURITY1 = valueOrNull(csvBean.getProxyOptionMaturity1());
+        //this.PSKEW1 = valueOrNull(csvBean.getProxySkew1());
+        //this.PPROXY2 = valueOrNull(csvBean.getProxy2());
+        //this.PNRDAYS2 = valueOrNull(csvBean.getProxyNrDays2());
+        //this.PLABEL2 = valueOrNull(csvBean.getProxyLabel2());
+        //this.PMATURITY2 = valueOrNull(csvBean.getProxyMaturity2());
+        //this.PSMATURITY2 = valueOrNull(csvBean.getProxySwapMaturity2());
+        //this.POMATURITY2 = valueOrNull(csvBean.getProxyOptionMaturity2());
+        //this.PSKEW2 = valueOrNull(csvBean.getProxySkew2());
+        //this.DIFF = diff;
+        //this.UNDERLCRV = "N/A";
+        //this.PK = new BigDecimal("1.0");
+        //this.FK_PARENT = new BigDecimal("1.0");
+        //this.FK_EXTENSION = new BigDecimal("1.0");
+        //this.FK_OWNER_OBJ = new BigDecimal("1.0");
+        //Para los campos que no tienen correspondencia directa, necesitarás decidir cómo manejarlos.
+    }
+
+    public Object[] toObjectArray() {
+        return new Object[] {
+                //this.DATA_DATEPART,
+                this.ASSET,
+                //this.FACTOR,
+                //this.SUBTYPE,
+                //this.NAME,
+                //this.OWNER,
+                //this.STATUS,
+                //this.UNIT,
+                //this.UADO,
+                //this.RETMODEL,
+                //this.TEMPLATE,
+                //this.NRDAYS,
+                //this.TENOR,
+                //this.SWPTENOR,
+                //this.OPTTENOR,
+                //this.STRIKE,
+                //this.INTERPOLFORM,
+                //this.VALUEINTERPOL,
+                //this.INTERPOLFPILLAR,
+                //this.INTERPOLLPILLAR,
+                //this.CALMETHOD,
+                //this.RATECONV,
+                //this.SPREADCRVTY,
+                //this.BUSINESSDAYS,
+                //this.PMETHODOLOGY,
+                //this.PSTATUS,
+                //this.PADO,
+                //this.PSTARTD,
+                //this.PENDD,
+                //this.PALPHA,
+                //this.PBETA,
+                //this.PPROXY1,
+                //this.PNRDAYS1,
+                //this.PLABEL1,
+                //this.PMATURITY1,
+                //this.PSMATURITY1,
+                //this.POMATURITY1,
+                //this.PSKEW1,
+                //this.PPROXY2,
+                //this.PNRDAYS2,
+                //this.PLABEL2,
+                //this.PMATURITY2,
+                //this.PSMATURITY2,
+                //this.POMATURITY2,
+                //this.PSKEW2,
+                //this.DIFF,
+                //this.UNDERLCRV,
+                //this.PK,
+                //this.FK_PARENT,
+                //this.FK_EXTENSION,
+                //this.FK_OWNER_OBJ
+        };
+    }
+    
+    private String valueOrNull(Object o) {
+        return (null != o) ? o.toString() : null;
+    }
+
+}
+ */
