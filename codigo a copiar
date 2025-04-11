@@ -1,9 +1,9 @@
-import org.junit.jupiter.api.Test;
-import org.junit.jupiter.api.extension.ExtendWith;
+import org.junit.Test;
+import org.junit.runner.RunWith;
 import org.mockito.ArgumentCaptor;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
-import org.mockito.junit.jupiter.MockitoExtension;
+import org.mockito.runners.MockitoJUnitRunner;
 import org.springframework.batch.core.*;
 import org.springframework.batch.core.configuration.annotation.EnableBatchProcessing;
 import org.springframework.batch.core.job.builder.JobBuilderFactory;
@@ -19,14 +19,17 @@ import org.springframework.test.util.ReflectionTestUtils;
 
 import java.time.Duration;
 import java.time.Instant;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
-import static org.junit.jupiter.api.Assertions.*;
+import static org.junit.Assert.*;
+import static org.mockito.Matchers.any;
+import static org.mockito.Matchers.eq;
 import static org.mockito.Mockito.*;
 
-@ExtendWith(MockitoExtension.class)
+@RunWith(MockitoJUnitRunner.class)
 public class JobConfigExtractTaylorReportDbTest {
 
     @Mock
@@ -54,7 +57,7 @@ public class JobConfigExtractTaylorReportDbTest {
     private JobConfigExtractTaylorReportDb jobConfig;
 
     @Test
-    void testJobExtracFullRevalReportDb() {
+    public void testJobExtracFullRevalReportDb() {
         // Arrange
         String jobName = "jobExtracTaylorReportDb";
         when(jobBuilderFactory.get(jobName)).thenReturn(jobBuilder);
@@ -79,7 +82,7 @@ public class JobConfigExtractTaylorReportDbTest {
     }
 
     @Test
-    void testStepFrLoadDb() {
+    public void testStepFrLoadDb() {
         // Arrange
         String stepName = "stepFrLoadDb";
         when(stepBuilderFactory.get(stepName)).thenReturn(stepBuilder);
@@ -99,7 +102,7 @@ public class JobConfigExtractTaylorReportDbTest {
     }
 
     @Test
-    void testJobListenerBeforeJob() {
+    public void testJobListenerBeforeJob() {
         // Arrange
         JobConfigExtractTaylorReportDb.JobListener jobListener = jobConfig.new JobListener();
         JobExecution jobExecution = new JobExecution(1L);
@@ -121,7 +124,7 @@ public class JobConfigExtractTaylorReportDbTest {
     }
 
     @Test
-    void testJobListenerAfterJob() {
+    public void testJobListenerAfterJob() {
         // Arrange
         JobConfigExtractTaylorReportDb.JobListener jobListener = jobConfig.new JobListener();
         JobExecution jobExecution = new JobExecution(1L);
@@ -152,7 +155,7 @@ public class JobConfigExtractTaylorReportDbTest {
     }
 
     @Test
-    void testStepGenerarListenerBeforeStep() {
+    public void testStepGenerarListenerBeforeStep() {
         // Arrange
         JobConfigExtractTaylorReportDb.StepGenerarListener stepListener = jobConfig.new StepGenerarListener();
         StepExecution stepExecution = new StepExecution("stepFrLoadDb", new JobExecution(1L));
@@ -172,7 +175,7 @@ public class JobConfigExtractTaylorReportDbTest {
     }
 
     @Test
-    void testStepGenerarListenerAfterStep() {
+    public void testStepGenerarListenerAfterStep() {
         // Arrange
         JobConfigExtractTaylorReportDb.StepGenerarListener stepListener = jobConfig.new StepGenerarListener();
         StepExecution stepExecution = new StepExecution("stepFrLoadDb", new JobExecution(1L));
@@ -202,12 +205,17 @@ public class JobConfigExtractTaylorReportDbTest {
     static class TestConfig {
         @Bean
         public Tasklet mockTasklet() {
-            return (contribution, chunkContext) -> RepeatStatus.FINISHED;
+            return new Tasklet() {
+                @Override
+                public RepeatStatus execute(StepContribution contribution, ChunkContext chunkContext) throws Exception {
+                    return RepeatStatus.FINISHED;
+                }
+            };
         }
     }
 
     @Test
-    void testContextLoads() {
+    public void testContextLoads() {
         AnnotationConfigApplicationContext context = new AnnotationConfigApplicationContext(JobConfigExtractTaylorReportDb.class, TestConfig.class);
         assertNotNull(context.getBean("jobExtracFullRevalReportDb"));
         assertNotNull(context.getBean("stepFrLoadDb"));
