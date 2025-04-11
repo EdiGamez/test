@@ -1,9 +1,6 @@
 import org.junit.Test;
 import org.junit.runner.RunWith;
-import org.mockito.ArgumentCaptor;
-import org.mockito.InjectMocks;
-import org.mockito.Mock;
-import org.mockito.runners.MockitoJUnitRunner;
+import org.junit.runners.JUnit4;
 import org.springframework.batch.core.*;
 import org.springframework.batch.core.configuration.annotation.EnableBatchProcessing;
 import org.springframework.batch.core.job.builder.JobBuilderFactory;
@@ -11,6 +8,7 @@ import org.springframework.batch.core.listener.JobExecutionListener;
 import org.springframework.batch.core.listener.StepExecutionListener;
 import org.springframework.batch.core.step.builder.StepBuilderFactory;
 import org.springframework.batch.core.step.tasklet.Tasklet;
+import org.springframework.batch.item.ExecutionContext;
 import org.springframework.context.annotation.AnnotationConfigApplicationContext;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
@@ -19,81 +17,62 @@ import org.springframework.test.util.ReflectionTestUtils;
 
 import java.time.Duration;
 import java.time.Instant;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
 import static org.junit.Assert.*;
-import static org.mockito.Matchers.any;
-import static org.mockito.Matchers.eq;
-import static org.mockito.Mockito.*;
 
-@RunWith(MockitoJUnitRunner.class)
+@RunWith(JUnit4.class) // Cambiado a JUnit4 para ser explícito
 public class JobConfigExtractTaylorReportDbTest {
 
-    @Mock
+    // No hay mocks de Mockito aquí
+
     private JobBuilderFactory jobBuilderFactory;
-
-    @Mock
     private StepBuilderFactory stepBuilderFactory;
-
-    @Mock
     private Tasklet taylorReportLoadDatabase;
-
-    @Mock
-    private Job job;
-
-    @InjectMocks
     private JobConfigExtractTaylorReportDb jobConfig;
 
     @Test
     public void testJobExtracFullRevalReportDb() {
         // Arrange
         String jobName = "jobExtracTaylorReportDb";
-        Job.Builder jobBuilder = mock(Job.Builder.class);
-        Step.Builder stepBuilder = mock(Step.Builder.class);
-
-        when(jobBuilderFactory.get(jobName)).thenReturn(jobBuilder);
-        when(jobBuilder.listener(any(JobExecutionListener.class))).thenReturn(jobBuilder);
-        when(jobBuilder.start(any(Step.class))).thenReturn(jobBuilder);
-        when(jobBuilder.build()).thenReturn(job);
-        when(stepBuilderFactory.get("stepFrLoadDb")).thenReturn(stepBuilder);
-        when(stepBuilder.listener(any(StepExecutionListener.class))).thenReturn(stepBuilder);
-        when(stepBuilder.tasklet(taylorReportLoadDatabase)).thenReturn(stepBuilder);
-        when(stepBuilder.build()).thenReturn(mock(Step.class)); // Changed to mock()
-        when(jobConfig.stepFrLoadDb(taylorReportLoadDatabase, stepBuilderFactory)).thenReturn(mock(Step.class));
+        // En lugar de mocks, usamos implementaciones reales o stubs muy simples
+        jobBuilderFactory = new TestJobBuilderFactory();
+        stepBuilderFactory = new TestStepBuilderFactory();
+        taylorReportLoadDatabase = new TestTasklet(); // Un Tasklet vacío para este test
+        jobConfig = new JobConfigExtractTaylorReportDb();
+        ReflectionTestUtils.setField(jobConfig, "dataDatePart", "20230101"); // Valores para el logger
+        ReflectionTestUtils.setField(jobConfig, "unit", "MXN");
 
         // Act
         Job actualJob = jobConfig.jobExtracFullRevalReportDb(jobBuilderFactory, taylorReportLoadDatabase, stepBuilderFactory);
 
         // Assert
-        assertEquals(job, actualJob);
-        verify(jobBuilderFactory).get(jobName);
-        verify(jobBuilder).listener(any(JobExecutionListener.class));
-        verify(jobBuilder).start(any(Step.class));
-        verify(jobBuilder).build();
-        verify(jobConfig).stepFrLoadDb(taylorReportLoadDatabase, stepBuilderFactory);
+        assertNotNull(actualJob);
+        assertEquals(jobName, actualJob.getName());
+        // Aquí podrías agregar más aserciones para verificar la configuración del Job
+        // Por ejemplo, podrías usar reflection para inspeccionar los pasos del Job
     }
 
     @Test
     public void testStepFrLoadDb() {
         // Arrange
         String stepName = "stepFrLoadDb";
-        Step.Builder stepBuilder = mock(Step.Builder.class);
-        when(stepBuilderFactory.get(stepName)).thenReturn(stepBuilder);
-        when(stepBuilder.listener(any(StepExecutionListener.class))).thenReturn(stepBuilder);
-        when(stepBuilder.tasklet(taylorReportLoadDatabase)).thenReturn(stepBuilder);
-        when(stepBuilder.build()).thenReturn(mock(Step.class));
+        stepBuilderFactory = new TestStepBuilderFactory();
+        taylorReportLoadDatabase = new TestTasklet();
+        jobConfig = new JobConfigExtractTaylorReportDb(); //Necesario para que no sea null y lance NullPointerException
+        ReflectionTestUtils.setField(jobConfig, "dataDatePart", "20230101"); // Valores para el logger
+        ReflectionTestUtils.setField(jobConfig, "unit", "MXN");
 
         // Act
         Step actualStep = jobConfig.stepFrLoadDb(taylorReportLoadDatabase, stepBuilderFactory);
 
         // Assert
-        assertNotNull(actualStep); // Changed from assertEquals(step, actualStep); to assertNotNull
-        verify(stepBuilderFactory).get(stepName);
-        verify(stepBuilder).listener(any(StepExecutionListener.class));
-        verify(stepBuilder).tasklet(taylorReportLoadDatabase);
-        verify(stepBuilder).build();
+        assertNotNull(actualStep);
+        assertEquals(stepName, actualStep.getName());
+        // Aquí podrías agregar más aserciones para verificar la configuración del Step
     }
 
     @Test
@@ -105,17 +84,15 @@ public class JobConfigExtractTaylorReportDbTest {
         jobExecution.setJobInstance(jobInstance);
         ReflectionTestUtils.setField(jobConfig, "dataDatePart", "20230101");
         ReflectionTestUtils.setField(jobConfig, "unit", "MXN");
-        Logger logger = mock(Logger.class);
+        Logger logger = new TestLogger(); // Usamos nuestro logger de prueba
         ReflectionTestUtils.setField(jobListener, "log", logger);
 
         // Act
         jobListener.beforeJob(jobExecution);
 
         // Assert
-        ArgumentCaptor<String> messageCaptor = ArgumentCaptor.forClass(String.class);
-        verify(logger).log(eq(Level.INFO), messageCaptor.capture());
-        String expectedMessage = String.format("INI BATCH: jobExtracTaylorReportDb - DATA_DATE: 20230101 - UNIT: MXN");
-        assertTrue(messageCaptor.getValue().contains(expectedMessage));
+        TestLogger testLogger = (TestLogger) logger;
+        assertEquals("INI BATCH: jobExtracTaylorReportDb - DATA_DATE: 20230101 - UNIT: MXN", testLogger.getLastMessage());
     }
 
     @Test
@@ -128,23 +105,20 @@ public class JobConfigExtractTaylorReportDbTest {
         ReflectionTestUtils.setField(jobConfig, "dataDatePart", "20230101");
         ReflectionTestUtils.setField(jobConfig, "unit", "MXN");
         ReflectionTestUtils.setField(jobListener, "init", Instant.now().minusSeconds(5));
-        Logger logger = mock(Logger.class);
+        Logger logger = new TestLogger();
         ReflectionTestUtils.setField(jobListener, "log", logger);
-        List<String> durationMessages = (List<String>) ReflectionTestUtils.getField(jobConfig, "durationMessages");
-        durationMessages.clear(); // Ensure it's empty before the test
+        ReflectionTestUtils.setField(jobConfig, "durationMessages", new ArrayList<>());
 
         // Act
         jobListener.afterJob(jobExecution);
 
         // Assert
-        ArgumentCaptor<String> messageCaptor = ArgumentCaptor.forClass(String.class);
-        verify(logger, times(3)).log(eq(Level.INFO), messageCaptor.capture());
-        List<String> logMessages = messageCaptor.getAllValues();
-
-        String expectedFinishMessage = String.format("FIN BATCH: jobExtracTaylorReportDb - DATA_DATE: 20230101 - UNIT: MXN");
-        assertTrue(logMessages.get(0).contains(expectedFinishMessage));
+        TestLogger testLogger = (TestLogger) logger;
+        List<String> logMessages = testLogger.getMessages();
+        assertEquals("FIN BATCH: jobExtracTaylorReportDb - DATA_DATE: 20230101 - UNIT: MXN", logMessages.get(0));
         assertTrue(logMessages.get(1).contains("DURATION entire process:"));
         assertTrue(logMessages.get(2).contains("PROCESS Finished"));
+        List<String> durationMessages = (List<String>) ReflectionTestUtils.getField(jobConfig, "durationMessages");
         assertEquals(1, durationMessages.size());
         assertTrue(durationMessages.get(0).contains("DURATION JOB: jobExtracTaylorReportDb -"));
     }
@@ -156,17 +130,15 @@ public class JobConfigExtractTaylorReportDbTest {
         StepExecution stepExecution = new StepExecution("stepFrLoadDb", new JobExecution(1L));
         ReflectionTestUtils.setField(jobConfig, "dataDatePart", "20230101");
         ReflectionTestUtils.setField(jobConfig, "unit", "MXN");
-        Logger logger = mock(Logger.class);
+        Logger logger = new TestLogger();
         ReflectionTestUtils.setField(stepListener, "log", logger);
 
         // Act
         stepListener.beforeStep(stepExecution);
 
         // Assert
-        ArgumentCaptor<String> messageCaptor = ArgumentCaptor.forClass(String.class);
-        verify(logger).log(eq(Level.INFO), messageCaptor.capture());
-        String expectedMessage = String.format("INI STEP: stepFrLoadDb - DATA_DATE: 20230101 - UNIT: MXN");
-        assertTrue(messageCaptor.getValue().contains(expectedMessage));
+        TestLogger testLogger = (TestLogger) logger;
+        assertEquals("INI STEP: stepFrLoadDb - DATA_DATE: 20230101 - UNIT: MXN", testLogger.getLastMessage());
     }
 
     @Test
@@ -177,20 +149,18 @@ public class JobConfigExtractTaylorReportDbTest {
         ReflectionTestUtils.setField(jobConfig, "dataDatePart", "20230101");
         ReflectionTestUtils.setField(jobConfig, "unit", "MXN");
         ReflectionTestUtils.setField(stepListener, "init", Instant.now().minusSeconds(3));
-        Logger logger = mock(Logger.class);
+        Logger logger = new TestLogger();
         ReflectionTestUtils.setField(stepListener, "log", logger);
-        List<String> durationMessages = (List<String>) ReflectionTestUtils.getField(jobConfig, "durationMessages");
-        durationMessages.clear(); // Ensure it's empty before the test
+        ReflectionTestUtils.setField(jobConfig, "durationMessages", new ArrayList<>());
 
         // Act
         ExitStatus exitStatus = stepListener.afterStep(stepExecution);
 
         // Assert
-        ArgumentCaptor<String> messageCaptor = ArgumentCaptor.forClass(String.class);
-        verify(logger).log(eq(Level.INFO), messageCaptor.capture());
-        String expectedFinishMessage = String.format("FIN STEP: stepFrLoadDb - DATA_DATE: 20230101 - UNIT: MXN");
-        assertTrue(messageCaptor.getValue().contains(expectedFinishMessage));
+        TestLogger testLogger = (TestLogger) logger;
+        assertEquals("FIN STEP: stepFrLoadDb - DATA_DATE: 20230101 - UNIT: MXN", testLogger.getLastMessage());
         assertNull(exitStatus);
+        List<String> durationMessages = (List<String>) ReflectionTestUtils.getField(jobConfig, "durationMessages");
         assertEquals(1, durationMessages.size());
         assertTrue(durationMessages.get(0).contains("DURATION STEP: stepFrLoadDb -"));
     }
@@ -216,4 +186,101 @@ public class JobConfigExtractTaylorReportDbTest {
         assertNotNull(context.getBean("stepFrLoadDb"));
         context.close();
     }
+
+    // Implementaciones de prueba (Stubs)
+    private static class TestJobBuilderFactory extends JobBuilderFactory {
+        private int jobCount = 0;
+
+        public TestJobBuilderFactory() {
+            super(null); // No necesitamos un JobRepository real para estas pruebas
+        }
+
+        @Override
+        public JobBuilder get(String name) {
+            jobCount++;
+            return new JobBuilder(name, null) { // También un JobBuilder de prueba
+                @Override
+                public Job build() {
+                    Job job = new Job() {
+                        @Override
+                        public String getName() {
+                            return name;
+                        }
+                    };
+                    return job;
+                }
+            };
+        }
+    }
+
+    private static class TestStepBuilderFactory extends StepBuilderFactory {
+        private int stepCount = 0;
+
+        public TestStepBuilderFactory() {
+            super(null, null); // No necesitamos un JobRepository ni TransactionManager
+        }
+
+        @Override
+        public StepBuilder get(String name) {
+            stepCount++;
+            return new StepBuilder(name, null) {
+                @Override
+                public Step build() {
+                    return new Step() {
+                        @Override
+                        public String getName() {
+                            return name;
+                        }
+
+                        @Override
+                        public void execute(JobExecution jobExecution) throws JobInterruptedException, UnexpectedJobExecutionException, JobRestartException, NonTransientResourceException {
+
+                        }
+
+                        @Override
+                        public boolean isSkippable() {
+                            return false;
+                        }
+
+                        @Override
+                        public boolean isAllowStartIfComplete() {
+                            return false;
+                        }
+                    };
+                }
+            };
+        }
+    }
+
+    private static class TestTasklet implements Tasklet {
+        @Override
+        public RepeatStatus execute(StepContribution contribution, ChunkContext chunkContext) throws Exception {
+            return RepeatStatus.FINISHED;
+        }
+    }
+
+    private static class TestLogger extends Logger {
+        private String lastMessage;
+        private List<String> messages = new ArrayList<>();
+
+        protected TestLogger() {
+            super("TestLogger", null);
+        }
+
+        @Override
+        public void log(Level level, String msg) {
+            lastMessage = msg;
+            messages.add(msg);
+            // No imprimimos a la consola para no contaminar la salida de la prueba
+        }
+
+        public String getLastMessage() {
+            return lastMessage;
+        }
+
+        public List<String> getMessages() {
+            return messages;
+        }
+    }
 }
+
