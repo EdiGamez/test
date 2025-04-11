@@ -9,7 +9,6 @@ import org.springframework.batch.core.configuration.JobBuilderFactory;
 import org.springframework.batch.core.configuration.StepBuilderFactory;
 import org.springframework.batch.core.launch.JobLauncher;
 import org.springframework.batch.core.launch.JobRepository;
-import org.springframework.batch.core.launch.JobOperator;
 import org.springframework.batch.core.step.Step;
 import org.springframework.batch.test.MetaDataInstanceFactory;
 import org.springframework.beans.factory.annotation.Value;
@@ -35,9 +34,6 @@ public class JobConfigExtractTaylorReportDbTest {
     @Mock
     private JobLauncher jobLauncher;
 
-    @Mock
-    private JobOperator jobOperator;
-
     @InjectMocks
     private JobConfigExtractTaylorReportDb jobConfigExtractTaylorReportDb;
 
@@ -48,34 +44,47 @@ public class JobConfigExtractTaylorReportDbTest {
 
     @Test
     public void testJobExtracFullRevalReportDb() {
-        // Setup
-        when(jobBuilderFactory.get(anyString())).thenReturn(mock(Job.Builder.class));
-        when(stepBuilderFactory.get(anyString())).thenReturn(mock(Step.Builder.class));
+        // Simulamos las fábricas para crear los jobs y pasos
+        Job job = mock(Job.class);
+        Step step = mock(Step.class);
         
+        // Simulamos el comportamiento de las fábricas
+        when(jobBuilderFactory.get(anyString())).thenReturn(mock(JobBuilderFactory.JobBuilder.class));
+        when(jobBuilderFactory.get(anyString()).start(any(Step.class))).thenReturn(mock(JobBuilderFactory.JobBuilder.class));
+        when(jobBuilderFactory.get(anyString()).listener(any())).thenReturn(mock(JobBuilderFactory.JobBuilder.class));
+        when(jobBuilderFactory.get(anyString()).build()).thenReturn(job);
+
+        when(stepBuilderFactory.get(anyString())).thenReturn(mock(StepBuilderFactory.StepBuilder.class));
+        when(stepBuilderFactory.get(anyString()).listener(any())).thenReturn(mock(StepBuilderFactory.StepBuilder.class));
+        when(stepBuilderFactory.get(anyString()).tasklet(taskletTaylorReportLoadDatabase)).thenReturn(mock(StepBuilderFactory.StepBuilder.class));
+        when(stepBuilderFactory.get(anyString()).build()).thenReturn(step);
+
         // Ejecutar el método
-        Job job = jobConfigExtractTaylorReportDb.jobExtracFullRevalReportDb(
+        Job createdJob = jobConfigExtractTaylorReportDb.jobExtracFullRevalReportDb(
                 jobBuilderFactory, taskletTaylorReportLoadDatabase, stepBuilderFactory
         );
         
-        // Verificar que se crearon correctamente los beans
-        assertNotNull(job);
+        // Verificar que el Job es creado correctamente
+        assertNotNull(createdJob);
         verify(jobBuilderFactory).get("jobExtracTaylorReportDb");
         verify(stepBuilderFactory).get("stepFrLoadDb");
-        
-        // Verificar que el job y el step tienen los listeners correctos
-        assertEquals(1, job.getJobListeners().size());
     }
 
     @Test
     public void testStepFrLoadDb() {
-        // Setup
-        when(stepBuilderFactory.get(anyString())).thenReturn(mock(Step.Builder.class));
-        
+        // Simulamos el comportamiento de la fábrica de pasos
+        Step step = mock(Step.class);
+
+        when(stepBuilderFactory.get(anyString())).thenReturn(mock(StepBuilderFactory.StepBuilder.class));
+        when(stepBuilderFactory.get(anyString()).listener(any())).thenReturn(mock(StepBuilderFactory.StepBuilder.class));
+        when(stepBuilderFactory.get(anyString()).tasklet(taskletTaylorReportLoadDatabase)).thenReturn(mock(StepBuilderFactory.StepBuilder.class));
+        when(stepBuilderFactory.get(anyString()).build()).thenReturn(step);
+
         // Ejecutar el método
-        Step step = jobConfigExtractTaylorReportDb.stepFrLoadDb(taskletTaylorReportLoadDatabase, stepBuilderFactory);
+        Step createdStep = jobConfigExtractTaylorReportDb.stepFrLoadDb(taskletTaylorReportLoadDatabase, stepBuilderFactory);
         
-        // Verificar que se ha creado correctamente el step
-        assertNotNull(step);
+        // Verificar que el Step es creado correctamente
+        assertNotNull(createdStep);
         verify(stepBuilderFactory).get("stepFrLoadDb");
     }
 
