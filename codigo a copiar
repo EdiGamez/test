@@ -1,60 +1,109 @@
-import com.isb.rfrbatch.jobextracfullrevalreport.jobextractfullrevalreportdb.config.JobConfigExtractTaylorReportDb;
-import com.isb.rfrbatch.jobextracfullrevalreport.jobextractfullrevalreportdb.tasklets.TaskletTaylorReportLoadDatabase;
 import org.junit.Before;
 import org.junit.Test;
+import org.junit.runner.RunWith;
+import org.mockito.InjectMocks;
+import org.mockito.Mock;
+import org.mockito.MockitoAnnotations;
 import org.springframework.batch.core.Job;
-import org.springframework.batch.core.Step;
-import org.springframework.batch.core.configuration.annotation.JobBuilderFactory;
-import org.springframework.batch.core.configuration.annotation.StepBuilderFactory;
-import org.springframework.batch.core.job.builder.JobBuilder;
-import org.springframework.batch.core.repository.support.SimpleJobRepository;
-import org.springframework.batch.core.step.builder.StepBuilder;
-import org.springframework.batch.repeat.RepeatStatus;
-import org.springframework.transaction.support.ResTransactionManager;
+import org.springframework.batch.core.configuration.JobBuilderFactory;
+import org.springframework.batch.core.configuration.StepBuilderFactory;
+import org.springframework.batch.core.launch.JobLauncher;
+import org.springframework.batch.core.launch.JobRepository;
+import org.springframework.batch.core.launch.JobOperator;
+import org.springframework.batch.core.step.Step;
+import org.springframework.batch.test.MetaDataInstanceFactory;
+import org.springframework.beans.factory.annotation.Value;
+import org.springframework.test.context.junit4.SpringRunner;
 
-import static org.junit.Assert.*;
+import static org.mockito.Mockito.*;
 
+@RunWith(SpringRunner.class)
 public class JobConfigExtractTaylorReportDbTest {
 
-    private JobConfigExtractTaylorReportDb config;
-    private TaskletTaylorReportLoadDatabase tasklet;
+    @Mock
+    private JobBuilderFactory jobBuilderFactory;
+    
+    @Mock
+    private StepBuilderFactory stepBuilderFactory;
+    
+    @Mock
+    private TaskletTaylorReportLoadDatabase taskletTaylorReportLoadDatabase;
+
+    @Mock
+    private JobRepository jobRepository;
+
+    @Mock
+    private JobLauncher jobLauncher;
+
+    @Mock
+    private JobOperator jobOperator;
+
+    @InjectMocks
+    private JobConfigExtractTaylorReportDb jobConfigExtractTaylorReportDb;
 
     @Before
-    public void setUp() throws Exception {
-        config = new JobConfigExtractTaylorReportDb();
-        tasklet = (contribution, chunkContext) -> RepeatStatus.FINISHED;
-
-        // Simular valores de propiedades
-        setPrivateField("dataDatePart", "20240410");
-        setPrivateField("unit", "UNIT1");
-        setPrivateField("path", "/dummy/path");
-    }
-
-    private void setPrivateField(String name, String value) throws Exception {
-        java.lang.reflect.Field field = JobConfigExtractTaylorReportDb.class.getDeclaredField(name);
-        field.setAccessible(true);
-        field.set(config, value);
+    public void setUp() {
+        MockitoAnnotations.initMocks(this);
     }
 
     @Test
-    public void testJobCreation() {
-        // Crear factories reales de Spring Batch
-        JobBuilderFactory jobBuilderFactory = new JobBuilderFactory(new SimpleJobRepository(), null);
-        StepBuilderFactory stepBuilderFactory = new StepBuilderFactory(new SimpleJobRepository(), null);
-
-        Job job = config.jobExtracFullRevalReportDb(jobBuilderFactory, tasklet, stepBuilderFactory);
-
+    public void testJobExtracFullRevalReportDb() {
+        // Setup
+        when(jobBuilderFactory.get(anyString())).thenReturn(mock(Job.Builder.class));
+        when(stepBuilderFactory.get(anyString())).thenReturn(mock(Step.Builder.class));
+        
+        // Ejecutar el método
+        Job job = jobConfigExtractTaylorReportDb.jobExtracFullRevalReportDb(
+                jobBuilderFactory, taskletTaylorReportLoadDatabase, stepBuilderFactory
+        );
+        
+        // Verificar que se crearon correctamente los beans
         assertNotNull(job);
-        assertEquals("jobExtracTaylorReportDb", job.getName());
+        verify(jobBuilderFactory).get("jobExtracTaylorReportDb");
+        verify(stepBuilderFactory).get("stepFrLoadDb");
+        
+        // Verificar que el job y el step tienen los listeners correctos
+        assertEquals(1, job.getJobListeners().size());
     }
 
     @Test
-    public void testStepCreation() {
-        StepBuilderFactory stepBuilderFactory = new StepBuilderFactory(new SimpleJobRepository(), null);
-
-        Step step = config.stepFrLoadDb(tasklet, stepBuilderFactory);
-
+    public void testStepFrLoadDb() {
+        // Setup
+        when(stepBuilderFactory.get(anyString())).thenReturn(mock(Step.Builder.class));
+        
+        // Ejecutar el método
+        Step step = jobConfigExtractTaylorReportDb.stepFrLoadDb(taskletTaylorReportLoadDatabase, stepBuilderFactory);
+        
+        // Verificar que se ha creado correctamente el step
         assertNotNull(step);
-        assertEquals("stepFrLoadDb", step.getName());
+        verify(stepBuilderFactory).get("stepFrLoadDb");
+    }
+
+    @Test
+    public void testJobListenerBeforeAndAfterJob() {
+        // Crear un mock de JobExecution
+        JobExecution jobExecution = MetaDataInstanceFactory.createJobExecution();
+        JobListener jobListener = jobConfigExtractTaylorReportDb.new JobListener();
+        
+        // Probar el comportamiento de beforeJob y afterJob
+        jobListener.beforeJob(jobExecution);
+        jobListener.afterJob(jobExecution);
+        
+        // Verificar que las funciones fueron llamadas sin errores
+        assertNotNull(jobListener);
+    }
+
+    @Test
+    public void testStepListenerBeforeAndAfterStep() {
+        // Crear un mock de StepExecution
+        StepExecution stepExecution = MetaDataInstanceFactory.createStepExecution();
+        StepGenerarListener stepListener = jobConfigExtractTaylorReportDb.new StepGenerarListener();
+        
+        // Probar el comportamiento de beforeStep y afterStep
+        stepListener.beforeStep(stepExecution);
+        stepListener.afterStep(stepExecution);
+        
+        // Verificar que las funciones fueron llamadas sin errores
+        assertNotNull(stepListener);
     }
 }
