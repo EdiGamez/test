@@ -1,99 +1,47 @@
-import com.yourpackage.JobConfigExtractTaylorReportDb;
-import com.yourpackage.tasklets.TaskletTaylorReportLoadDatabase;
-import lombok.extern.slf4j.Slf4j;
-import org.junit.jupiter.api.BeforeEach;
-import org.junit.jupiter.api.Test;
-import org.mockito.Mock;
-import org.mockito.MockitoAnnotations;
-import org.springframework.batch.core.ExitStatus;
-import org.springframework.batch.core.Job;
-import org.springframework.batch.core.JobExecution;
-import org.springframework.batch.core.JobInstance;
-import org.springframework.batch.core.Step;
-import org.springframework.batch.core.StepExecution;
-import org.springframework.batch.core.configuration.annotation.JobBuilderFactory;
-import org.springframework.batch.core.configuration.annotation.StepBuilderFactory;
-import org.springframework.batch.core.scope.context.ChunkContext;
-import org.springframework.batch.repeat.RepeatStatus;
-
-import java.text.MessageFormat;
-import java.time.Duration;
-import java.time.Instant;
-
-import static org.junit.jupiter.api.Assertions.*;
-import static org.mockito.Mockito.*;
-
-@Slf4j
-public class JobConfigExtractTaylorReportDbTest {
-
-    @Mock
-    private JobBuilderFactory jobBuilderFactory;
-    @Mock
-    private StepBuilderFactory stepBuilderFactory;
-    @Mock
-    private TaskletTaylorReportLoadDatabase tasklet;
-
-    private JobConfigExtractTaylorReportDb config;
-
-    @BeforeEach
-    void setUp() {
-        MockitoAnnotations.openMocks(this);
-        config = new JobConfigExtractTaylorReportDb();
-    }
-
-    @Test
-    void testStepFrLoadDbNotNull() {
-        Step step = config.stepFrLoadDb(tasklet, stepBuilderFactory);
-        assertNotNull(step, "Step debe estar correctamente configurado");
-    }
-
-    @Test
-    void testJobExtracFullRevalReportDbNotNull() {
-        Job job = config.jobExtracFullRevalReportDb(jobBuilderFactory, tasklet, stepBuilderFactory);
-        assertNotNull(job, "Job debe estar correctamente creado");
-    }
-
-    @Test
-    void testJobListener() {
-        JobConfigExtractTaylorReportDb.JobListener listener = config.new JobListener();
-
-        JobExecution jobExecution = mock(JobExecution.class);
-        JobInstance jobInstance = mock(JobInstance.class);
-        when(jobExecution.getJobInstance()).thenReturn(jobInstance);
-        when(jobInstance.getJobName()).thenReturn("jobTest");
-
-        config.dataDatePart = "2025-04-10";
-        config.unit = "Unit-Test";
-
-        listener.beforeJob(jobExecution);
-        sleep(1);  // Simula duración del trabajo
-        listener.afterJob(jobExecution);
-
-        // No hay excepciones y logs se imprimen: test pasa
-    }
-
-    @Test
-    void testStepGenerarListener() {
-        JobConfigExtractTaylorReportDb.StepGenerarListener listener = config.new StepGenerarListener();
-
-        StepExecution stepExecution = mock(StepExecution.class);
-        when(stepExecution.getStepName()).thenReturn("stepTest");
-
-        config.dataDatePart = "2025-04-10";
-        config.unit = "Unit-Test";
-
-        listener.beforeStep(stepExecution);
-        sleep(1);  // Simula duración del step
-        ExitStatus status = listener.afterStep(stepExecution);
-
-        assertNull(status, "Debe devolver null (comportamiento esperado en la clase original)");
-    }
-
-    private void sleep(int seconds) {
-        try {
-            Thread.sleep(seconds * 1000L);
-        } catch (InterruptedException e) {
-            Thread.currentThread().interrupt();
-        }
-    }
+@Data
+public class CsvBeanTaylorReport {
+    @JsonProperty("Asset Class") private String asset;
+    @JsonProperty("Factor Type") private String factor;
+    @JsonProperty("Subtype") private String subType;
+    @JsonProperty("Name") private String name;
+    @JsonProperty("Owner Unit") private String ownerunit;
+    @JsonProperty("Status") private String stat;
+    @JsonProperty("Unit") private String unt;
+    @JsonProperty("ADO Underlying") private String ado;
+    @JsonProperty("Return Model") private String returnmodel;
+    @JsonProperty("Template") private String temp;
+    @JsonProperty("Nro Days") private String days;
+    @JsonProperty("Label") private String lab;
+    @JsonProperty("Swap Maturity") private String swapMat;
+    @JsonProperty("Option Maturity") private String optionMat;
+    @JsonProperty("Skew") private String skeW;
+    @JsonProperty("interpolationFormula") private String interpolationForm;
+    @JsonProperty("valueToInterpolate") private String valueInterpolate;
+    @JsonProperty("firstInterpolation") private String firstInterpol;
+    @JsonProperty("lastInterpolation") private String lastInterpol;
+    @JsonProperty("calibrationMethod") private String calibrationMet;
+    @JsonProperty("rateConvention") private String rateConv;
+    @JsonProperty("spreadCurve") private String spreadCur;
+    @JsonProperty("businessDays") private String businessDys;
+    @JsonProperty("Proxy Methodology") private String proxyMtdlgy;
+    @JsonProperty("Proxy Status") private String proxyStat;
+    @JsonProperty("Proxy ADO") private String proxyado;
+    @JsonProperty("Start Date") private String startdate;
+    @JsonProperty("End Date") private String enddate;
+    @JsonProperty("Alpha") private String alph;
+    @JsonProperty("Beta") private String bet;
+    @JsonProperty("Proxy 1") private String proxyOne;
+    @JsonProperty("Proxy Nro Days 1") private String proxyNroDaysOne;
+    @JsonProperty("Proxy Label 1") private String proxyLabelOne;
+    @JsonProperty("Proxy Maturity 1") private String proxyMaturityOne;
+    @JsonProperty("Proxy Swap Maturity 1") private String proxySwapMaturityOne;
+    @JsonProperty("Proxy Option Maturity 1") private String proxyOptionMaturityOne;
+    @JsonProperty("Proxy Skew 1") private String proxySkewOne;
+    @JsonProperty("Proxy 2") private String proxyTwo;
+    @JsonProperty("Proxy Nro Days 2") private String proxyNroDaysTwo;
+    @JsonProperty("Proxy Label 2") private String proxyLabelTwo;
+    @JsonProperty("Proxy Maturity 2") private String proxyMaturityTwo;
+    @JsonProperty("Proxy Swap Maturity 2") private String proxySwapMaturityTwo;
+    @JsonProperty("Proxy Option Maturity 2") private String proxyOptionMaturityTwo;
+    @JsonProperty("Proxy Skew 2") private String proxySkewTwo;
 }
