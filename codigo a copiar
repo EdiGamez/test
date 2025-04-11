@@ -1,88 +1,891 @@
+@Getter @Setter
+public class RFRLoadTaylorObj implements SQLData {
+    private Date dataDatePart;
+    private String assetClass;
+    private String factorType;
+    private String subtype;
+    private String name;
+    private String ownerUnit;
+    private String status;
+    private String unit;
+    private String adoUnderlying;
+    private String returnModel;
+    private String template;
+    private String nroDays;
+    private String label;
+    private String swapMaturity;
+    private String optionMaturity;
+    private String skew;
+    private String interpolationFormula;
+    private String valueToInterpolate;
+    private String firstInterpolation;
+    private String lastInterpolation;
+    private String calibrationMethod;
+    private String rateConvention;
+    private String spreadCurve;
+    private String businessDays;
+    private String proxyMethodology;
+    private String proxyStatus;
+    private String proxyAdo;
+    private String startDate;
+    private String endDate;
+    private String alpha;
+    private String beta;
+    private String proxy1;
+    private String proxyNroDays1;
+    private String proxyLabel1;
+    private String proxyMaturity1;
+    private String proxySwapMaturity1;
+    private String proxyOptionMaturity1;
+    private String proxySkew1;
+    private String proxy2;
+    private String proxyNroDays2;
+    private String proxyLabel2;
+    private String proxyMaturity2;
+    private String proxySwapMaturity2;
+    private String proxyOptionMaturity2;
+    private String proxySkew2;
+    private double diff;
+    private String underlcrv;
+    private double pk;
+    private double fkParent;
+    private double fkExtension;
+    private double fkOwnerObj;
+    public static final String SQL_TYPE = "RFR.RFR_TAYLORREPORT_OBJ";
+    @Override
+    public String getSQLTypeName() {
+        return SQL_TYPE;
+    }
+    @Override
+    public void readSQL(SQLInput stream, String typeName) throws SQLException {
+        dataDatePart = stream.readDate();
+        assetClass = stream.readString();
+        factorType = stream.readString();
+        subtype = stream.readString();
+        name = stream.readString();
+        ownerUnit = stream.readString();
+        status = stream.readString();
+        unit = stream.readString();
+        adoUnderlying = stream.readString();
+        returnModel = stream.readString();
+        template = stream.readString();
+        nroDays = stream.readString();
+        label = stream.readString();
+        swapMaturity = stream.readString();
+        optionMaturity = stream.readString();
+        skew = stream.readString();
+        interpolationFormula = stream.readString();
+        valueToInterpolate = stream.readString();
+        firstInterpolation = stream.readString();
+        lastInterpolation = stream.readString();
+        calibrationMethod = stream.readString();
+        rateConvention = stream.readString();
+        spreadCurve = stream.readString();
+        businessDays = stream.readString();
+        proxyMethodology = stream.readString();
+        proxyStatus = stream.readString();
+        proxyAdo = stream.readString();
+        startDate = stream.readString();
+        endDate = stream.readString();
+        alpha = stream.readString();
+        beta = stream.readString();
+        proxy1 = stream.readString();
+        proxyNroDays1 = stream.readString();
+        proxyLabel1 = stream.readString();
+        proxyMaturity1 = stream.readString();
+        proxySwapMaturity1 = stream.readString();
+        proxyOptionMaturity1 = stream.readString();
+        proxySkew1 = stream.readString();
+        proxy2 = stream.readString();
+        proxyNroDays2 = stream.readString();
+        proxyLabel2 = stream.readString();
+        proxyMaturity2 = stream.readString();
+        proxySwapMaturity2 = stream.readString();
+        proxyOptionMaturity2 = stream.readString();
+        proxySkew2 = stream.readString();
+    }
+    @Override
+    public void writeSQL(SQLOutput stream) throws SQLException {
+        stream.writeDate(dataDatePart);
+        stream.writeString(assetClass);
+        stream.writeString(factorType);
+        stream.writeString(subtype);
+        stream.writeString(name);
+        stream.writeString(ownerUnit);
+        stream.writeString(status);
+        stream.writeString(unit);
+        stream.writeString(adoUnderlying);
+        stream.writeString(returnModel);
+        stream.writeString(template);
+        stream.writeString(nroDays);
+        stream.writeString(label);
+        stream.writeString(swapMaturity);
+        stream.writeString(optionMaturity);
+        stream.writeString(skew);
+        stream.writeString(interpolationFormula);
+        stream.writeString(valueToInterpolate);
+        stream.writeString(firstInterpolation);
+        stream.writeString(lastInterpolation);
+        stream.writeString(calibrationMethod);
+        stream.writeString(rateConvention);
+        stream.writeString(spreadCurve);
+        stream.writeString(businessDays);
+        stream.writeString(proxyMethodology);
+        stream.writeString(proxyStatus);
+        stream.writeString(proxyAdo);
+        stream.writeString(startDate);
+        stream.writeString(endDate);
+        stream.writeString(alpha);
+        stream.writeString(beta);
+        stream.writeString(proxy1);
+        stream.writeString(proxyNroDays1);
+        stream.writeString(proxyLabel1);
+        stream.writeString(proxyMaturity1);
+        stream.writeString(proxySwapMaturity1);
+        stream.writeString(proxyOptionMaturity1);
+        stream.writeString(proxySkew1);
+        stream.writeString(proxy2);
+        stream.writeString(proxyNroDays2);
+        stream.writeString(proxyLabel2);
+        stream.writeString(proxyMaturity2);
+        stream.writeString(proxySwapMaturity2);
+        stream.writeString(proxyOptionMaturity2);
+        stream.writeString(proxySkew2);
+        stream.writeDouble(diff);
+        stream.writeString(underlcrv);
+        stream.writeDouble(pk);
+        stream.writeDouble(fkParent);
+        stream.writeDouble(fkExtension);
+        stream.writeDouble(fkOwnerObj);
+    }
+    public Object[] toObjectArray() {
+        return new Object[] {
+                this.dataDatePart,
+                assetClass, factorType, subtype, name, ownerUnit, status, unit,
+                adoUnderlying, returnModel, template, nroDays, label, swapMaturity,
+                optionMaturity, skew, interpolationFormula, valueToInterpolate,
+                firstInterpolation, lastInterpolation, calibrationMethod,
+                rateConvention, spreadCurve, businessDays, proxyMethodology,
+                proxyStatus, proxyAdo, startDate, endDate, alpha, beta, proxy1,
+                proxyNroDays1, proxyLabel1, proxyMaturity1, proxySwapMaturity1,
+                proxyOptionMaturity1, proxySkew1, proxy2, proxyNroDays2,
+                proxyLabel2, proxyMaturity2, proxySwapMaturity2,
+                proxyOptionMaturity2, proxySkew2,
+                this.diff,
+                this.underlcrv,
+                this.pk,
+                this.fkParent,
+                this.fkExtension,
+                this.fkOwnerObj
+        };
+    }
+    public void setFromCsvBean(CsvBeanTaylorReport csvBean, Date date, Integer diff) {
+        dataDatePart = date;
+        assetClass = valueOrNull(csvBean.getAsset());
+        factorType = valueOrNull(csvBean.getFactor());
+        subtype = valueOrNull(csvBean.getSubType());
+        name = valueOrNull(csvBean.getName());
+        ownerUnit = valueOrNull(csvBean.getOwnerunit());
+        status = valueOrNull(csvBean.getStat());
+        unit = valueOrNull(csvBean.getUnt());
+        adoUnderlying = valueOrNull(csvBean.getAdo());
+        returnModel = valueOrNull(csvBean.getReturnmodel());
+        template = valueOrNull(csvBean.getTemp());
+        nroDays = valueOrNull(csvBean.getDays());
+        label = valueOrNull(csvBean.getLab());
+        swapMaturity = valueOrNull(csvBean.getSwapMat());
+        optionMaturity = valueOrNull(csvBean.getOptionMat());
+        skew = valueOrNull(csvBean.getSkeW());
+        interpolationFormula = valueOrNull(csvBean.getInterpolationForm());
+        valueToInterpolate = valueOrNull(csvBean.getValueInterpolate());
+        firstInterpolation = valueOrNull(csvBean.getFirstInterpol());
+        lastInterpolation = valueOrNull(csvBean.getLastInterpol());
+        calibrationMethod = valueOrNull(csvBean.getCalibrationMet());
+        rateConvention = valueOrNull(csvBean.getRateConv());
+        spreadCurve = valueOrNull(csvBean.getSpreadCur());
+        businessDays = valueOrNull(csvBean.getBusinessDys());
+        proxyMethodology = valueOrNull(csvBean.getProxyMtdlgy());
+        proxyStatus = valueOrNull(csvBean.getProxyStat());
+        proxyAdo = valueOrNull(csvBean.getProxyado());
+        startDate = valueOrNull(csvBean.getStartdate());
+        endDate = valueOrNull(csvBean.getEnddate());
+        alpha = valueOrNull(csvBean.getAlph());
+        beta = valueOrNull(csvBean.getBet());
+        proxy1 = valueOrNull(csvBean.getProxyOne());
+        proxyNroDays1 = valueOrNull(csvBean.getProxyNroDaysOne());
+        proxyLabel1 = valueOrNull(csvBean.getProxyLabelOne());
+        proxyMaturity1 = valueOrNull(csvBean.getProxyMaturityOne());
+        proxySwapMaturity1 = valueOrNull(csvBean.getProxySwapMaturityOne());
+        proxyOptionMaturity1 = valueOrNull(csvBean.getProxyOptionMaturityOne());
+        proxySkew1 = valueOrNull(csvBean.getProxySkewOne());
+        proxy2 = valueOrNull(csvBean.getProxyTwo());
+        proxyNroDays2 = valueOrNull(csvBean.getProxyNroDaysTwo());
+        proxyLabel2 = valueOrNull(csvBean.getProxyLabelTwo());
+        proxyMaturity2 = valueOrNull(csvBean.getProxyMaturityTwo());
+        proxySwapMaturity2 = valueOrNull(csvBean.getProxySwapMaturityTwo());
+        proxyOptionMaturity2 = valueOrNull(csvBean.getProxyOptionMaturityTwo());
+        proxySkew2 = valueOrNull(csvBean.getProxySkewTwo());
+        this.diff = diff;
+        this.pk = 1.0;
+        this.fkParent = 1.0;
+        this.fkExtension = 1.0;
+        this.fkOwnerObj = 1.0;
+    }
+    String valueOrNull(Object o) {
+        return (null != o) ? o.toString() : null;
+    }
+}
 
-org.mockito.exceptions.verification.TooManyActualInvocations: 
-sQLOutput.writeDouble(<any double>);
-Wanted 4 times:
--> at com.isb.rfrbatch.jobextracfullrevalreport.jobextractfullrevalreportdb.services.database.beans.RFRLoadFullRevalObjTest.testWriteSQL(RFRLoadFullRevalObjTest.java:176)
-But was 5 times:
--> at com.isb.rfrbatch.jobextracfullrevalreport.jobextractfullrevalreportdb.services.database.beans.RFRLoadFullRevalObj.writeSQL(RFRLoadFullRevalObj.java:174)
--> at com.isb.rfrbatch.jobextracfullrevalreport.jobextractfullrevalreportdb.services.database.beans.RFRLoadFullRevalObj.writeSQL(RFRLoadFullRevalObj.java:176)
--> at com.isb.rfrbatch.jobextracfullrevalreport.jobextractfullrevalreportdb.services.database.beans.RFRLoadFullRevalObj.writeSQL(RFRLoadFullRevalObj.java:177)
--> at com.isb.rfrbatch.jobextracfullrevalreport.jobextractfullrevalreportdb.services.database.beans.RFRLoadFullRevalObj.writeSQL(RFRLoadFullRevalObj.java:178)
--> at com.isb.rfrbatch.jobextracfullrevalreport.jobextractfullrevalreportdb.services.database.beans.RFRLoadFullRevalObj.writeSQL(RFRLoadFullRevalObj.java:179)
-
-
-
-	at com.isb.rfrbatch.jobextracfullrevalreport.jobextractfullrevalreportdb.services.database.beans.RFRLoadFullRevalObjTest.testWriteSQL(RFRLoadFullRevalObjTest.java:176)
-	at java.base/jdk.internal.reflect.NativeMethodAccessorImpl.invoke0(Native Method)
-	at java.base/jdk.internal.reflect.NativeMethodAccessorImpl.invoke(NativeMethodAccessorImpl.java:62)
-	at java.base/jdk.internal.reflect.DelegatingMethodAccessorImpl.invoke(DelegatingMethodAccessorImpl.java:43)
-	at java.base/java.lang.reflect.Method.invoke(Method.java:566)
-	at org.junit.runners.model.FrameworkMethod$1.runReflectiveCall(FrameworkMethod.java:59)
-	at org.junit.internal.runners.model.ReflectiveCallable.run(ReflectiveCallable.java:12)
-	at org.junit.runners.model.FrameworkMethod.invokeExplosively(FrameworkMethod.java:56)
-	at org.junit.internal.runners.statements.InvokeMethod.evaluate(InvokeMethod.java:17)
-	at org.junit.internal.runners.statements.RunBefores.evaluate(RunBefores.java:26)
-	at org.junit.runners.ParentRunner$3.evaluate(ParentRunner.java:306)
-	at org.junit.runners.BlockJUnit4ClassRunner$1.evaluate(BlockJUnit4ClassRunner.java:100)
-	at org.junit.runners.ParentRunner.runLeaf(ParentRunner.java:366)
-	at org.junit.runners.BlockJUnit4ClassRunner.runChild(BlockJUnit4ClassRunner.java:103)
-	at org.junit.runners.BlockJUnit4ClassRunner.runChild(BlockJUnit4ClassRunner.java:63)
-	at org.junit.runners.ParentRunner$4.run(ParentRunner.java:331)
-	at org.junit.runners.ParentRunner$1.schedule(ParentRunner.java:79)
-	at org.junit.runners.ParentRunner.runChildren(ParentRunner.java:329)
-	at org.junit.runners.ParentRunner.access$100(ParentRunner.java:66)
-	at org.junit.runners.ParentRunner$2.evaluate(ParentRunner.java:293)
-	at org.junit.runners.ParentRunner$3.evaluate(ParentRunner.java:306)
-	at org.junit.runners.ParentRunner.run(ParentRunner.java:413)
-	at org.junit.runner.JUnitCore.run(JUnitCore.java:137)
-	at com.intellij.junit4.JUnit4IdeaTestRunner.startRunnerWithArgs(JUnit4IdeaTestRunner.java:69)
-	at com.intellij.rt.junit.IdeaTestRunner$Repeater$1.execute(IdeaTestRunner.java:38)
-	at com.intellij.rt.execution.junit.TestsRepeater.repeat(TestsRepeater.java:11)
-	at com.intellij.rt.junit.IdeaTestRunner$Repeater.startRunnerWithArgs(IdeaTestRunner.java:35)
-	at com.intellij.rt.junit.JUnitStarter.prepareStreamsAndStart(JUnitStarter.java:232)
-	at com.intellij.rt.junit.JUnitStarter.main(JUnitStarter.java:55)
-
-
-org.mockito.exceptions.verification.TooManyActualInvocations: 
-sQLInput.readDouble();
-Wanted 4 times:
--> at com.isb.rfrbatch.jobextracfullrevalreport.jobextractfullrevalreportdb.services.database.beans.RFRLoadFullRevalObjTest.testReadSQL(RFRLoadFullRevalObjTest.java:113)
-But was 5 times:
--> at com.isb.rfrbatch.jobextracfullrevalreport.jobextractfullrevalreportdb.services.database.beans.RFRLoadFullRevalObj.readSQL(RFRLoadFullRevalObj.java:119)
--> at com.isb.rfrbatch.jobextracfullrevalreport.jobextractfullrevalreportdb.services.database.beans.RFRLoadFullRevalObj.readSQL(RFRLoadFullRevalObj.java:121)
--> at com.isb.rfrbatch.jobextracfullrevalreport.jobextractfullrevalreportdb.services.database.beans.RFRLoadFullRevalObj.readSQL(RFRLoadFullRevalObj.java:122)
--> at com.isb.rfrbatch.jobextracfullrevalreport.jobextractfullrevalreportdb.services.database.beans.RFRLoadFullRevalObj.readSQL(RFRLoadFullRevalObj.java:123)
--> at com.isb.rfrbatch.jobextracfullrevalreport.jobextractfullrevalreportdb.services.database.beans.RFRLoadFullRevalObj.readSQL(RFRLoadFullRevalObj.java:124)
-
-
-
-	at com.isb.rfrbatch.jobextracfullrevalreport.jobextractfullrevalreportdb.services.database.beans.RFRLoadFullRevalObjTest.testReadSQL(RFRLoadFullRevalObjTest.java:113)
-	at java.base/jdk.internal.reflect.NativeMethodAccessorImpl.invoke0(Native Method)
-	at java.base/jdk.internal.reflect.NativeMethodAccessorImpl.invoke(NativeMethodAccessorImpl.java:62)
-	at java.base/jdk.internal.reflect.DelegatingMethodAccessorImpl.invoke(DelegatingMethodAccessorImpl.java:43)
-	at java.base/java.lang.reflect.Method.invoke(Method.java:566)
-	at org.junit.runners.model.FrameworkMethod$1.runReflectiveCall(FrameworkMethod.java:59)
-	at org.junit.internal.runners.model.ReflectiveCallable.run(ReflectiveCallable.java:12)
-	at org.junit.runners.model.FrameworkMethod.invokeExplosively(FrameworkMethod.java:56)
-	at org.junit.internal.runners.statements.InvokeMethod.evaluate(InvokeMethod.java:17)
-	at org.junit.internal.runners.statements.RunBefores.evaluate(RunBefores.java:26)
-	at org.junit.runners.ParentRunner$3.evaluate(ParentRunner.java:306)
-	at org.junit.runners.BlockJUnit4ClassRunner$1.evaluate(BlockJUnit4ClassRunner.java:100)
-	at org.junit.runners.ParentRunner.runLeaf(ParentRunner.java:366)
-	at org.junit.runners.BlockJUnit4ClassRunner.runChild(BlockJUnit4ClassRunner.java:103)
-	at org.junit.runners.BlockJUnit4ClassRunner.runChild(BlockJUnit4ClassRunner.java:63)
-	at org.junit.runners.ParentRunner$4.run(ParentRunner.java:331)
-	at org.junit.runners.ParentRunner$1.schedule(ParentRunner.java:79)
-	at org.junit.runners.ParentRunner.runChildren(ParentRunner.java:329)
-	at org.junit.runners.ParentRunner.access$100(ParentRunner.java:66)
-	at org.junit.runners.ParentRunner$2.evaluate(ParentRunner.java:293)
-	at org.junit.runners.ParentRunner$3.evaluate(ParentRunner.java:306)
-	at org.junit.runners.ParentRunner.run(ParentRunner.java:413)
-	at org.junit.runner.JUnitCore.run(JUnitCore.java:137)
-	at com.intellij.junit4.JUnit4IdeaTestRunner.startRunnerWithArgs(JUnit4IdeaTestRunner.java:69)
-	at com.intellij.rt.junit.IdeaTestRunner$Repeater$1.execute(IdeaTestRunner.java:38)
-	at com.intellij.rt.execution.junit.TestsRepeater.repeat(TestsRepeater.java:11)
-	at com.intellij.rt.junit.IdeaTestRunner$Repeater.startRunnerWithArgs(IdeaTestRunner.java:35)
-	at com.intellij.rt.junit.JUnitStarter.prepareStreamsAndStart(JUnitStarter.java:232)
-	at com.intellij.rt.junit.JUnitStarter.main(JUnitStarter.java:55)
-
+public class RFRLoadFullRevalObj implements SQLData {
+    private Date dataDatePart;
+    private String asset;
+    private String factor;
+    private String subtype;
+    private String name;
+    private String owner;
+    private String status;
+    private String unit;
+    private String uado;
+    private String retmodel;
+    private String template;
+    private String nrdays;
+    private String tenor;
+    private String swptenor;
+    private String opttenor;
+    private String strike;
+    private String interpolform;
+    private String valueinterpol;
+    private String interpolfpillar;
+    private String interpollpillar;
+    private String calmethod;
+    private String rateconv;
+    private String spreadcrvty;
+    private String businessdays;
+    private String pmethodology;
+    private String pstatus;
+    private String pado;
+    private String pstartd;
+    private String pendd;
+    private String palpha;
+    private String pbeta;
+    private String pproxy1;
+    private String pnrdays1;
+    private String plabel1;
+    private String pmaturity1;
+    private String psmaturity1;
+    private String pomaturity1;
+    private String pskew1;
+    private String pproxy2;
+    private String pnrdays2;
+    private String plabel2;
+    private String pmaturity2;
+    private String psmaturity2;
+    private String pomaturity2;
+    private String pskew2;
+    private double diff;
+    private String underlcrv;
+    private double pk;
+    private double fkParent;
+    private double fkExtension;
+    private double fkOwnerObj;
+    public static final String SQL_TYPE = "RFR.RFR_LOADFULLREVAL_OBJ";
+    @Override
+    public String getSQLTypeName() {
+        return SQL_TYPE;
+    }
+    @Override
+    public void readSQL(SQLInput stream, String typeName) throws SQLException {
+        dataDatePart = stream.readDate();
+        asset = stream.readString();
+        factor = stream.readString();
+        subtype = stream.readString();
+        name = stream.readString();
+        owner = stream.readString();
+        status = stream.readString();
+        unit = stream.readString();
+        uado = stream.readString();
+        retmodel = stream.readString();
+        template = stream.readString();
+        nrdays = stream.readString();
+        tenor = stream.readString();
+        swptenor = stream.readString();
+        opttenor = stream.readString();
+        strike = stream.readString();
+        interpolform = stream.readString();
+        valueinterpol = stream.readString();
+        interpolfpillar = stream.readString();
+        interpollpillar = stream.readString();
+        calmethod = stream.readString();
+        rateconv = stream.readString();
+        spreadcrvty = stream.readString();
+        businessdays = stream.readString();
+        pmethodology = stream.readString();
+        pstatus = stream.readString();
+        pado = stream.readString();
+        pstartd = stream.readString();
+        pendd = stream.readString();
+        palpha = stream.readString();
+        pbeta = stream.readString();
+        pproxy1 = stream.readString();
+        pnrdays1 = stream.readString();
+        plabel1 = stream.readString();
+        pmaturity1 = stream.readString();
+        psmaturity1 = stream.readString();
+        pomaturity1 = stream.readString();
+        pskew1 = stream.readString();
+        pproxy2 = stream.readString();
+        pnrdays2 = stream.readString();
+        plabel2 = stream.readString();
+        pmaturity2 = stream.readString();
+        psmaturity2 = stream.readString();
+        pomaturity2 = stream.readString();
+        pskew2 = stream.readString();
+        diff = stream.readDouble();
+        underlcrv = stream.readString();
+        pk = stream.readDouble();
+        fkParent = stream.readDouble();
+        fkExtension = stream.readDouble();
+        fkOwnerObj = stream.readDouble();
+    }
+    @Override
+    public void writeSQL(SQLOutput stream) throws SQLException {
+        stream.writeDate(dataDatePart);
+        stream.writeString(asset);
+        stream.writeString(factor);
+        stream.writeString(subtype);
+        stream.writeString(name);
+        stream.writeString(owner);
+        stream.writeString(status);
+        stream.writeString(unit);
+        stream.writeString(uado);
+        stream.writeString(retmodel);
+        stream.writeString(template);
+        stream.writeString(nrdays);
+        stream.writeString(tenor);
+        stream.writeString(swptenor);
+        stream.writeString(opttenor);
+        stream.writeString(strike);
+        stream.writeString(interpolform);
+        stream.writeString(valueinterpol);
+        stream.writeString(interpolfpillar);
+        stream.writeString(interpollpillar);
+        stream.writeString(calmethod);
+        stream.writeString(rateconv);
+        stream.writeString(spreadcrvty);
+        stream.writeString(businessdays);
+        stream.writeString(pmethodology);
+        stream.writeString(pstatus);
+        stream.writeString(pado);
+        stream.writeString(pstartd);
+        stream.writeString(pendd);
+        stream.writeString(palpha);
+        stream.writeString(pbeta);
+        stream.writeString(pproxy1);
+        stream.writeString(pnrdays1);
+        stream.writeString(plabel1);
+        stream.writeString(pmaturity1);
+        stream.writeString(psmaturity1);
+        stream.writeString(pomaturity1);
+        stream.writeString(pskew1);
+        stream.writeString(pproxy2);
+        stream.writeString(pnrdays2);
+        stream.writeString(plabel2);
+        stream.writeString(pmaturity2);
+        stream.writeString(psmaturity2);
+        stream.writeString(pomaturity2);
+        stream.writeString(pskew2);
+        stream.writeDouble(diff);
+        stream.writeString(underlcrv);
+        stream.writeDouble(pk);
+        stream.writeDouble(fkParent);
+        stream.writeDouble(fkExtension);
+        stream.writeDouble(fkOwnerObj);
+    }
+    public Object[] toObjectArray() {
+        return new Object[] {
+                this.dataDatePart,
+                this.asset,
+                this.factor,
+                this.subtype,
+                this.name,
+                this.owner,
+                this.status,
+                this.unit,
+                this.uado,
+                this.retmodel,
+                this.template,
+                this.nrdays,
+                this.tenor,
+                this.swptenor,
+                this.opttenor,
+                this.strike,
+                this.interpolform,
+                this.valueinterpol,
+                this.interpolfpillar,
+                this.interpollpillar,
+                this.calmethod,
+                this.rateconv,
+                this.spreadcrvty,
+                this.businessdays,
+                this.pmethodology,
+                this.pstatus,
+                this.pado,
+                this.pstartd,
+                this.pendd,
+                this.palpha,
+                this.pbeta,
+                this.pproxy1,
+                this.pnrdays1,
+                this.plabel1,
+                this.pmaturity1,
+                this.psmaturity1,
+                this.pomaturity1,
+                this.pskew1,
+                this.pproxy2,
+                this.pnrdays2,
+                this.plabel2,
+                this.pmaturity2,
+                this.psmaturity2,
+                this.pomaturity2,
+                this.pskew2,
+                this.diff,
+                this.underlcrv,
+                this.pk,
+                this.fkParent,
+                this.fkExtension,
+                this.fkOwnerObj
+        };
+    }
+    // Getters y setters para cada atributo
+    public Date getDataDatePart() {
+        return dataDatePart;
+    }
+    public void setDataDatePart(Date dataDatePart) {
+        this.dataDatePart = dataDatePart;
+    }
+    public String getAsset() {
+        return asset;
+    }
+    public void setAsset(String asset) {
+        this.asset = asset;
+    }
+    public String getFactor() {
+        return factor;
+    }
+    public void setFactor(String factor) {
+        this.factor = factor;
+    }
+    public String getSubtype() {
+        return subtype;
+    }
+    public void setSubtype(String subtype) {
+        this.subtype = subtype;
+    }
+    public String getName() {
+        return name;
+    }
+    public void setName(String name) {
+        this.name = name;
+    }
+    public String getOwner() {
+        return owner;
+    }
+    public void setOwner(String owner) {
+        this.owner = owner;
+    }
+    public String getStatus() {
+        return status;
+    }
+    public void setStatus(String status) {
+        this.status = status;
+    }
+    public String getUnit() {
+        return unit;
+    }
+    public void setUnit(String unit) {
+        this.unit = unit;
+    }
+    public String getUado() {
+        return uado;
+    }
+    public void setUado(String uado) {
+        this.uado = uado;
+    }
+    public String getRetmodel() {
+        return retmodel;
+    }
+    public void setRetmodel(String retmodel) {
+        this.retmodel = retmodel;
+    }
+    public String getTemplate() {
+        return template;
+    }
+    public void setTemplate(String template) {
+        this.template = template;
+    }
+    public String getNrdays() {
+        return nrdays;
+    }
+    public void setNrdays(String nrdays) {
+        this.nrdays = nrdays;
+    }
+    public String getTenor() {
+        return tenor;
+    }
+    public void setTenor(String tenor) {
+        this.tenor = tenor;
+    }
+    public String getSwptenor() {
+        return swptenor;
+    }
+    public void setSwptenor(String swptenor) {
+        this.swptenor = swptenor;
+    }
+    public String getOpttenor() {
+        return opttenor;
+    }
+    public void setOpttenor(String opttenor) {
+        this.opttenor = opttenor;
+    }
+    public String getStrike() {
+        return strike;
+    }
+    public void setStrike(String strike) {
+        this.strike = strike;
+    }
+    public String getInterpolform() {
+        return interpolform;
+    }
+    public void setInterpolform(String interpolform) {
+        this.interpolform = interpolform;
+    }
+    public String getValueinterpol() {
+        return valueinterpol;
+    }
+    public void setValueinterpol(String valueinterpol) {
+        this.valueinterpol = valueinterpol;
+    }
+    public String getInterpolfpillar() {
+        return interpolfpillar;
+    }
+    public void setInterpolfpillar(String interpolfpillar) {
+        this.interpolfpillar = interpolfpillar;
+    }
+    public String getInterpollpillar() {
+        return interpollpillar;
+    }
+    public void setInterpollpillar(String interpollpillar) {
+        this.interpollpillar = interpollpillar;
+    }
+    public String getCalmethod() {
+        return calmethod;
+    }
+    public void setCalmethod(String calmethod) {
+        this.calmethod = calmethod;
+    }
+    public String getRateconv() {
+        return rateconv;
+    }
+    public void setRateconv(String rateconv) {
+        this.rateconv = rateconv;
+    }
+    public String getSpreadcrvty() {
+        return spreadcrvty;
+    }
+    public void setSpreadcrvty(String spreadcrvty) {
+        this.spreadcrvty = spreadcrvty;
+    }
+    public String getBusinessdays() {
+        return businessdays;
+    }
+    public void setBusinessdays(String businessdays) {
+        this.businessdays = businessdays;
+    }
+    public String getPmethodology() {
+        return pmethodology;
+    }
+    public void setPmethodology(String pmethodology) {
+        this.pmethodology = pmethodology;
+    }
+    public String getPstatus() {
+        return pstatus;
+    }
+    public void setPstatus(String pstatus) {
+        this.pstatus = pstatus;
+    }
+    public String getPado() {
+        return pado;
+    }
+    public void setPado(String pado) {
+        this.pado = pado;
+    }
+    public String getPstartd() {
+        return pstartd;
+    }
+    public void setPstartd(String pstartd) {
+        this.pstartd = pstartd;
+    }
+    public String getPendd() {
+        return pendd;
+    }
+    public void setPendd(String pendd) {
+        this.pendd = pendd;
+    }
+    public String getPalpha() {
+        return palpha;
+    }
+    public void setPalpha(String palpha) {
+        this.palpha = palpha;
+    }
+    public String getPbeta() {
+        return pbeta;
+    }
+    public void setPbeta(String pbeta) {
+        this.pbeta = pbeta;
+    }
+    public String getPproxy1() {
+        return pproxy1;
+    }
+    public void setPproxy1(String pproxy1) {
+        this.pproxy1 = pproxy1;
+    }
+    public String getPnrdays1() {
+        return pnrdays1;
+    }
+    public void setPnrdays1(String pnrdays1) {
+        this.pnrdays1 = pnrdays1;
+    }
+    public String getPlabel1() {
+        return plabel1;
+    }
+    public void setPlabel1(String plabel1) {
+        this.plabel1 = plabel1;
+    }
+    public String getPmaturity1() {
+        return pmaturity1;
+    }
+    public void setPmaturity1(String pmaturity1) {
+        this.pmaturity1 = pmaturity1;
+    }
+    public String getPsmaturity1() {
+        return psmaturity1;
+    }
+    public void setPsmaturity1(String psmaturity1) {
+        this.psmaturity1 = psmaturity1;
+    }
+    public String getPomaturity1() {
+        return pomaturity1;
+    }
+    public void setPomaturity1(String pomaturity1) {
+        this.pomaturity1 = pomaturity1;
+    }
+    public String getPskew1() {
+        return pskew1;
+    }
+    public void setPskew1(String pskew1) {
+        this.pskew1 = pskew1;
+    }
+    public String getPproxy2() {
+        return pproxy2;
+    }
+    public void setPproxy2(String pproxy2) {
+        this.pproxy2 = pproxy2;
+    }
+    public String getPnrdays2() {
+        return pnrdays2;
+    }
+    public void setPnrdays2(String pnrdays2) {
+        this.pnrdays2 = pnrdays2;
+    }
+    public String getPlabel2() {
+        return plabel2;
+    }
+    public void setPlabel2(String plabel2) {
+        this.plabel2 = plabel2;
+    }
+    public String getPmaturity2() {
+        return pmaturity2;
+    }
+    public void setPmaturity2(String pmaturity2) {
+        this.pmaturity2 = pmaturity2;
+    }
+    public String getPsmaturity2() {
+        return psmaturity2;
+    }
+    public void setPsmaturity2(String psmaturity2) {
+        this.psmaturity2 = psmaturity2;
+    }
+    public String getPomaturity2() {
+        return pomaturity2;
+    }
+    public void setPomaturity2(String pomaturity2) {
+        this.pomaturity2 = pomaturity2;
+    }
+    public String getPskew2() {
+        return pskew2;
+    }
+    public void setPskew2(String pskew2) {
+        this.pskew2 = pskew2;
+    }
+    public double getDiff() {
+        return diff;
+    }
+    public void setDiff(double diff) {
+        this.diff = diff;
+    }
+    public String getUnderlcrv() {
+        return underlcrv;
+    }
+    public void setUnderlcrv(String underlcrv) {
+        this.underlcrv = underlcrv;
+    }
+    public double getFkParent() {
+        return fkParent;
+    }
+    public void setFkParent(double fkParent) {
+        this.fkParent = fkParent;
+    }
+    public double getFkExtension() {
+        return fkExtension;
+    }
+    public void setFkExtension(double fkExtension) {
+        this.fkExtension = fkExtension;
+    }
+    public double getPk() {
+        return pk;
+    }
+    public void setPk(double pk) {
+        this.pk = pk;
+    }
+    public double getFkOwnerObj() {
+        return fkOwnerObj;
+    }
+    public void setFkOwnerObj(double fkOwnerObj) {
+        this.fkOwnerObj = fkOwnerObj;
+    }
+    public void setFromCsvBean(CsvBeanFullRevalReport csvBean, Date date, Integer diff) {
+        this.dataDatePart = date;
+        this.asset = valueOrNull(csvBean.getAssetclass());
+        this.factor = valueOrNull(csvBean.getFactortype());
+        this.subtype = valueOrNull(csvBean.getSubtype());
+        this.name = valueOrNull(csvBean.getName());
+        this.owner = valueOrNull(csvBean.getOwnUnit());
+        this.status = valueOrNull(csvBean.getStats());
+        this.unit = valueOrNull(csvBean.getUnit_());
+        this.uado = valueOrNull(csvBean.getAdounderlying());
+        this.retmodel = valueOrNull(csvBean.getReturn_model());
+        this.template = valueOrNull(csvBean.getTemplte());
+        this.nrdays = valueOrNull(csvBean.getNumDays());
+        this.tenor = valueOrNull(csvBean.getLabl());
+        this.swptenor = valueOrNull(csvBean.getSwapmaturity());
+        this.opttenor = valueOrNull(csvBean.getOptionmaturity());
+        this.strike = valueOrNull(csvBean.getSkw());
+        this.interpolform = valueOrNull(csvBean.getInterpolationformula());
+        this.valueinterpol = valueOrNull(csvBean.getValuetointerpolate());
+        this.interpolfpillar = valueOrNull(csvBean.getFirstinterpolation());
+        this.interpollpillar = valueOrNull(csvBean.getLastinterpolation());
+        this.calmethod = valueOrNull(csvBean.getCalibrationmethod());
+        this.rateconv = valueOrNull(csvBean.getRateconvention());
+        this.spreadcrvty = valueOrNull(csvBean.getSpreadcurve());
+        this.businessdays = valueOrNull(csvBean.getBusinessdays());
+        this.pmethodology = valueOrNull(csvBean.getProxymethodology());
+        this.pstatus = valueOrNull(csvBean.getProxystatus());
+        this.pado = valueOrNull(csvBean.getProxAdo());
+        this.pstartd = valueOrNull(csvBean.getStartingDate());
+        this.pendd = valueOrNull(csvBean.getEndingDate());
+        this.palpha = valueOrNull(csvBean.getAlpha());
+        this.pbeta = valueOrNull(csvBean.getBeta());
+        this.pproxy1 = valueOrNull(csvBean.getProx1());
+        this.pnrdays1 = valueOrNull(csvBean.getProxynrdays1());
+        this.plabel1 = valueOrNull(csvBean.getProxylabel1());
+        this.pmaturity1 = valueOrNull(csvBean.getProxymaturity1());
+        this.psmaturity1 = valueOrNull(csvBean.getProxyswapmaturity1());
+        this.pomaturity1 = valueOrNull(csvBean.getProxyoptionmaturity1());
+        this.pskew1 = valueOrNull(csvBean.getProxyskew1());
+        this.pproxy2 = valueOrNull(csvBean.getProx2());
+        this.pnrdays2 = valueOrNull(csvBean.getProxynrdays2());
+        this.plabel2 = valueOrNull(csvBean.getProxylabel2());
+        this.pmaturity2 = valueOrNull(csvBean.getProxymaturity2());
+        this.psmaturity2 = valueOrNull(csvBean.getProxyswapmaturity2());
+        this.pomaturity2 = valueOrNull(csvBean.getProxyoptionmaturity2());
+        this.pskew2 = valueOrNull(csvBean.getProxyskew2());
+        this.diff = diff;
+        this.pk = 1.0;
+        this.fkParent = 1.0;
+        this.fkExtension = 1.0;
+        this.fkOwnerObj = 1.0;
+        // Para los campos que no tienen correspondencia directa, necesitarás decidir cómo manejarlos.
+    }
+    private String valueOrNull(Object o) {
+        return (null != o) ? o.toString() : null;
+    }
+}
+@Slf4j
+@Configuration
+@EnableBatchProcessing
+public class JobConfigExtractTaylorReportDb {
+    @Value("${rfr.dataDatePart:}")
+    private String dataDatePart;
+    @Value("${rfr.unit:}")
+    private String unit;
+    @Value("${rfr.path:}")
+    private String path;
+    private List<String> durationMessages = new ArrayList<>();
+    @Primary
+    @Bean
+    public Job jobExtracFullRevalReportDb(JobBuilderFactory jobBuilderFactory,
+                                          TaskletTaylorReportLoadDatabase taskletTaylorReportLoadDatabase,
+                                          StepBuilderFactory stepBuilderFactory) {
+        return jobBuilderFactory.get("jobExtracTaylorReportDb")
+                .listener(new JobListener())
+                .start(stepFrLoadDb( taskletTaylorReportLoadDatabase,stepBuilderFactory))
+                .build();
+    }
+    @Bean
+    public Step stepFrLoadDb(TaskletTaylorReportLoadDatabase taskletTaylorReportLoadDatabase,
+                             StepBuilderFactory stepBuilderFactory) {
+        return stepBuilderFactory.get("stepFrLoadDb")
+                .listener(new StepGenerarListener())
+                .tasklet(taskletTaylorReportLoadDatabase)
+                .build();
+    }
+    public class JobListener implements JobExecutionListener {
+        Instant init;
+        Instant end;
+        @Override
+        public void beforeJob(JobExecution jobExec) {
+            init = Instant.now();
+            log.info(MessageFormat.format(CTES.Messages.INFO_BATCH_INI, jobExec.getJobInstance().getJobName(), dataDatePart, unit));
+        }
+        @Override
+        public void afterJob(JobExecution jobExec) {
+            end = Instant.now();
+            long durationJob = Duration.between(init, end).getSeconds();
+            log.info(MessageFormat.format(CTES.Messages.INFO_BATCH_FIN, jobExec.getJobInstance().getJobName(), dataDatePart, unit));
+            String message = "DURATION JOB: " + jobExec.getJobInstance().getJobName() + " - " + durationJob;
+            durationMessages.add(message);
+            //Logging duration rest of entire process because this is the last step
+            log.info("DURATION entire process:");
+            durationMessages.stream().forEach(m -> log.info(m));
+            log.info("PROCESS Finished");
+        }
+    }
+    public class StepGenerarListener implements StepExecutionListener {
+        Instant init;
+        Instant end;
+        @Override
+        public void beforeStep(StepExecution stepExecution) {
+            init = Instant.now();
+            log.info(MessageFormat.format(CTES.Messages.INFO_STEP_GENERATE_INI, stepExecution.getStepName(), dataDatePart, unit));
+        }
+        @Override
+        public ExitStatus afterStep(StepExecution stepExecution) {
+            end = Instant.now();
+            long durationJob = Duration.between(init, end).getSeconds();
+            String message = "DURATION STEP: " + stepExecution.getStepName() + " - " + durationJob + " seconds";
+            durationMessages.add(message);
+            log.info(MessageFormat.format(CTES.Messages.INFO_STEP_GENERATE_FIN, stepExecution.getStepName(), dataDatePart, unit));
+            return null;
+        }
+    }
+}
