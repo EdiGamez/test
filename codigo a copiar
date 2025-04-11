@@ -1,47 +1,13 @@
-@Data
-public class CsvBeanTaylorReport {
-    @JsonProperty("Asset Class") private String asset;
-    @JsonProperty("Factor Type") private String factor;
-    @JsonProperty("Subtype") private String subType;
-    @JsonProperty("Name") private String name;
-    @JsonProperty("Owner Unit") private String ownerunit;
-    @JsonProperty("Status") private String stat;
-    @JsonProperty("Unit") private String unt;
-    @JsonProperty("ADO Underlying") private String ado;
-    @JsonProperty("Return Model") private String returnmodel;
-    @JsonProperty("Template") private String temp;
-    @JsonProperty("Nro Days") private String days;
-    @JsonProperty("Label") private String lab;
-    @JsonProperty("Swap Maturity") private String swapMat;
-    @JsonProperty("Option Maturity") private String optionMat;
-    @JsonProperty("Skew") private String skeW;
-    @JsonProperty("interpolationFormula") private String interpolationForm;
-    @JsonProperty("valueToInterpolate") private String valueInterpolate;
-    @JsonProperty("firstInterpolation") private String firstInterpol;
-    @JsonProperty("lastInterpolation") private String lastInterpol;
-    @JsonProperty("calibrationMethod") private String calibrationMet;
-    @JsonProperty("rateConvention") private String rateConv;
-    @JsonProperty("spreadCurve") private String spreadCur;
-    @JsonProperty("businessDays") private String businessDys;
-    @JsonProperty("Proxy Methodology") private String proxyMtdlgy;
-    @JsonProperty("Proxy Status") private String proxyStat;
-    @JsonProperty("Proxy ADO") private String proxyado;
-    @JsonProperty("Start Date") private String startdate;
-    @JsonProperty("End Date") private String enddate;
-    @JsonProperty("Alpha") private String alph;
-    @JsonProperty("Beta") private String bet;
-    @JsonProperty("Proxy 1") private String proxyOne;
-    @JsonProperty("Proxy Nro Days 1") private String proxyNroDaysOne;
-    @JsonProperty("Proxy Label 1") private String proxyLabelOne;
-    @JsonProperty("Proxy Maturity 1") private String proxyMaturityOne;
-    @JsonProperty("Proxy Swap Maturity 1") private String proxySwapMaturityOne;
-    @JsonProperty("Proxy Option Maturity 1") private String proxyOptionMaturityOne;
-    @JsonProperty("Proxy Skew 1") private String proxySkewOne;
-    @JsonProperty("Proxy 2") private String proxyTwo;
-    @JsonProperty("Proxy Nro Days 2") private String proxyNroDaysTwo;
-    @JsonProperty("Proxy Label 2") private String proxyLabelTwo;
-    @JsonProperty("Proxy Maturity 2") private String proxyMaturityTwo;
-    @JsonProperty("Proxy Swap Maturity 2") private String proxySwapMaturityTwo;
-    @JsonProperty("Proxy Option Maturity 2") private String proxyOptionMaturityTwo;
-    @JsonProperty("Proxy Skew 2") private String proxySkewTwo;
+@Test
+void testIsProxyValid() {
+    CsvBeanTaylorReport bean = new CsvBeanTaylorReport();
+
+    bean.setProxyOne(null);
+    assertFalse(bean.isProxyValid()); // proxyOne == null (false)
+
+    bean.setProxyOne("   ");
+    assertFalse(bean.isProxyValid()); // proxyOne != null pero está blank (false)
+
+    bean.setProxyOne("valid");
+    assertTrue(bean.isProxyValid()); // true
 }
