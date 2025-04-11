@@ -1,92 +1,60 @@
--> at com.isb.rfrbatch.jobextracttaylorreport.jobextractaylorreportdb.batch.config.JobConfigExtractTaylorReportDbTest.testJobCreation(JobConfigExtractTaylorReportDbTest.java:52)
+import com.isb.rfrbatch.jobextracfullrevalreport.jobextractfullrevalreportdb.config.JobConfigExtractTaylorReportDb;
+import com.isb.rfrbatch.jobextracfullrevalreport.jobextractfullrevalreportdb.tasklets.TaskletTaylorReportLoadDatabase;
+import org.junit.Before;
+import org.junit.Test;
+import org.springframework.batch.core.Job;
+import org.springframework.batch.core.Step;
+import org.springframework.batch.core.configuration.annotation.JobBuilderFactory;
+import org.springframework.batch.core.configuration.annotation.StepBuilderFactory;
+import org.springframework.batch.core.job.builder.JobBuilder;
+import org.springframework.batch.core.repository.support.SimpleJobRepository;
+import org.springframework.batch.core.step.builder.StepBuilder;
+import org.springframework.batch.repeat.RepeatStatus;
+import org.springframework.transaction.support.ResTransactionManager;
 
-You cannot use argument matchers outside of verification or stubbing.
-Examples of correct usage of argument matchers:
-    when(mock.get(anyInt())).thenReturn(null);
-    doThrow(new RuntimeException()).when(mock).someVoidMethod(anyObject());
-    verify(mock).someMethod(contains("foo"))
+import static org.junit.Assert.*;
 
-This message may appear after an NullPointerException if the last matcher is returning an object 
-like any() but the stubbed method signature expect a primitive argument, in this case,
-use primitive alternatives.
-    when(mock.get(any())); // bad use, will raise NPE
-    when(mock.get(anyInt())); // correct usage use
+public class JobConfigExtractTaylorReportDbTest {
 
-Also, this error might show up because you use argument matchers with methods that cannot be mocked.
-Following methods *cannot* be stubbed/verified: final/private/equals()/hashCode().
-Mocking methods declared on non-public parent classes is not supported.
+    private JobConfigExtractTaylorReportDb config;
+    private TaskletTaylorReportLoadDatabase tasklet;
 
+    @Before
+    public void setUp() throws Exception {
+        config = new JobConfigExtractTaylorReportDb();
+        tasklet = (contribution, chunkContext) -> RepeatStatus.FINISHED;
 
-	at com.isb.rfrbatch.jobextracttaylorreport.jobextractaylorreportdb.batch.config.JobConfigExtractTaylorReportDbTest.testJobCreation(JobConfigExtractTaylorReportDbTest.java:52)
-	at java.base/jdk.internal.reflect.NativeMethodAccessorImpl.invoke0(Native Method)
-	at java.base/jdk.internal.reflect.NativeMethodAccessorImpl.invoke(NativeMethodAccessorImpl.java:62)
-	at java.base/jdk.internal.reflect.DelegatingMethodAccessorImpl.invoke(DelegatingMethodAccessorImpl.java:43)
-	at java.base/java.lang.reflect.Method.invoke(Method.java:566)
-	at org.junit.runners.model.FrameworkMethod$1.runReflectiveCall(FrameworkMethod.java:59)
-	at org.junit.internal.runners.model.ReflectiveCallable.run(ReflectiveCallable.java:12)
-	at org.junit.runners.model.FrameworkMethod.invokeExplosively(FrameworkMethod.java:56)
-	at org.junit.internal.runners.statements.InvokeMethod.evaluate(InvokeMethod.java:17)
-	at org.junit.internal.runners.statements.RunBefores.evaluate(RunBefores.java:26)
-	at org.junit.runners.ParentRunner$3.evaluate(ParentRunner.java:306)
-	at org.junit.runners.BlockJUnit4ClassRunner$1.evaluate(BlockJUnit4ClassRunner.java:100)
-	at org.junit.runners.ParentRunner.runLeaf(ParentRunner.java:366)
-	at org.junit.runners.BlockJUnit4ClassRunner.runChild(BlockJUnit4ClassRunner.java:103)
-	at org.junit.runners.BlockJUnit4ClassRunner.runChild(BlockJUnit4ClassRunner.java:63)
-	at org.junit.runners.ParentRunner$4.run(ParentRunner.java:331)
-	at org.junit.runners.ParentRunner$1.schedule(ParentRunner.java:79)
-	at org.junit.runners.ParentRunner.runChildren(ParentRunner.java:329)
-	at org.junit.runners.ParentRunner.access$100(ParentRunner.java:66)
-	at org.junit.runners.ParentRunner$2.evaluate(ParentRunner.java:293)
-	at org.junit.runners.ParentRunner$3.evaluate(ParentRunner.java:306)
-	at org.junit.runners.ParentRunner.run(ParentRunner.java:413)
-	at org.junit.runner.JUnitCore.run(JUnitCore.java:137)
-	at com.intellij.junit4.JUnit4IdeaTestRunner.startRunnerWithArgs(JUnit4IdeaTestRunner.java:69)
-	at com.intellij.rt.junit.IdeaTestRunner$Repeater$1.execute(IdeaTestRunner.java:38)
-	at com.intellij.rt.execution.junit.TestsRepeater.repeat(TestsRepeater.java:11)
-	at com.intellij.rt.junit.IdeaTestRunner$Repeater.startRunnerWithArgs(IdeaTestRunner.java:35)
-	at com.intellij.rt.junit.JUnitStarter.prepareStreamsAndStart(JUnitStarter.java:232)
-	at com.intellij.rt.junit.JUnitStarter.main(JUnitStarter.java:55)
+        // Simular valores de propiedades
+        setPrivateField("dataDatePart", "20240410");
+        setPrivateField("unit", "UNIT1");
+        setPrivateField("path", "/dummy/path");
+    }
 
+    private void setPrivateField(String name, String value) throws Exception {
+        java.lang.reflect.Field field = JobConfigExtractTaylorReportDb.class.getDeclaredField(name);
+        field.setAccessible(true);
+        field.set(config, value);
+    }
 
-org.mockito.exceptions.misusing.MissingMethodInvocationException: 
-when() requires an argument which has to be 'a method call on a mock'.
-For example:
-    when(mock.getArticles()).thenReturn(articles);
+    @Test
+    public void testJobCreation() {
+        // Crear factories reales de Spring Batch
+        JobBuilderFactory jobBuilderFactory = new JobBuilderFactory(new SimpleJobRepository(), null);
+        StepBuilderFactory stepBuilderFactory = new StepBuilderFactory(new SimpleJobRepository(), null);
 
-Also, this error might show up because:
-1. you stub either of: final/private/equals()/hashCode() methods.
-   Those methods *cannot* be stubbed/verified.
-   Mocking methods declared on non-public parent classes is not supported.
-2. inside when() you don't call method on mock but on some other object.
+        Job job = config.jobExtracFullRevalReportDb(jobBuilderFactory, tasklet, stepBuilderFactory);
 
+        assertNotNull(job);
+        assertEquals("jobExtracTaylorReportDb", job.getName());
+    }
 
-	at com.isb.rfrbatch.jobextracttaylorreport.jobextractaylorreportdb.batch.config.JobConfigExtractTaylorReportDbTest.testStepCreation(JobConfigExtractTaylorReportDbTest.java:66)
-	at java.base/jdk.internal.reflect.NativeMethodAccessorImpl.invoke0(Native Method)
-	at java.base/jdk.internal.reflect.NativeMethodAccessorImpl.invoke(NativeMethodAccessorImpl.java:62)
-	at java.base/jdk.internal.reflect.DelegatingMethodAccessorImpl.invoke(DelegatingMethodAccessorImpl.java:43)
-	at java.base/java.lang.reflect.Method.invoke(Method.java:566)
-	at org.junit.runners.model.FrameworkMethod$1.runReflectiveCall(FrameworkMethod.java:59)
-	at org.junit.internal.runners.model.ReflectiveCallable.run(ReflectiveCallable.java:12)
-	at org.junit.runners.model.FrameworkMethod.invokeExplosively(FrameworkMethod.java:56)
-	at org.junit.internal.runners.statements.InvokeMethod.evaluate(InvokeMethod.java:17)
-	at org.junit.internal.runners.statements.RunBefores.evaluate(RunBefores.java:26)
-	at org.junit.runners.ParentRunner$3.evaluate(ParentRunner.java:306)
-	at org.junit.runners.BlockJUnit4ClassRunner$1.evaluate(BlockJUnit4ClassRunner.java:100)
-	at org.junit.runners.ParentRunner.runLeaf(ParentRunner.java:366)
-	at org.junit.runners.BlockJUnit4ClassRunner.runChild(BlockJUnit4ClassRunner.java:103)
-	at org.junit.runners.BlockJUnit4ClassRunner.runChild(BlockJUnit4ClassRunner.java:63)
-	at org.junit.runners.ParentRunner$4.run(ParentRunner.java:331)
-	at org.junit.runners.ParentRunner$1.schedule(ParentRunner.java:79)
-	at org.junit.runners.ParentRunner.runChildren(ParentRunner.java:329)
-	at org.junit.runners.ParentRunner.access$100(ParentRunner.java:66)
-	at org.junit.runners.ParentRunner$2.evaluate(ParentRunner.java:293)
-	at org.junit.runners.ParentRunner$3.evaluate(ParentRunner.java:306)
-	at org.junit.runners.ParentRunner.run(ParentRunner.java:413)
-	at org.junit.runner.JUnitCore.run(JUnitCore.java:137)
-	at com.intellij.junit4.JUnit4IdeaTestRunner.startRunnerWithArgs(JUnit4IdeaTestRunner.java:69)
-	at com.intellij.rt.junit.IdeaTestRunner$Repeater$1.execute(IdeaTestRunner.java:38)
-	at com.intellij.rt.execution.junit.TestsRepeater.repeat(TestsRepeater.java:11)
-	at com.intellij.rt.junit.IdeaTestRunner$Repeater.startRunnerWithArgs(IdeaTestRunner.java:35)
-	at com.intellij.rt.junit.JUnitStarter.prepareStreamsAndStart(JUnitStarter.java:232)
-	at com.intellij.rt.junit.JUnitStarter.main(JUnitStarter.java:55)
+    @Test
+    public void testStepCreation() {
+        StepBuilderFactory stepBuilderFactory = new StepBuilderFactory(new SimpleJobRepository(), null);
 
+        Step step = config.stepFrLoadDb(tasklet, stepBuilderFactory);
+
+        assertNotNull(step);
+        assertEquals("stepFrLoadDb", step.getName());
+    }
+}
