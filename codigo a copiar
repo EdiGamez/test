@@ -1,216 +1,223 @@
-@Data
-public class CsvBeanBase {
+package com.isb.rfrbatch.jobextracttaylorreport.jobextractaylorreportdb.services.files;
 
-    @JsonProperty("Asset Class")
-    private String assetClass;
+import com.fasterxml.jackson.databind.MapperFeature;
+import com.fasterxml.jackson.databind.MappingIterator;
+import com.fasterxml.jackson.dataformat.csv.CsvMapper;
+import com.fasterxml.jackson.dataformat.csv.CsvSchema;
+import lombok.extern.slf4j.Slf4j;
+import org.springframework.stereotype.Service;
 
-    @JsonProperty("Factor Type")
-    private String factorType;
+import java.io.File;
+import java.util.Collection;
+import java.util.Collections;
 
-    @JsonProperty("Subtype")
-    private String subType;
+@Slf4j
+@Service
+public class ExtractTaylorFileService {
 
-    @JsonProperty("Name")
-    private String name;
+    private static final char SEMICOLON = ';';
 
-    @JsonProperty("Unit")
+    public <C extends Collection<?>> C readShatReportCsv(File file, String path, Class<?> pojoType) {
+        try {
+            log.info("Reading file: " + path);
+            CsvMapper mapper = new CsvMapper();
+            mapper.disable(MapperFeature.SORT_PROPERTIES_ALPHABETICALLY);
+            CsvSchema csvSchema = mapper.schemaFor(pojoType).withHeader().withoutQuoteChar().withColumnSeparator(SEMICOLON);
+            MappingIterator<?> iterator = mapper.readerFor(pojoType).with(csvSchema).readValues(file);
+            return (C) iterator.readAll();
+        } catch (Exception e) {
+            log.error(e.getMessage(), e);
+            return (C) Collections.emptyList();
+        }
+    }
+}
+package com.isb.rfrbatch.jobextracttaylorreport.jobextractaylorreportdb.services.database.procedure;
+
+import static oracle.jdbc.internal.OracleTypes.ARRAY;
+import org.springframework.jdbc.core.JdbcTemplate;
+import org.springframework.jdbc.core.SqlParameter;
+import org.springframework.jdbc.object.StoredProcedure;
+
+public class LoadTaylorReportProcedure extends StoredProcedure {
+    private static final String PROCEDURE_NAME =  "RFR.PKG_LOADTAYLORRP.p_LoadTaylorReport";
+
+    public LoadTaylorReportProcedure(JdbcTemplate jdbcTemplate) {
+        super(jdbcTemplate, PROCEDURE_NAME);
+        declareParameter(new SqlParameter("REC_DATA_ARRAY", ARRAY, "RFR.RFR_TAYLORREPORT_OBJ_ARRAY"));
+        compile();
+    }
+}
+package com.isb.rfrbatch.jobextracttaylorreport.jobextractaylorreportdb.batch.tasklets;
+
+import com.isb.rfrbatch.jobextracttaylorreport.jobextractaylorreportcsv.services.buildcsv.CsvBeanTaylorReport;
+import com.isb.rfrbatch.jobextracttaylorreport.jobextractaylorreportdb.services.database.TaylorReportLoadDbRepository;
+import com.isb.rfrbatch.jobextracttaylorreport.jobextractaylorreportdb.services.database.beans.RFRLoadTaylorObj;
+import com.isb.rfrbatch.jobextracttaylorreport.jobextractaylorreportdb.services.files.ExtractTaylorFileService;
+import com.isb.rfrutils.exception.RfrException;
+import com.isb.rfrutils.util.RfrCommonCTES;
+import lombok.extern.slf4j.Slf4j;
+import org.springframework.batch.core.StepContribution;
+import org.springframework.batch.core.UnexpectedJobExecutionException;
+import org.springframework.batch.core.scope.context.ChunkContext;
+import org.springframework.batch.core.step.tasklet.Tasklet;
+import org.springframework.batch.repeat.RepeatStatus;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Value;
+import org.springframework.stereotype.Component;
+
+import java.io.File;
+import java.sql.Date;
+import java.text.SimpleDateFormat;
+import java.util.List;
+import java.util.stream.Collectors;
+
+@Slf4j
+@Component
+public class TaskletTaylorReportLoadDatabase implements Tasklet {
+
+    @Value("${rfr.dataDatePart:}")
+    private String dataDatePart;
+    @Value("${rfr.unit:}")
     private String unit;
+    @Value("${rfr.path:}")
+    private String path;
 
-    @JsonProperty("ADO")
-    private String ado;
 
-    @JsonProperty("Return Model")
-    private String returnModel;
+    private static final String FORMAT_DATE_OUTPUT = RfrCommonCTES.DATEFORMAT_YYYYMMDD;
 
-    @JsonProperty("Reference Name")
-    private String refName;
 
-    @JsonProperty("Currency")
-    private String currency;
+    private TaylorReportLoadDbRepository taylorReportLoadDbRepository;
 
-    @JsonProperty("Market")
-    private String market;
+    private ExtractTaylorFileService extractTaylorFileService;
 
-    @JsonProperty("Template")
-    private String template;
+    public TaskletTaylorReportLoadDatabase(TaylorReportLoadDbRepository taylorReportLoadDbRepository,
+                                           ExtractTaylorFileService extractTaylorFileService){
+        this.taylorReportLoadDbRepository = taylorReportLoadDbRepository;
+        this.extractTaylorFileService = extractTaylorFileService;
+    }
 
-    @JsonProperty("Nro Days")
-    private String nroDays;
+    @Override
+    public RepeatStatus execute(StepContribution stepContribution, ChunkContext chunkContext) throws Exception {
+        try {
+            java.util.Date utilDate = new SimpleDateFormat(FORMAT_DATE_OUTPUT).parse(dataDatePart);
+            Date sqlDate = new Date(utilDate.getTime());
+            File report = new File(path);
 
-    @JsonProperty("Skew")
-    private String skew;
+            String pathGaps = path.replace("ExtractTaylorReport_", "ExtractTaylorReportGap_");
+            File reportGaps = new File(pathGaps);
+            insertReport(report, path, sqlDate, unit, 0);
+            insertReport(reportGaps, pathGaps, sqlDate, unit, 1);
+        } catch (Exception e) {
+            log.error(e.getMessage(), e);
+            throw new UnexpectedJobExecutionException("There was an error during TaskletExecuteTaylor (repo.generateReport)");
+        }
+        return RepeatStatus.FINISHED;
+    }
 
-    @JsonProperty("Proxy Methodology")
-    private String proxyMethodology;
+    private void insertReport(File file, String path, Date date, String unit, Integer diff) throws RfrException {
+        log.info("Borramos registros previos de la tabla para: " + dataDatePart + "/" + unit + "/" + diff);
+        taylorReportLoadDbRepository.deleteFromTaylorDb(date, unit, diff);
+        log.info("Borra terminado");
+        log.info("Recuperar contenido del fichero: " + file.getAbsolutePath());
 
-    @JsonProperty("Proxy Status")
-    private String proxyStatus;
+        List<CsvBeanTaylorReport> csvBeanTaylorReport = extractTaylorFileService.readShatReportCsv(file, path, CsvBeanTaylorReport.class);
+        if (csvBeanTaylorReport != null && !csvBeanTaylorReport.isEmpty()) {
+            List<RFRLoadTaylorObj> list = csvBeanTaylorReport.stream()
+                    .map(csvBeanTaylorReport1 -> {
+                        RFRLoadTaylorObj r = new RFRLoadTaylorObj();
+                            r.setFromCsvBean(csvBeanTaylorReport1, date, diff);
+                            return r;
+                    }).collect(Collectors.toList());
+            log.info("Empezamos a insertar los registros en bbdd");
+            taylorReportLoadDbRepository.callLoadTaylorProcedure(list);
+            log.info("Finalizada insercion");
+        } else {
+            log.error("No se han recuperado datos del fichero.");
+        }
 
-    @JsonProperty("Start Date")
-    private String startDate;
+    }
 
-    @JsonProperty("End Date")
-    private String endDate;
 
-    @JsonProperty("Alpha")
-    private String alpha;
 
-    @JsonProperty("Beta")
-    private String beta;
 }
-@Data
-public class CsvBeanProxy {
+package com.isb.rfrbatch.jobextracttaylorreport.jobextractaylorreportcsv.services.buildcsv;
 
-    @JsonProperty("Proxy 1")
-    private String proxy1;
+import com.fasterxml.jackson.databind.ObjectMapper;
+import org.junit.Test;
+import static org.junit.Assert.*;
 
-    @JsonProperty("Proxy ADO 1")
-    private String proxyAdo1;
+public class CsvBeanTaylorReportTest {
 
-    @JsonProperty("Proxy Nro Days 1")
-    private String proxyNrDays1;
+    @Test
+    public void testSetterAndGetter() {
+        // Crear una nueva instancia de la clase
+        CsvBeanTaylorReport report = new CsvBeanTaylorReport();
 
-    @JsonProperty("Proxy Label 1")
-    private String proxyLabel1;
+        // Asignar valores usando los setters
+        report.setAsset("Equity");
+        report.setFactor("Risk");
+        report.setSubType("Subtype1");
+        report.setName("SampleName");
+        report.setOwnerunit("Unit1");
+        report.setStat("Active");
+        report.setUnt("Unit1");
+        report.setAdo("Underlying1");
+        report.setReturnmodel("Model1");
+        report.setTemp("Template1");
+        report.setDays("30");
+        report.setLab("Label1");
+        report.setSwapMat("2025-01-01");
+        report.setOptionMat("2025-12-31");
+        report.setSkeW("0.5");
 
-    @JsonProperty("Proxy Maturity 1")
-    private String proxyMaturity1;
+        // Verificar que los valores se asignen correctamente usando los getters
+        assertEquals("Equity", report.getAsset());
+        assertEquals("Risk", report.getFactor());
+        assertEquals("Subtype1", report.getSubType());
+        assertEquals("SampleName", report.getName());
+        assertEquals("Unit1", report.getOwnerunit());
+        assertEquals("Active", report.getStat());
+        assertEquals("Unit1", report.getUnt());
+        assertEquals("Underlying1", report.getAdo());
+        assertEquals("Model1", report.getReturnmodel());
+        assertEquals("Template1", report.getTemp());
+        assertEquals("30", report.getDays());
+        assertEquals("Label1", report.getLab());
+        assertEquals("2025-01-01", report.getSwapMat());
+        assertEquals("2025-12-31", report.getOptionMat());
+        assertEquals("0.5", report.getSkeW());
+    }
 
-    @JsonProperty("Proxy Swap Maturity 1")
-    private String proxySwapMaturity1;
+    @Test
+    public void testJsonSerialization() throws Exception {
+        // Crear una nueva instancia de la clase y asignar valores
+        CsvBeanTaylorReport report = new CsvBeanTaylorReport();
+        report.setAsset("Equity");
+        report.setFactor("Risk");
+        report.setSubType("Subtype1");
 
-    @JsonProperty("Proxy Option Maturity 1")
-    private String proxyOptionMaturity1;
+        // Serializar el objeto a JSON
+        ObjectMapper objectMapper = new ObjectMapper();
+        String json = objectMapper.writeValueAsString(report);
 
-    @JsonProperty("Proxy Skew 1")
-    private String proxySkew1;
+        // Verificar que la serialización contenga los valores esperados
+        assertTrue(json.contains("\"Asset Class\":\"Equity\""));
+        assertTrue(json.contains("\"Factor Type\":\"Risk\""));
+        assertTrue(json.contains("\"Subtype\":\"Subtype1\""));
+    }
 
-    @JsonProperty("Proxy 2")
-    private String proxy2;
+    @Test
+    public void testJsonDeserialization() throws Exception {
+        // JSON de prueba
+        String json = "{\"Asset Class\":\"Equity\",\"Factor Type\":\"Risk\",\"Subtype\":\"Subtype1\"}";
 
-    @JsonProperty("Proxy ADO 2")
-    private String proxyAdo2;
+        // Deserializar el JSON a un objeto CsvBeanTaylorReport
+        ObjectMapper objectMapper = new ObjectMapper();
+        CsvBeanTaylorReport report = objectMapper.readValue(json, CsvBeanTaylorReport.class);
 
-    @JsonProperty("Proxy Nro Days 2")
-    private String proxyNrDays2;
-
-    @JsonProperty("Proxy Label 2")
-    private String proxyLabel2;
-
-    @JsonProperty("Proxy Maturity 2")
-    private String proxyMaturity2;
-
-    @JsonProperty("Proxy Swap Maturity 2")
-    private String proxySwapMaturity2;
-
-    @JsonProperty("Proxy Option Maturity 2")
-    private String proxyOptionMaturity2;
-
-    @JsonProperty("Proxy Skew 2")
-    private String proxySkew2;
-}
-@Data
-public class CsvBeanProxy {
-
-    @JsonProperty("Proxy 1")
-    private String proxy1;
-
-    @JsonProperty("Proxy ADO 1")
-    private String proxyAdo1;
-
-    @JsonProperty("Proxy Nro Days 1")
-    private String proxyNrDays1;
-
-    @JsonProperty("Proxy Label 1")
-    private String proxyLabel1;
-
-    @JsonProperty("Proxy Maturity 1")
-    private String proxyMaturity1;
-
-    @JsonProperty("Proxy Swap Maturity 1")
-    private String proxySwapMaturity1;
-
-    @JsonProperty("Proxy Option Maturity 1")
-    private String proxyOptionMaturity1;
-
-    @JsonProperty("Proxy Skew 1")
-    private String proxySkew1;
-
-    @JsonProperty("Proxy 2")
-    private String proxy2;
-
-    @JsonProperty("Proxy ADO 2")
-    private String proxyAdo2;
-
-    @JsonProperty("Proxy Nro Days 2")
-    private String proxyNrDays2;
-
-    @JsonProperty("Proxy Label 2")
-    private String proxyLabel2;
-
-    @JsonProperty("Proxy Maturity 2")
-    private String proxyMaturity2;
-
-    @JsonProperty("Proxy Swap Maturity 2")
-    private String proxySwapMaturity2;
-
-    @JsonProperty("Proxy Option Maturity 2")
-    private String proxyOptionMaturity2;
-
-    @JsonProperty("Proxy Skew 2")
-    private String proxySkew2;
-}
-@Data
-@EqualsAndHashCode(callSuper = true)
-public class CsvBeanStressTestHipoteticReport extends CsvBeanBase {
-
-    @JsonProperty("Tenor")
-    private String tenor; // en vez de label
-
-    // Extiende los campos de proxy
-    private CsvBeanProxy proxyData;
-}
-@Data
-@EqualsAndHashCode(callSuper = true)
-public class CsvBeanStressTestHistoricReport extends CsvBeanBase {
-
-    @JsonProperty("Label")
-    private String label;
-
-    @JsonProperty("Swap Maturity")
-    private String swapMaturity;
-
-    @JsonProperty("Option Maturity")
-    private String optionMaturity;
-
-    @JsonProperty("interpolationFormula")
-    private String interpolationFormula;
-
-    @JsonProperty("valueToInterpolate")
-    private String valueToInterpolate;
-
-    @JsonProperty("firstInterpolation")
-    private String firstInterpolation;
-
-    @JsonProperty("lastInterpolation")
-    private String lastInterpolation;
-
-    @JsonProperty("calibrationMethod")
-    private String calibrationMethod;
-
-    @JsonProperty("rateConvention")
-    private String rateConvention;
-
-    @JsonProperty("spreadCurve")
-    private String spreadCurve;
-
-    @JsonProperty("businessDays")
-    private String businessDays;
-
-    private CsvBeanProxy proxyData;
-}
-@Data
-@EqualsAndHashCode(callSuper = true)
-public class CsvBeanTaylorReport extends CsvBeanBase {
-    private CsvBeanProxy proxyData;
+        // Verificar que los valores del objeto coincidan con los del JSON
+        assertEquals("Equity", report.getAsset());
+        assertEquals("Risk", report.getFactor());
+        assertEquals("Subtype1", report.getSubType());
+    }
 }
