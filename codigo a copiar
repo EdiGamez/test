@@ -1,185 +1,88 @@
-import com.isb.rfrbatch.jobextracfullrevalreport.jobextractfullrevalreportdb.services.database.beans.RFRLoadFullRevalObj;
-import org.junit.Before;
-import org.junit.Test;
 
-import java.sql.Date;
-import java.sql.SQLInput;
-import java.sql.SQLOutput;
-import java.sql.SQLException;
+org.mockito.exceptions.verification.TooManyActualInvocations: 
+sQLOutput.writeDouble(<any double>);
+Wanted 4 times:
+-> at com.isb.rfrbatch.jobextracfullrevalreport.jobextractfullrevalreportdb.services.database.beans.RFRLoadFullRevalObjTest.testWriteSQL(RFRLoadFullRevalObjTest.java:176)
+But was 5 times:
+-> at com.isb.rfrbatch.jobextracfullrevalreport.jobextractfullrevalreportdb.services.database.beans.RFRLoadFullRevalObj.writeSQL(RFRLoadFullRevalObj.java:174)
+-> at com.isb.rfrbatch.jobextracfullrevalreport.jobextractfullrevalreportdb.services.database.beans.RFRLoadFullRevalObj.writeSQL(RFRLoadFullRevalObj.java:176)
+-> at com.isb.rfrbatch.jobextracfullrevalreport.jobextractfullrevalreportdb.services.database.beans.RFRLoadFullRevalObj.writeSQL(RFRLoadFullRevalObj.java:177)
+-> at com.isb.rfrbatch.jobextracfullrevalreport.jobextractfullrevalreportdb.services.database.beans.RFRLoadFullRevalObj.writeSQL(RFRLoadFullRevalObj.java:178)
+-> at com.isb.rfrbatch.jobextracfullrevalreport.jobextractfullrevalreportdb.services.database.beans.RFRLoadFullRevalObj.writeSQL(RFRLoadFullRevalObj.java:179)
 
-import static org.junit.Assert.*;
-import static org.mockito.Mockito.*;
 
-public class RFRLoadFullRevalObjTest {
 
-    private RFRLoadFullRevalObj obj;
+	at com.isb.rfrbatch.jobextracfullrevalreport.jobextractfullrevalreportdb.services.database.beans.RFRLoadFullRevalObjTest.testWriteSQL(RFRLoadFullRevalObjTest.java:176)
+	at java.base/jdk.internal.reflect.NativeMethodAccessorImpl.invoke0(Native Method)
+	at java.base/jdk.internal.reflect.NativeMethodAccessorImpl.invoke(NativeMethodAccessorImpl.java:62)
+	at java.base/jdk.internal.reflect.DelegatingMethodAccessorImpl.invoke(DelegatingMethodAccessorImpl.java:43)
+	at java.base/java.lang.reflect.Method.invoke(Method.java:566)
+	at org.junit.runners.model.FrameworkMethod$1.runReflectiveCall(FrameworkMethod.java:59)
+	at org.junit.internal.runners.model.ReflectiveCallable.run(ReflectiveCallable.java:12)
+	at org.junit.runners.model.FrameworkMethod.invokeExplosively(FrameworkMethod.java:56)
+	at org.junit.internal.runners.statements.InvokeMethod.evaluate(InvokeMethod.java:17)
+	at org.junit.internal.runners.statements.RunBefores.evaluate(RunBefores.java:26)
+	at org.junit.runners.ParentRunner$3.evaluate(ParentRunner.java:306)
+	at org.junit.runners.BlockJUnit4ClassRunner$1.evaluate(BlockJUnit4ClassRunner.java:100)
+	at org.junit.runners.ParentRunner.runLeaf(ParentRunner.java:366)
+	at org.junit.runners.BlockJUnit4ClassRunner.runChild(BlockJUnit4ClassRunner.java:103)
+	at org.junit.runners.BlockJUnit4ClassRunner.runChild(BlockJUnit4ClassRunner.java:63)
+	at org.junit.runners.ParentRunner$4.run(ParentRunner.java:331)
+	at org.junit.runners.ParentRunner$1.schedule(ParentRunner.java:79)
+	at org.junit.runners.ParentRunner.runChildren(ParentRunner.java:329)
+	at org.junit.runners.ParentRunner.access$100(ParentRunner.java:66)
+	at org.junit.runners.ParentRunner$2.evaluate(ParentRunner.java:293)
+	at org.junit.runners.ParentRunner$3.evaluate(ParentRunner.java:306)
+	at org.junit.runners.ParentRunner.run(ParentRunner.java:413)
+	at org.junit.runner.JUnitCore.run(JUnitCore.java:137)
+	at com.intellij.junit4.JUnit4IdeaTestRunner.startRunnerWithArgs(JUnit4IdeaTestRunner.java:69)
+	at com.intellij.rt.junit.IdeaTestRunner$Repeater$1.execute(IdeaTestRunner.java:38)
+	at com.intellij.rt.execution.junit.TestsRepeater.repeat(TestsRepeater.java:11)
+	at com.intellij.rt.junit.IdeaTestRunner$Repeater.startRunnerWithArgs(IdeaTestRunner.java:35)
+	at com.intellij.rt.junit.JUnitStarter.prepareStreamsAndStart(JUnitStarter.java:232)
+	at com.intellij.rt.junit.JUnitStarter.main(JUnitStarter.java:55)
 
-    @Before
-    public void setUp() {
-        obj = new RFRLoadFullRevalObj();
-    }
 
-    @Test
-    public void testGetAndSetters() {
-        Date date = new Date(System.currentTimeMillis());
-        obj.setDataDatePart(date);
-        assertEquals(date, obj.getDataDatePart());
+org.mockito.exceptions.verification.TooManyActualInvocations: 
+sQLInput.readDouble();
+Wanted 4 times:
+-> at com.isb.rfrbatch.jobextracfullrevalreport.jobextractfullrevalreportdb.services.database.beans.RFRLoadFullRevalObjTest.testReadSQL(RFRLoadFullRevalObjTest.java:113)
+But was 5 times:
+-> at com.isb.rfrbatch.jobextracfullrevalreport.jobextractfullrevalreportdb.services.database.beans.RFRLoadFullRevalObj.readSQL(RFRLoadFullRevalObj.java:119)
+-> at com.isb.rfrbatch.jobextracfullrevalreport.jobextractfullrevalreportdb.services.database.beans.RFRLoadFullRevalObj.readSQL(RFRLoadFullRevalObj.java:121)
+-> at com.isb.rfrbatch.jobextracfullrevalreport.jobextractfullrevalreportdb.services.database.beans.RFRLoadFullRevalObj.readSQL(RFRLoadFullRevalObj.java:122)
+-> at com.isb.rfrbatch.jobextracfullrevalreport.jobextractfullrevalreportdb.services.database.beans.RFRLoadFullRevalObj.readSQL(RFRLoadFullRevalObj.java:123)
+-> at com.isb.rfrbatch.jobextracfullrevalreport.jobextractfullrevalreportdb.services.database.beans.RFRLoadFullRevalObj.readSQL(RFRLoadFullRevalObj.java:124)
 
-        obj.setAsset("asset");
-        assertEquals("asset", obj.getAsset());
 
-        obj.setFactor("factor");
-        assertEquals("factor", obj.getFactor());
 
-        obj.setSubtype("subtype");
-        assertEquals("subtype", obj.getSubtype());
+	at com.isb.rfrbatch.jobextracfullrevalreport.jobextractfullrevalreportdb.services.database.beans.RFRLoadFullRevalObjTest.testReadSQL(RFRLoadFullRevalObjTest.java:113)
+	at java.base/jdk.internal.reflect.NativeMethodAccessorImpl.invoke0(Native Method)
+	at java.base/jdk.internal.reflect.NativeMethodAccessorImpl.invoke(NativeMethodAccessorImpl.java:62)
+	at java.base/jdk.internal.reflect.DelegatingMethodAccessorImpl.invoke(DelegatingMethodAccessorImpl.java:43)
+	at java.base/java.lang.reflect.Method.invoke(Method.java:566)
+	at org.junit.runners.model.FrameworkMethod$1.runReflectiveCall(FrameworkMethod.java:59)
+	at org.junit.internal.runners.model.ReflectiveCallable.run(ReflectiveCallable.java:12)
+	at org.junit.runners.model.FrameworkMethod.invokeExplosively(FrameworkMethod.java:56)
+	at org.junit.internal.runners.statements.InvokeMethod.evaluate(InvokeMethod.java:17)
+	at org.junit.internal.runners.statements.RunBefores.evaluate(RunBefores.java:26)
+	at org.junit.runners.ParentRunner$3.evaluate(ParentRunner.java:306)
+	at org.junit.runners.BlockJUnit4ClassRunner$1.evaluate(BlockJUnit4ClassRunner.java:100)
+	at org.junit.runners.ParentRunner.runLeaf(ParentRunner.java:366)
+	at org.junit.runners.BlockJUnit4ClassRunner.runChild(BlockJUnit4ClassRunner.java:103)
+	at org.junit.runners.BlockJUnit4ClassRunner.runChild(BlockJUnit4ClassRunner.java:63)
+	at org.junit.runners.ParentRunner$4.run(ParentRunner.java:331)
+	at org.junit.runners.ParentRunner$1.schedule(ParentRunner.java:79)
+	at org.junit.runners.ParentRunner.runChildren(ParentRunner.java:329)
+	at org.junit.runners.ParentRunner.access$100(ParentRunner.java:66)
+	at org.junit.runners.ParentRunner$2.evaluate(ParentRunner.java:293)
+	at org.junit.runners.ParentRunner$3.evaluate(ParentRunner.java:306)
+	at org.junit.runners.ParentRunner.run(ParentRunner.java:413)
+	at org.junit.runner.JUnitCore.run(JUnitCore.java:137)
+	at com.intellij.junit4.JUnit4IdeaTestRunner.startRunnerWithArgs(JUnit4IdeaTestRunner.java:69)
+	at com.intellij.rt.junit.IdeaTestRunner$Repeater$1.execute(IdeaTestRunner.java:38)
+	at com.intellij.rt.execution.junit.TestsRepeater.repeat(TestsRepeater.java:11)
+	at com.intellij.rt.junit.IdeaTestRunner$Repeater.startRunnerWithArgs(IdeaTestRunner.java:35)
+	at com.intellij.rt.junit.JUnitStarter.prepareStreamsAndStart(JUnitStarter.java:232)
+	at com.intellij.rt.junit.JUnitStarter.main(JUnitStarter.java:55)
 
-        obj.setName("name");
-        assertEquals("name", obj.getName());
-
-        obj.setOwner("owner");
-        assertEquals("owner", obj.getOwner());
-
-        obj.setStatus("status");
-        assertEquals("status", obj.getStatus());
-
-        obj.setUnit("unit");
-        assertEquals("unit", obj.getUnit());
-
-        obj.setUado("uado");
-        assertEquals("uado", obj.getUado());
-
-        obj.setRetmodel("retmodel");
-        assertEquals("retmodel", obj.getRetmodel());
-
-        obj.setTemplate("template");
-        assertEquals("template", obj.getTemplate());
-
-        obj.setNrdays("10");
-        assertEquals("10", obj.getNrdays());
-
-        obj.setTenor("5Y");
-        assertEquals("5Y", obj.getTenor());
-
-        obj.setSwptenor("2Y");
-        assertEquals("2Y", obj.getSwptenor());
-
-        obj.setOpttenor("1M");
-        assertEquals("1M", obj.getOpttenor());
-
-        obj.setStrike("1.5");
-        assertEquals("1.5", obj.getStrike());
-
-        obj.setInterpolform("linear");
-        assertEquals("linear", obj.getInterpolform());
-
-        obj.setValueinterpol("true");
-        assertEquals("true", obj.getValueinterpol());
-
-        obj.setInterpolfpillar("2025-01-01");
-        assertEquals("2025-01-01", obj.getInterpolfpillar());
-
-        obj.setInterpollpillar("2026-01-01");
-        assertEquals("2026-01-01", obj.getInterpollpillar());
-
-        obj.setCalmethod("daycount");
-        assertEquals("daycount", obj.getCalmethod());
-
-        obj.setRateconv("rateconv");
-        assertEquals("rateconv", obj.getRateconv());
-    }
-
-    @Test
-    public void testSQLTypeName() {
-        assertEquals("RFR.RFR_LOADFULLREVAL_OBJ", obj.getSQLTypeName());
-    }
-
-    @Test
-    public void testReadSQL() throws SQLException {
-        SQLInput mockInput = mock(SQLInput.class);
-
-        when(mockInput.readDate()).thenReturn(new Date(123456789L));
-        for (int i = 0; i < 45; i++) {
-            when(mockInput.readString()).thenReturn("string");
-        }
-        when(mockInput.readDouble()).thenReturn(1.0);
-
-        obj.readSQL(mockInput, RFRLoadFullRevalObj.SQL_TYPE);
-
-        verify(mockInput, times(1)).readDate();
-        verify(mockInput, times(45)).readString();
-        verify(mockInput, times(4)).readDouble();
-    }
-
-    @Test
-    public void testWriteSQL() throws SQLException {
-        SQLOutput mockOutput = mock(SQLOutput.class);
-
-        obj.setDataDatePart(new Date(123456789L));
-        obj.setAsset("A");
-        obj.setFactor("F");
-        obj.setSubtype("S");
-        obj.setName("N");
-        obj.setOwner("O");
-        obj.setStatus("ST");
-        obj.setUnit("U");
-        obj.setUado("UA");
-        obj.setRetmodel("RM");
-        obj.setTemplate("T");
-        obj.setNrdays("ND");
-        obj.setTenor("TE");
-        obj.setSwptenor("ST");
-        obj.setOpttenor("OT");
-        obj.setStrike("STR");
-        obj.setInterpolform("IF");
-        obj.setValueinterpol("VI");
-        obj.setInterpolfpillar("IPF");
-        obj.setInterpollpillar("IPL");
-        obj.setCalmethod("CM");
-        obj.setRateconv("RC");
-        obj.setSpreadcrvty("SC");
-        obj.setBusinessdays("BD");
-        obj.setPmethodology("PM");
-        obj.setPstatus("PS");
-        obj.setPado("PA");
-        obj.setPstartd("PST");
-        obj.setPendd("PEN");
-        obj.setPalpha("AL");
-        obj.setPbeta("BE");
-        obj.setPproxy1("PX1");
-        obj.setPnrdays1("NR1");
-        obj.setPlabel1("PL1");
-        obj.setPmaturity1("PM1");
-        obj.setPsmaturity1("PS1");
-        obj.setPomaturity1("PO1");
-        obj.setPskew1("SK1");
-        obj.setPproxy2("PX2");
-        obj.setPnrdays2("NR2");
-        obj.setPlabel2("PL2");
-        obj.setPmaturity2("PM2");
-        obj.setPsmaturity2("PS2");
-        obj.setPomaturity2("PO2");
-        obj.setPskew2("SK2");
-        obj.setDiff(1.0);
-        obj.setUnderlcrv("UC");
-        obj.setPk(2.0);
-        obj.setFkParent(3.0);
-        obj.setFkExtension(4.0);
-        obj.setFkOwnerObj(5.0);
-
-        obj.writeSQL(mockOutput);
-
-        verify(mockOutput, times(1)).writeDate(any(Date.class));
-        verify(mockOutput, times(45)).writeString(anyString());
-        verify(mockOutput, times(4)).writeDouble(anyDouble());
-    }
-
-    @Test
-    public void testToObjectArray() {
-        obj.setAsset("AssetTest");
-        obj.setDiff(3.14);
-        Object[] array = obj.toObjectArray();
-        assertNotNull(array);
-        assertEquals(50, array.length); // 1 date + 45 strings + 4 doubles
-    }
-}
