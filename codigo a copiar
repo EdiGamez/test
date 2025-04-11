@@ -1,112 +1,99 @@
- @Test
-    void testSetFromCsvBean() {
-        // Arrange
-        CsvBeanFullRevalReport mockCsvBean = mock(CsvBeanFullRevalReport.class);
-        Date testDate = new Date();
-        Integer testDiff = 42;
+import com.yourpackage.JobConfigExtractTaylorReportDb;
+import com.yourpackage.tasklets.TaskletTaylorReportLoadDatabase;
+import lombok.extern.slf4j.Slf4j;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
+import org.mockito.Mock;
+import org.mockito.MockitoAnnotations;
+import org.springframework.batch.core.ExitStatus;
+import org.springframework.batch.core.Job;
+import org.springframework.batch.core.JobExecution;
+import org.springframework.batch.core.JobInstance;
+import org.springframework.batch.core.Step;
+import org.springframework.batch.core.StepExecution;
+import org.springframework.batch.core.configuration.annotation.JobBuilderFactory;
+import org.springframework.batch.core.configuration.annotation.StepBuilderFactory;
+import org.springframework.batch.core.scope.context.ChunkContext;
+import org.springframework.batch.repeat.RepeatStatus;
 
-        // Simular valores de retorno
-        when(mockCsvBean.getAssetclass()).thenReturn("Equity");
-        when(mockCsvBean.getFactortype()).thenReturn("FactorType");
-        when(mockCsvBean.getSubtype()).thenReturn("Subtype");
-        when(mockCsvBean.getName()).thenReturn("Instrument Name");
-        when(mockCsvBean.getOwnUnit()).thenReturn("Unit A");
-        when(mockCsvBean.getStats()).thenReturn("Active");
-        when(mockCsvBean.getUnit_()).thenReturn("USD");
-        when(mockCsvBean.getAdounderlying()).thenReturn("Underlying");
-        when(mockCsvBean.getReturn_model()).thenReturn("Linear");
-        when(mockCsvBean.getTemplte()).thenReturn("Template1");
-        when(mockCsvBean.getNumDays()).thenReturn("10");
-        when(mockCsvBean.getLabl()).thenReturn("1Y");
-        when(mockCsvBean.getSwapmaturity()).thenReturn("5Y");
-        when(mockCsvBean.getOptionmaturity()).thenReturn("3Y");
-        when(mockCsvBean.getSkw()).thenReturn("0.25");
-        when(mockCsvBean.getInterpolationformula()).thenReturn("Linear");
-        when(mockCsvBean.getValuetointerpolate()).thenReturn("100");
-        when(mockCsvBean.getFirstinterpolation()).thenReturn("2024-01-01");
-        when(mockCsvBean.getLastinterpolation()).thenReturn("2024-12-31");
-        when(mockCsvBean.getCalibrationmethod()).thenReturn("OLS");
-        when(mockCsvBean.getRateconvention()).thenReturn("Annual");
-        when(mockCsvBean.getSpreadcurve()).thenReturn("CurveA");
-        when(mockCsvBean.getBusinessdays()).thenReturn("252");
-        when(mockCsvBean.getProxymethodology()).thenReturn("Historical");
-        when(mockCsvBean.getProxystatus()).thenReturn("Valid");
-        when(mockCsvBean.getProxAdo()).thenReturn("ProxyADO");
-        when(mockCsvBean.getStartingDate()).thenReturn("2023-01-01");
-        when(mockCsvBean.getEndingDate()).thenReturn("2023-12-31");
-        when(mockCsvBean.getAlpha()).thenReturn("0.95");
-        when(mockCsvBean.getBeta()).thenReturn("1.10");
-        when(mockCsvBean.getProx1()).thenReturn("Proxy1");
-        when(mockCsvBean.getProxynrdays1()).thenReturn("30");
-        when(mockCsvBean.getProxylabel1()).thenReturn("Label1");
-        when(mockCsvBean.getProxymaturity1()).thenReturn("6M");
-        when(mockCsvBean.getProxyswapmaturity1()).thenReturn("1Y");
-        when(mockCsvBean.getProxyoptionmaturity1()).thenReturn("3M");
-        when(mockCsvBean.getProxyskew1()).thenReturn("0.5");
-        when(mockCsvBean.getProx2()).thenReturn("Proxy2");
-        when(mockCsvBean.getProxynrdays2()).thenReturn("60");
-        when(mockCsvBean.getProxylabel2()).thenReturn("Label2");
-        when(mockCsvBean.getProxymaturity2()).thenReturn("1Y");
-        when(mockCsvBean.getProxyswapmaturity2()).thenReturn("2Y");
-        when(mockCsvBean.getProxyoptionmaturity2()).thenReturn("6M");
-        when(mockCsvBean.getProxyskew2()).thenReturn("0.3");
+import java.text.MessageFormat;
+import java.time.Duration;
+import java.time.Instant;
 
-        FullRevalReportEntity entity = new FullRevalReportEntity();
+import static org.junit.jupiter.api.Assertions.*;
+import static org.mockito.Mockito.*;
 
-        // Act
-        entity.setFromCsvBean(mockCsvBean, testDate, testDiff);
+@Slf4j
+public class JobConfigExtractTaylorReportDbTest {
 
-        // Assert
-        assertEquals("Equity", entity.asset);
-        assertEquals("FactorType", entity.factor);
-        assertEquals("Subtype", entity.subtype);
-        assertEquals("Instrument Name", entity.name);
-        assertEquals("Unit A", entity.owner);
-        assertEquals("Active", entity.status);
-        assertEquals("USD", entity.unit);
-        assertEquals("Underlying", entity.uado);
-        assertEquals("Linear", entity.retmodel);
-        assertEquals("Template1", entity.template);
-        assertEquals("10", entity.nrdays);
-        assertEquals("1Y", entity.tenor);
-        assertEquals("5Y", entity.swptenor);
-        assertEquals("3Y", entity.opttenor);
-        assertEquals("0.25", entity.strike);
-        assertEquals("Linear", entity.interpolform);
-        assertEquals("100", entity.valueinterpol);
-        assertEquals("2024-01-01", entity.interpolfpillar);
-        assertEquals("2024-12-31", entity.interpollpillar);
-        assertEquals("OLS", entity.calmethod);
-        assertEquals("Annual", entity.rateconv);
-        assertEquals("CurveA", entity.spreadcrvty);
-        assertEquals("252", entity.businessdays);
-        assertEquals("Historical", entity.pmethodology);
-        assertEquals("Valid", entity.pstatus);
-        assertEquals("ProxyADO", entity.pado);
-        assertEquals("2023-01-01", entity.pstartd);
-        assertEquals("2023-12-31", entity.pendd);
-        assertEquals("0.95", entity.palpha);
-        assertEquals("1.10", entity.pbeta);
-        assertEquals("Proxy1", entity.pproxy1);
-        assertEquals("30", entity.pnrdays1);
-        assertEquals("Label1", entity.plabel1);
-        assertEquals("6M", entity.pmaturity1);
-        assertEquals("1Y", entity.psmaturity1);
-        assertEquals("3M", entity.pomaturity1);
-        assertEquals("0.5", entity.pskew1);
-        assertEquals("Proxy2", entity.pproxy2);
-        assertEquals("60", entity.pnrdays2);
-        assertEquals("Label2", entity.plabel2);
-        assertEquals("1Y", entity.pmaturity2);
-        assertEquals("2Y", entity.psmaturity2);
-        assertEquals("6M", entity.pomaturity2);
-        assertEquals("0.3", entity.pskew2);
+    @Mock
+    private JobBuilderFactory jobBuilderFactory;
+    @Mock
+    private StepBuilderFactory stepBuilderFactory;
+    @Mock
+    private TaskletTaylorReportLoadDatabase tasklet;
 
-        assertEquals(testDate, entity.dataDatePart);
-        assertEquals(testDiff, entity.diff);
+    private JobConfigExtractTaylorReportDb config;
 
-        assertEquals(1.0, entity.pk);
-        assertEquals(1.0, entity.fkParent);
-        assertEquals(1.0, entity.fkExtension);
-        assertEquals(1.0, entity.fkOwnerObj);
+    @BeforeEach
+    void setUp() {
+        MockitoAnnotations.openMocks(this);
+        config = new JobConfigExtractTaylorReportDb();
     }
+
+    @Test
+    void testStepFrLoadDbNotNull() {
+        Step step = config.stepFrLoadDb(tasklet, stepBuilderFactory);
+        assertNotNull(step, "Step debe estar correctamente configurado");
+    }
+
+    @Test
+    void testJobExtracFullRevalReportDbNotNull() {
+        Job job = config.jobExtracFullRevalReportDb(jobBuilderFactory, tasklet, stepBuilderFactory);
+        assertNotNull(job, "Job debe estar correctamente creado");
+    }
+
+    @Test
+    void testJobListener() {
+        JobConfigExtractTaylorReportDb.JobListener listener = config.new JobListener();
+
+        JobExecution jobExecution = mock(JobExecution.class);
+        JobInstance jobInstance = mock(JobInstance.class);
+        when(jobExecution.getJobInstance()).thenReturn(jobInstance);
+        when(jobInstance.getJobName()).thenReturn("jobTest");
+
+        config.dataDatePart = "2025-04-10";
+        config.unit = "Unit-Test";
+
+        listener.beforeJob(jobExecution);
+        sleep(1);  // Simula duración del trabajo
+        listener.afterJob(jobExecution);
+
+        // No hay excepciones y logs se imprimen: test pasa
+    }
+
+    @Test
+    void testStepGenerarListener() {
+        JobConfigExtractTaylorReportDb.StepGenerarListener listener = config.new StepGenerarListener();
+
+        StepExecution stepExecution = mock(StepExecution.class);
+        when(stepExecution.getStepName()).thenReturn("stepTest");
+
+        config.dataDatePart = "2025-04-10";
+        config.unit = "Unit-Test";
+
+        listener.beforeStep(stepExecution);
+        sleep(1);  // Simula duración del step
+        ExitStatus status = listener.afterStep(stepExecution);
+
+        assertNull(status, "Debe devolver null (comportamiento esperado en la clase original)");
+    }
+
+    private void sleep(int seconds) {
+        try {
+            Thread.sleep(seconds * 1000L);
+        } catch (InterruptedException e) {
+            Thread.currentThread().interrupt();
+        }
+    }
+}
