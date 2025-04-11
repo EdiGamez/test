@@ -1,13 +1,95 @@
 @Test
-void testIsProxyValid() {
-    CsvBeanTaylorReport bean = new CsvBeanTaylorReport();
+    public void testGettersAndSetters() {
+        CsvBeanTaylorReport bean = new CsvBeanTaylorReport();
 
-    bean.setProxyOne(null);
-    assertFalse(bean.isProxyValid()); // proxyOne == null (false)
+        bean.setAsset("Fixed Income");
+        bean.setFactor("Interest Rate");
+        bean.setSubType("Linear");
+        bean.setName("Test Name");
+        bean.setOwnerunit("Unit A");
+        bean.setStat("Active");
+        bean.setUnt("MXN");
+        bean.setAdo("Underlying A");
+        bean.setReturnmodel("Model X");
+        bean.setTemp("Template A");
+        bean.setDays("10");
+        bean.setLab("Label A");
+        bean.setSwapMat("1Y");
+        bean.setOptionMat("6M");
+        bean.setSkeW("0.5");
+        bean.setInterpolationForm("Linear");
+        bean.setValueInterpolate("100");
+        bean.setFirstInterpol("90");
+        bean.setLastInterpol("110");
+        bean.setCalibrationMet("Method X");
+        bean.setRateConv("Act/360");
+        bean.setSpreadCur("Spread A");
+        bean.setBusinessDys("3");
+        bean.setProxyMtdlgy("Proxy Method");
+        bean.setProxyStat("Enabled");
+        bean.setProxyado("ADO X");
+        bean.setStartdate("2025-01-01");
+        bean.setEnddate("2025-12-31");
+        bean.setAlph("0.8");
+        bean.setBet("1.2");
+        bean.setProxyOne("Proxy A");
+        bean.setProxyNroDaysOne("5");
+        bean.setProxyLabelOne("Label X");
+        bean.setProxyMaturityOne("2Y");
+        bean.setProxySwapMaturityOne("1Y");
+        bean.setProxyOptionMaturityOne("3M");
+        bean.setProxySkewOne("0.3");
+        bean.setProxyTwo("Proxy B");
+        bean.setProxyNroDaysTwo("7");
+        bean.setProxyLabelTwo("Label Y");
+        bean.setProxyMaturityTwo("3Y");
+        bean.setProxySwapMaturityTwo("2Y");
+        bean.setProxyOptionMaturityTwo("6M");
+        bean.setProxySkewTwo("0.6");
 
-    bean.setProxyOne("   ");
-    assertFalse(bean.isProxyValid()); // proxyOne != null pero está blank (false)
-
-    bean.setProxyOne("valid");
-    assertTrue(bean.isProxyValid()); // true
-}
+        // Assertions
+        assertEquals("Fixed Income", bean.getAsset());
+        assertEquals("Interest Rate", bean.getFactor());
+        assertEquals("Linear", bean.getSubType());
+        assertEquals("Test Name", bean.getName());
+        assertEquals("Unit A", bean.getOwnerunit());
+        assertEquals("Active", bean.getStat());
+        assertEquals("MXN", bean.getUnt());
+        assertEquals("Underlying A", bean.getAdo());
+        assertEquals("Model X", bean.getReturnmodel());
+        assertEquals("Template A", bean.getTemp());
+        assertEquals("10", bean.getDays());
+        assertEquals("Label A", bean.getLab());
+        assertEquals("1Y", bean.getSwapMat());
+        assertEquals("6M", bean.getOptionMat());
+        assertEquals("0.5", bean.getSkeW());
+        assertEquals("Linear", bean.getInterpolationForm());
+        assertEquals("100", bean.getValueInterpolate());
+        assertEquals("90", bean.getFirstInterpol());
+        assertEquals("110", bean.getLastInterpol());
+        assertEquals("Method X", bean.getCalibrationMet());
+        assertEquals("Act/360", bean.getRateConv());
+        assertEquals("Spread A", bean.getSpreadCur());
+        assertEquals("3", bean.getBusinessDys());
+        assertEquals("Proxy Method", bean.getProxyMtdlgy());
+        assertEquals("Enabled", bean.getProxyStat());
+        assertEquals("ADO X", bean.getProxyado());
+        assertEquals("2025-01-01", bean.getStartdate());
+        assertEquals("2025-12-31", bean.getEnddate());
+        assertEquals("0.8", bean.getAlph());
+        assertEquals("1.2", bean.getBet());
+        assertEquals("Proxy A", bean.getProxyOne());
+        assertEquals("5", bean.getProxyNroDaysOne());
+        assertEquals("Label X", bean.getProxyLabelOne());
+        assertEquals("2Y", bean.getProxyMaturityOne());
+        assertEquals("1Y", bean.getProxySwapMaturityOne());
+        assertEquals("3M", bean.getProxyOptionMaturityOne());
+        assertEquals("0.3", bean.getProxySkewOne());
+        assertEquals("Proxy B", bean.getProxyTwo());
+        assertEquals("7", bean.getProxyNroDaysTwo());
+        assertEquals("Label Y", bean.getProxyLabelTwo());
+        assertEquals("3Y", bean.getProxyMaturityTwo());
+        assertEquals("2Y", bean.getProxySwapMaturityTwo());
+        assertEquals("6M", bean.getProxyOptionMaturityTwo());
+        assertEquals("0.6", bean.getProxySkewTwo());
+    }
