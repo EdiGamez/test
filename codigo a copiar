@@ -1,163 +1,94 @@
-#!/bin/ksh
+    private EqSptFullRevalScmInventoryService eqSptFullRevalScmInventoryService;
+    private FxSptFullRevalScmInventoryService fxSptFullRevalScmInventoryService;
+    private EqRpoFullRevalScmInventoryService eqRpoFullRevalScmInventoryService;
+    private EqDivFullRevalScmInventoryService eqDivFullRevalScmInventoryService;
+    private CspCrvFullRevalScmInventoryService cspCrvFullRevalScmInventoryService;
+    private InfCrvFullRevalScmInventoryService infCrvFullRevalScmInventoryService;
+    private IrCrvFullRevalScmInventoryService irCrvFullRevalScmInventoryService;
+    private ComCrvFullRevalScmInventoryService comCrvFullRevalScmInventoryService;
+    private ComVolFullRevalScmInventoryService comVolFullRevalScmInventoryService;
+    private EqVolFullRevalScmInventoryService eqVolFullRevalScmInventoryService;
+    private FxVolFullRevalScmInventoryService fxVolFullRevalScmInventoryService;
+    private InfVolFullRevalScmInventoryService infVolFullRevalScmInventoryService;
+    private IrVolFullRevalScmInventoryService irVolFullRevalScmInventoryService;
 
-. /RFR/conf/batchVersion.sh
-. /RFR/conf/javaversion.sh
-. /RFR/conf/batchProperties.sh
-. /RFR/conf/batchPath.sh
-. /RFR/conf/cacertfile.sh
-
-fecha=$1
-unidad=$2
-
-# Logs
-JOB="jobExtracFullRevalReportGaps"
-LOGFILE="/RFR/applogs/logRfrBatch_${JOB}_${fecha}_${unidad}.log"
-touch $LOGFILE
-
-# Verifica que se proporcionen dos argumentos
-if [ $# -ne 2 ]; then
-    echo "Uso: $0 <fecha> <unidad>"
-	echo "Uso: $0 <fecha> <unidad>" >> $LOGFILE
-    exit 1
-fi
-
-# Directorio de archivos
-dir="/RFR/files/EXPORT_REPORTS"
-
-# Expresión regular para el formato del nombre de archivo
-regex="ExtractFullRevalReport_[0-9]{8}_${unidad}\.csv"
-
-echo "Expresión regular para los archivos esperados: $regex"
-echo "Expresión regular para los archivos esperados: $regex" >> $LOGFILE
-
-# Lista de archivos que coinciden con la expresión regular y están en el directorio
-archivos=$(ls "$dir" | grep -E "$regex" | sort -r -t '_' -k 2)
-
-# Mostrar lista de archivos encontrados por grep para depuración
-echo "Archivos encontrados por grep:"
-echo "Archivos encontrados por grep:" >> $LOGFILE
-
-echo "$archivos"
-echo "$archivos" >> $LOGFILE
-
-# Variable para almacenar el nombre del archivo uno
-nombre_archivo_uno=""
-
-# Variable para almacenar el nombre del archivo dos
-nombre_archivo_dos=""
-
-# Bandera para indicar si se encontró el archivo uno
-encontrado_uno=false
-
-# Recorre los archivos para encontrar el archivo uno y dos
-for archivo in $archivos; do
-    fecha_archivo=$(echo "$archivo" | awk -F_ '{print $2}')
-    if [ "$fecha_archivo" = "$fecha" ]; then
-        nombre_archivo_uno=$archivo
-        encontrado_uno=true
-    elif [ "$encontrado_uno" = "true" ]; then
-        nombre_archivo_dos=$archivo
-        break
-    fi
-done
-
-# Verifica que se haya encontrado el archivo uno
-if [ -z "$nombre_archivo_uno" ]; then
-    echo "No se encontró el archivo uno con la fecha proporcionada."
-	echo "No se encontró el archivo uno con la fecha proporcionada." >> $LOGFILE
-    exit 1
-fi
-
-# Verifica que se haya encontrado el archivo dos
-if [ -z "$nombre_archivo_dos" ]; then
-    echo "No se encontró el archivo dos."
-	echo "No se encontró el archivo dos." >> $LOGFILE
-    exit 1
-fi
-
-# Log de archivos identificados
-echo "Nombre del archivo uno: $nombre_archivo_uno"
-echo "Nombre del archivo uno: $nombre_archivo_uno" >> $LOGFILE
-
-echo "Nombre del archivo dos: $nombre_archivo_dos"
-echo "Nombre del archivo dos: $nombre_archivo_dos" >> $LOGFILE
-
-# Archivos temporales para ordenar
-temp_uno=$(mktemp)
-temp_dos=$(mktemp)
-
-# Extrae la cabecera y ordena los archivos en temporales
-head -n 1 "$dir/$nombre_archivo_uno" > "$temp_uno"
-tail -n +2 "$dir/$nombre_archivo_uno" | sort >> "$temp_uno"
-head -n 1 "$dir/$nombre_archivo_dos" > "$temp_dos"
-tail -n +2 "$dir/$nombre_archivo_dos" | sort >> "$temp_dos"
-
-# Incluimos cabecera en fichero resultante
-cabecera=$(head -n 1 "$dir/$nombre_archivo_uno")
-echo "$cabecera" > "$dir/${nombre_archivo_uno/ExtractFullRevalReport/ExtractFullRevalReportGap}"
-
-# Realiza la comparación de los archivos conservando la primera línea (cabecera)
-#comm -1 -3 "$temp_uno" "$temp_dos" >> "$dir/${nombre_archivo_uno/ExtractFullRevalReport/ExtractFullRevalReportGap}"
-
-# Usando grep -xFvf fichero1 fichero2 > fichero3
-#grep: es un comando de Unix que busca patrones en archivos de texto.
-#-x: esta opción hace que grep busque coincidencias solo en líneas completas.
-#-F: esta opción hace que grep trate los patrones como cadenas de texto fijas, no como expresiones regulares. Esto significa que los patrones no serán interpretados como expresiones regulares.
-#-v: esta opción invierte la búsqueda, es decir, en lugar de encontrar las líneas que coinciden con el patrón, grep encontrará las líneas que no coinciden.
-#-f fichero1: esta opción indica a grep que lea los patrones desde el archivo especificado (fichero1 en este caso).
-#fichero2: es el archivo en el cual grep buscará las líneas que no coinciden con los patrones en fichero1.
-#> fichero3: redirige la salida de grep al archivo especificado (fichero3 en este caso).
-#Entonces, en resumen, este comando buscará y escribirá en fichero3 las líneas de fichero2 que no coinciden con ninguna de las líneas de fichero1, considerando coincidencias exactas y completas en las líneas.
-
-grep -xFvf "$temp_dos" "$temp_uno" >> "$dir/${nombre_archivo_uno/ExtractFullRevalReport/ExtractFullRevalReportGap}"
-
-echo "Fichero generado en $dir/${nombre_archivo_uno/ExtractFullRevalReport/ExtractFullRevalReportGap}" >> $LOGFILE
+List<Factor> entireReportJson = new ArrayList<>();
+        InventoryRequest inventoryRequestFxSpt = new InventoryRequest("FX_SPT", "inventory", "SCM", "TRIM", "FX", "SPT", unit, dataDatePart, "N/A");
+        InventoryRequest inventoryRequestEqSpt = new InventoryRequest("EQ_SPT", "inventory", "SCM", "TRIM", "EQ", "SPT", unit, dataDatePart, "N/A");
+        InventoryRequest inventoryRequestEqRpo = new InventoryRequest("EQ_RPO", "inventory", "SCM", "TRIM", "EQ", "RPO", unit, dataDatePart, "N/A");
+        InventoryRequest inventoryRequestEqDiv = new InventoryRequest("EQ_DIV", "inventory", "SCM", "TRIM", "EQ", "DIV", unit, dataDatePart, "N/A");
+        InventoryRequest inventoryRequestCspCrv = new InventoryRequest("CSP_CRV", "inventory", "SCM", "TRIM", "CSP", "CRV", unit, dataDatePart, "N/A");
+        InventoryRequest inventoryRequestInfCrv = new InventoryRequest("INF_CRV", "inventory", "SCM", "TRIM", "INF", "CRV", unit, dataDatePart, "N/A");
+        InventoryRequest inventoryRequestIrCrv = new InventoryRequest("IR_CRV", "inventory", "SCM", "TRIM", "IR", "CRV", unit, dataDatePart, "N/A");
+        InventoryRequest inventoryRequestComCrv = new InventoryRequest("COM_CRV", "inventory", "SCM", "TRIM", "COM", "CRV", unit, dataDatePart, "N/A");
+        InventoryRequest inventoryRequestComVol = new InventoryRequest("COM_VOL", "inventory", "SCM", "TRIM", "COM", "VOL", unit, dataDatePart, "N/A");
+        InventoryRequest inventoryRequestEqVol = new InventoryRequest("EQ_VOL", "inventory", "SCM", "TRIM", "EQ", "VOL", unit, dataDatePart, "N/A");
+        InventoryRequest inventoryRequestFxVol = new InventoryRequest("FX_VOL", "inventory", "SCM", "TRIM", "FX", "VOL", unit, dataDatePart, "N/A");
+        InventoryRequest inventoryRequestInfVol = new InventoryRequest("INF_VOL", "inventory", "SCM", "TRIM", "INF", "VOL", unit, dataDatePart, "N/A");
+        InventoryRequest inventoryRequestIrVol = new InventoryRequest("IR_VOL", "inventory", "SCM", "TRIM", "IR", "VOL", unit, dataDatePart, "N/A");
 
 
-# Borra los archivos temporales
-rm "$temp_uno" "$temp_dos"
-echo "Borrados ficheros temporales $temp_uno y $temp_dos" >> $LOGFILE
+        List<Factor> factorListFxSpt = fxSptFullRevalScmInventoryService.getInventory(inventoryRequestFxSpt);
+        List<Factor> factorListEqSpt = eqSptFullRevalScmInventoryService.getInventory(inventoryRequestEqSpt);
+        List<Factor> factorListEqRpo = eqRpoFullRevalScmInventoryService.getInventory(inventoryRequestEqRpo);
+        List<Factor> factorListEqDiv = eqDivFullRevalScmInventoryService.getInventory(inventoryRequestEqDiv);
+        List<Factor> factorListCspCrv = cspCrvFullRevalScmInventoryService.getInventory(inventoryRequestCspCrv);
+        List<Factor> factorListInfCrv = infCrvFullRevalScmInventoryService.getInventory(inventoryRequestInfCrv);
+        List<Factor> factorListIrCrv = irCrvFullRevalScmInventoryService.getInventory(inventoryRequestIrCrv);
+        List<Factor> factorListComCrv = comCrvFullRevalScmInventoryService.getInventory(inventoryRequestComCrv);
+        List<Factor> factorListComVol = comVolFullRevalScmInventoryService.getInventory(inventoryRequestComVol);
+        List<Factor> factorListEqVol = eqVolFullRevalScmInventoryService.getInventory(inventoryRequestEqVol);
+        List<Factor> factorListFxVol = fxVolFullRevalScmInventoryService.getInventory(inventoryRequestFxVol);
+        List<Factor> factorListInfVol = infVolFullRevalScmInventoryService.getInventory(inventoryRequestInfVol);
+        List<Factor> factorListIrVol = irVolFullRevalScmInventoryService.getInventory(inventoryRequestIrVol);
 
 
-echo "FIN"
-echo "FIN" >> $LOGFILE
+        entireReportJson.addAll(factorListFxSpt);
+        entireReportJson.addAll(factorListEqSpt);
+        entireReportJson.addAll(factorListEqRpo);
+        entireReportJson.addAll(factorListEqDiv);
+        entireReportJson.addAll(factorListCspCrv);
+        entireReportJson.addAll(factorListIrCrv);
+        entireReportJson.addAll(factorListInfCrv);
+        entireReportJson.addAll(factorListComCrv);
+        entireReportJson.addAll(factorListComVol);
+        entireReportJson.addAll(factorListEqVol);
+        entireReportJson.addAll(factorListFxVol);
+        entireReportJson.addAll(factorListInfVol);
+        entireReportJson.addAll(factorListIrVol);
 
-dataDatePart=$1
-unit=$2
-pathFichero="/RFR/files/EXPORT_REPORTS/${nombre_archivo_uno}"
+    List<CsvBeanFullRevalReport> csvBeanFullRevalReports = new ArrayList<>();
 
-JOB="jobExtracFullRevalReportDb"
-LOGFILE="${PATHLOGFILE}logRfrBatch_${JOB}_${dataDatePart}_${unit}.log"
-LOGFILE_HIBERNATE="${PATHLOGFILE}logRfrBatch_${JOB}_${dataDatePart}_${unit}_SQL.log"
+        List<CsvBeanFullRevalReport> csvBeanFullRevalReportsFxSpt = buildReport(new BuildCsvFullRevalReportFxSpt(), factorListFxSpt, "FX", "SPT");
+        List<CsvBeanFullRevalReport> csvBeanFullRevalReportsIrCrv = buildReport(new BuildCsvFullRevalReportIrCrv(),factorListIrCrv, "IR", "CRV");
+        List<CsvBeanFullRevalReport> csvBeanFullRevalReportsEqSpt = buildReport(new BuildCsvFullRevalReportEqSpt(),factorListEqSpt, "EQ", "SPT");
+        List<CsvBeanFullRevalReport> csvBeanFullRevalReportsEqDiv = buildReport(new BuildCsvFullRevalReportEqDiv(),factorListEqDiv, "EQ", "DIV");
+        List<CsvBeanFullRevalReport> csvBeanFullRevalReportsEqRpo = buildReport(new BuildCsvFullRevalReportEqRpo(),factorListEqRpo, "EQ", "RPO");
+        List<CsvBeanFullRevalReport> csvBeanFullRevalReportsCspCrv = buildReport(new BuildCsvFullRevalReportCspCrv(),factorListCspCrv, "CSP", "CRV");
+        List<CsvBeanFullRevalReport> csvBeanFullRevalReportsInfCrv = buildReport(new BuildCsvFullRevalReportInfCrv(),factorListInfCrv,  "INF", "CRV");
+        List<CsvBeanFullRevalReport> csvBeanFullRevalReportsComCrv = buildReport(new BuildCsvFullRevalReportComCrv(),factorListComCrv, "COM", "CRV");
+        List<CsvBeanFullRevalReport> csvBeanFullRevalReportsComVol = buildReport(new BuildCsvFullRevalReportComVol(),factorListComVol, "COM", "VOL");
+        List<CsvBeanFullRevalReport> csvBeanFullRevalReportsFxVol = buildReport(new BuildCsvFullRevalReportFxVol(),factorListFxVol, "FX", "VOL");
+        List<CsvBeanFullRevalReport> csvBeanFullRevalReportsEqVol = buildReport(new BuildCsvFullRevalReportEqVol(),factorListEqVol, "EQ", "VOL");
+        List<CsvBeanFullRevalReport> csvBeanFullRevalReportsInfVol = buildReport(new BuildCsvFullRevalReportInfVol(),factorListInfVol, "INF", "VOL");
+        List<CsvBeanFullRevalReport> csvBeanFullRevalReportsIrVol = buildReport(new BuildCsvFullRevalReportIrVol(),factorListIrVol, "IR", "VOL");
 
-echo " =================================================================================="
-echo " === CARGA DE LOS INFORMES DE FULLREVAL EN BBDD"
-echo " === "
-echo " === Parametros de ejecución:"
-echo " ===   - dataDatePart"
-echo " ===   - unit"
-echo " =================================================================================="
+        csvBeanFullRevalReports.addAll(csvBeanFullRevalReportsComCrv);
+        csvBeanFullRevalReports.addAll(csvBeanFullRevalReportsComVol);
+        csvBeanFullRevalReports.addAll(csvBeanFullRevalReportsCspCrv);
+        csvBeanFullRevalReports.addAll(csvBeanFullRevalReportsEqDiv);
+        csvBeanFullRevalReports.addAll(csvBeanFullRevalReportsEqRpo);
+        csvBeanFullRevalReports.addAll(csvBeanFullRevalReportsEqSpt);
+        csvBeanFullRevalReports.addAll(csvBeanFullRevalReportsEqVol);
+        csvBeanFullRevalReports.addAll(csvBeanFullRevalReportsFxSpt);
+        csvBeanFullRevalReports.addAll(csvBeanFullRevalReportsFxVol);
+        csvBeanFullRevalReports.addAll(csvBeanFullRevalReportsInfCrv);
+        csvBeanFullRevalReports.addAll(csvBeanFullRevalReportsInfVol);
+        csvBeanFullRevalReports.addAll(csvBeanFullRevalReportsIrCrv);
+        csvBeanFullRevalReports.addAll(csvBeanFullRevalReportsIrVol);
 
-#Validaciones
-if [ ! -n "$dataDatePart" ] || [ ! -n "$unit" ]
-then
-	echo " ==="
-	echo " === [${JOB}] ERROR: Faltan parametros de ejecucion (JOB: ${JOB}, dataDatePart: ${dataDatePart}, unit: ${unit})"
-	echo " ==="
-	exit 1
-fi
-
-echo " =================================================================================="
-echo " === [${JOB}] INICIO Proceso (dataDatePart: ${dataDatePart}, unit: ${unit}, path: ${pathFichero})"
-echo " =================================================================================="
-
-java  -Dfile.encoding=UTF8 -Djavax.net.ssl.trustStore=${CACERTFILE} -Xmx4096m -jar -Drfr.path=${pathFichero} -Drfr.dataDatePart=${dataDatePart} -Drfr.unit=${unit} -Drfr.fileLogFullPath=${LOGFILE} -Drfr.fileLogHibernateFullPath=${LOGFILE_HIBERNATE} -Dspring.config.location=${BATCHPROPERTIES} ${BATCHVERSION} --spring.batch.job.names=${JOB}
-CODE=$?
-
-echo " =================================================================================="
-echo " === [${JOB}] FIN  Proceso (dataDatePart: ${dataDatePart}, unit: ${unit})"
-echo " === returCode ${CODE}"
-echo " =================================================================================="
-exit $CODE
-
-exit 0
+    private InfCrvTaylorScmInventoryService infCrvTaylorScmInventoryService;
+    private IrCrvTaylorScmInventoryService irCrvTaylorScmInventoryService;
+    private FxSptTaylorScmInventoryService fxSptTaylorScmInventoryService;
+    private InfVolTaylorScmInventoryService infVolTaylorScmInventoryService;
+    private IrVolTaylorScmInventoryService irVolTaylorScmInventoryService;
