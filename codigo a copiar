@@ -1,94 +1,41 @@
-    private EqSptFullRevalScmInventoryService eqSptFullRevalScmInventoryService;
-    private FxSptFullRevalScmInventoryService fxSptFullRevalScmInventoryService;
-    private EqRpoFullRevalScmInventoryService eqRpoFullRevalScmInventoryService;
-    private EqDivFullRevalScmInventoryService eqDivFullRevalScmInventoryService;
-    private CspCrvFullRevalScmInventoryService cspCrvFullRevalScmInventoryService;
-    private InfCrvFullRevalScmInventoryService infCrvFullRevalScmInventoryService;
-    private IrCrvFullRevalScmInventoryService irCrvFullRevalScmInventoryService;
-    private ComCrvFullRevalScmInventoryService comCrvFullRevalScmInventoryService;
-    private ComVolFullRevalScmInventoryService comVolFullRevalScmInventoryService;
-    private EqVolFullRevalScmInventoryService eqVolFullRevalScmInventoryService;
-    private FxVolFullRevalScmInventoryService fxVolFullRevalScmInventoryService;
-    private InfVolFullRevalScmInventoryService infVolFullRevalScmInventoryService;
-    private IrVolFullRevalScmInventoryService irVolFullRevalScmInventoryService;
+// Declaración de servicios adicionales
+private InfCrvTaylorScmInventoryService infCrvTaylorScmInventoryService;
+private IrCrvTaylorScmInventoryService irCrvTaylorScmInventoryService;
+private FxSptTaylorScmInventoryService fxSptTaylorScmInventoryService;
+private InfVolTaylorScmInventoryService infVolTaylorScmInventoryService;
+private IrVolTaylorScmInventoryService irVolTaylorScmInventoryService;
 
-List<Factor> entireReportJson = new ArrayList<>();
-        InventoryRequest inventoryRequestFxSpt = new InventoryRequest("FX_SPT", "inventory", "SCM", "TRIM", "FX", "SPT", unit, dataDatePart, "N/A");
-        InventoryRequest inventoryRequestEqSpt = new InventoryRequest("EQ_SPT", "inventory", "SCM", "TRIM", "EQ", "SPT", unit, dataDatePart, "N/A");
-        InventoryRequest inventoryRequestEqRpo = new InventoryRequest("EQ_RPO", "inventory", "SCM", "TRIM", "EQ", "RPO", unit, dataDatePart, "N/A");
-        InventoryRequest inventoryRequestEqDiv = new InventoryRequest("EQ_DIV", "inventory", "SCM", "TRIM", "EQ", "DIV", unit, dataDatePart, "N/A");
-        InventoryRequest inventoryRequestCspCrv = new InventoryRequest("CSP_CRV", "inventory", "SCM", "TRIM", "CSP", "CRV", unit, dataDatePart, "N/A");
-        InventoryRequest inventoryRequestInfCrv = new InventoryRequest("INF_CRV", "inventory", "SCM", "TRIM", "INF", "CRV", unit, dataDatePart, "N/A");
-        InventoryRequest inventoryRequestIrCrv = new InventoryRequest("IR_CRV", "inventory", "SCM", "TRIM", "IR", "CRV", unit, dataDatePart, "N/A");
-        InventoryRequest inventoryRequestComCrv = new InventoryRequest("COM_CRV", "inventory", "SCM", "TRIM", "COM", "CRV", unit, dataDatePart, "N/A");
-        InventoryRequest inventoryRequestComVol = new InventoryRequest("COM_VOL", "inventory", "SCM", "TRIM", "COM", "VOL", unit, dataDatePart, "N/A");
-        InventoryRequest inventoryRequestEqVol = new InventoryRequest("EQ_VOL", "inventory", "SCM", "TRIM", "EQ", "VOL", unit, dataDatePart, "N/A");
-        InventoryRequest inventoryRequestFxVol = new InventoryRequest("FX_VOL", "inventory", "SCM", "TRIM", "FX", "VOL", unit, dataDatePart, "N/A");
-        InventoryRequest inventoryRequestInfVol = new InventoryRequest("INF_VOL", "inventory", "SCM", "TRIM", "INF", "VOL", unit, dataDatePart, "N/A");
-        InventoryRequest inventoryRequestIrVol = new InventoryRequest("IR_VOL", "inventory", "SCM", "TRIM", "IR", "VOL", unit, dataDatePart, "N/A");
+// InventoryRequest para Taylor SCM
+InventoryRequest inventoryRequestFxSptTaylor = new InventoryRequest("FX_SPT", "inventory", "SCM", "TRIM", "FX", "SPT", unit, dataDatePart, "N/A");
+InventoryRequest inventoryRequestInfCrvTaylor = new InventoryRequest("INF_CRV", "inventory", "SCM", "TRIM", "INF", "CRV", unit, dataDatePart, "N/A");
+InventoryRequest inventoryRequestIrCrvTaylor = new InventoryRequest("IR_CRV", "inventory", "SCM", "TRIM", "IR", "CRV", unit, dataDatePart, "N/A");
+InventoryRequest inventoryRequestInfVolTaylor = new InventoryRequest("INF_VOL", "inventory", "SCM", "TRIM", "INF", "VOL", unit, dataDatePart, "N/A");
+InventoryRequest inventoryRequestIrVolTaylor = new InventoryRequest("IR_VOL", "inventory", "SCM", "TRIM", "IR", "VOL", unit, dataDatePart, "N/A");
 
+// Obtener listas de Factor
+List<Factor> factorListFxSptTaylor = fxSptTaylorScmInventoryService.getInventory(inventoryRequestFxSptTaylor);
+List<Factor> factorListInfCrvTaylor = infCrvTaylorScmInventoryService.getInventory(inventoryRequestInfCrvTaylor);
+List<Factor> factorListIrCrvTaylor = irCrvTaylorScmInventoryService.getInventory(inventoryRequestIrCrvTaylor);
+List<Factor> factorListInfVolTaylor = infVolTaylorScmInventoryService.getInventory(inventoryRequestInfVolTaylor);
+List<Factor> factorListIrVolTaylor = irVolTaylorScmInventoryService.getInventory(inventoryRequestIrVolTaylor);
 
-        List<Factor> factorListFxSpt = fxSptFullRevalScmInventoryService.getInventory(inventoryRequestFxSpt);
-        List<Factor> factorListEqSpt = eqSptFullRevalScmInventoryService.getInventory(inventoryRequestEqSpt);
-        List<Factor> factorListEqRpo = eqRpoFullRevalScmInventoryService.getInventory(inventoryRequestEqRpo);
-        List<Factor> factorListEqDiv = eqDivFullRevalScmInventoryService.getInventory(inventoryRequestEqDiv);
-        List<Factor> factorListCspCrv = cspCrvFullRevalScmInventoryService.getInventory(inventoryRequestCspCrv);
-        List<Factor> factorListInfCrv = infCrvFullRevalScmInventoryService.getInventory(inventoryRequestInfCrv);
-        List<Factor> factorListIrCrv = irCrvFullRevalScmInventoryService.getInventory(inventoryRequestIrCrv);
-        List<Factor> factorListComCrv = comCrvFullRevalScmInventoryService.getInventory(inventoryRequestComCrv);
-        List<Factor> factorListComVol = comVolFullRevalScmInventoryService.getInventory(inventoryRequestComVol);
-        List<Factor> factorListEqVol = eqVolFullRevalScmInventoryService.getInventory(inventoryRequestEqVol);
-        List<Factor> factorListFxVol = fxVolFullRevalScmInventoryService.getInventory(inventoryRequestFxVol);
-        List<Factor> factorListInfVol = infVolFullRevalScmInventoryService.getInventory(inventoryRequestInfVol);
-        List<Factor> factorListIrVol = irVolFullRevalScmInventoryService.getInventory(inventoryRequestIrVol);
+// Agregar al JSON completo
+entireReportJson.addAll(factorListFxSptTaylor);
+entireReportJson.addAll(factorListInfCrvTaylor);
+entireReportJson.addAll(factorListIrCrvTaylor);
+entireReportJson.addAll(factorListInfVolTaylor);
+entireReportJson.addAll(factorListIrVolTaylor);
 
+// Construcción de reportes CSV
+List<CsvBeanFullRevalReport> csvBeanFullRevalReportsFxSptTaylor = buildReport(new BuildCsvFullRevalReportFxSpt(), factorListFxSptTaylor, "FX", "SPT");
+List<CsvBeanFullRevalReport> csvBeanFullRevalReportsInfCrvTaylor = buildReport(new BuildCsvFullRevalReportInfCrv(), factorListInfCrvTaylor, "INF", "CRV");
+List<CsvBeanFullRevalReport> csvBeanFullRevalReportsIrCrvTaylor = buildReport(new BuildCsvFullRevalReportIrCrv(), factorListIrCrvTaylor, "IR", "CRV");
+List<CsvBeanFullRevalReport> csvBeanFullRevalReportsInfVolTaylor = buildReport(new BuildCsvFullRevalReportInfVol(), factorListInfVolTaylor, "INF", "VOL");
+List<CsvBeanFullRevalReport> csvBeanFullRevalReportsIrVolTaylor = buildReport(new BuildCsvFullRevalReportIrVol(), factorListIrVolTaylor, "IR", "VOL");
 
-        entireReportJson.addAll(factorListFxSpt);
-        entireReportJson.addAll(factorListEqSpt);
-        entireReportJson.addAll(factorListEqRpo);
-        entireReportJson.addAll(factorListEqDiv);
-        entireReportJson.addAll(factorListCspCrv);
-        entireReportJson.addAll(factorListIrCrv);
-        entireReportJson.addAll(factorListInfCrv);
-        entireReportJson.addAll(factorListComCrv);
-        entireReportJson.addAll(factorListComVol);
-        entireReportJson.addAll(factorListEqVol);
-        entireReportJson.addAll(factorListFxVol);
-        entireReportJson.addAll(factorListInfVol);
-        entireReportJson.addAll(factorListIrVol);
-
-    List<CsvBeanFullRevalReport> csvBeanFullRevalReports = new ArrayList<>();
-
-        List<CsvBeanFullRevalReport> csvBeanFullRevalReportsFxSpt = buildReport(new BuildCsvFullRevalReportFxSpt(), factorListFxSpt, "FX", "SPT");
-        List<CsvBeanFullRevalReport> csvBeanFullRevalReportsIrCrv = buildReport(new BuildCsvFullRevalReportIrCrv(),factorListIrCrv, "IR", "CRV");
-        List<CsvBeanFullRevalReport> csvBeanFullRevalReportsEqSpt = buildReport(new BuildCsvFullRevalReportEqSpt(),factorListEqSpt, "EQ", "SPT");
-        List<CsvBeanFullRevalReport> csvBeanFullRevalReportsEqDiv = buildReport(new BuildCsvFullRevalReportEqDiv(),factorListEqDiv, "EQ", "DIV");
-        List<CsvBeanFullRevalReport> csvBeanFullRevalReportsEqRpo = buildReport(new BuildCsvFullRevalReportEqRpo(),factorListEqRpo, "EQ", "RPO");
-        List<CsvBeanFullRevalReport> csvBeanFullRevalReportsCspCrv = buildReport(new BuildCsvFullRevalReportCspCrv(),factorListCspCrv, "CSP", "CRV");
-        List<CsvBeanFullRevalReport> csvBeanFullRevalReportsInfCrv = buildReport(new BuildCsvFullRevalReportInfCrv(),factorListInfCrv,  "INF", "CRV");
-        List<CsvBeanFullRevalReport> csvBeanFullRevalReportsComCrv = buildReport(new BuildCsvFullRevalReportComCrv(),factorListComCrv, "COM", "CRV");
-        List<CsvBeanFullRevalReport> csvBeanFullRevalReportsComVol = buildReport(new BuildCsvFullRevalReportComVol(),factorListComVol, "COM", "VOL");
-        List<CsvBeanFullRevalReport> csvBeanFullRevalReportsFxVol = buildReport(new BuildCsvFullRevalReportFxVol(),factorListFxVol, "FX", "VOL");
-        List<CsvBeanFullRevalReport> csvBeanFullRevalReportsEqVol = buildReport(new BuildCsvFullRevalReportEqVol(),factorListEqVol, "EQ", "VOL");
-        List<CsvBeanFullRevalReport> csvBeanFullRevalReportsInfVol = buildReport(new BuildCsvFullRevalReportInfVol(),factorListInfVol, "INF", "VOL");
-        List<CsvBeanFullRevalReport> csvBeanFullRevalReportsIrVol = buildReport(new BuildCsvFullRevalReportIrVol(),factorListIrVol, "IR", "VOL");
-
-        csvBeanFullRevalReports.addAll(csvBeanFullRevalReportsComCrv);
-        csvBeanFullRevalReports.addAll(csvBeanFullRevalReportsComVol);
-        csvBeanFullRevalReports.addAll(csvBeanFullRevalReportsCspCrv);
-        csvBeanFullRevalReports.addAll(csvBeanFullRevalReportsEqDiv);
-        csvBeanFullRevalReports.addAll(csvBeanFullRevalReportsEqRpo);
-        csvBeanFullRevalReports.addAll(csvBeanFullRevalReportsEqSpt);
-        csvBeanFullRevalReports.addAll(csvBeanFullRevalReportsEqVol);
-        csvBeanFullRevalReports.addAll(csvBeanFullRevalReportsFxSpt);
-        csvBeanFullRevalReports.addAll(csvBeanFullRevalReportsFxVol);
-        csvBeanFullRevalReports.addAll(csvBeanFullRevalReportsInfCrv);
-        csvBeanFullRevalReports.addAll(csvBeanFullRevalReportsInfVol);
-        csvBeanFullRevalReports.addAll(csvBeanFullRevalReportsIrCrv);
-        csvBeanFullRevalReports.addAll(csvBeanFullRevalReportsIrVol);
-
-    private InfCrvTaylorScmInventoryService infCrvTaylorScmInventoryService;
-    private IrCrvTaylorScmInventoryService irCrvTaylorScmInventoryService;
-    private FxSptTaylorScmInventoryService fxSptTaylorScmInventoryService;
-    private InfVolTaylorScmInventoryService infVolTaylorScmInventoryService;
-    private IrVolTaylorScmInventoryService irVolTaylorScmInventoryService;
+// Agregar al reporte completo
+csvBeanFullRevalReports.addAll(csvBeanFullRevalReportsFxSptTaylor);
+csvBeanFullRevalReports.addAll(csvBeanFullRevalReportsInfCrvTaylor);
+csvBeanFullRevalReports.addAll(csvBeanFullRevalReportsIrCrvTaylor);
+csvBeanFullRevalReports.addAll(csvBeanFullRevalReportsInfVolTaylor);
+csvBeanFullRevalReports.addAll(csvBeanFullRevalReportsIrVolTaylor);
