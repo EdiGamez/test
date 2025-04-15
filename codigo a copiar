@@ -1,41 +1,25 @@
-// Declaración de servicios adicionales
-private InfCrvTaylorScmInventoryService infCrvTaylorScmInventoryService;
-private IrCrvTaylorScmInventoryService irCrvTaylorScmInventoryService;
-private FxSptTaylorScmInventoryService fxSptTaylorScmInventoryService;
-private InfVolTaylorScmInventoryService infVolTaylorScmInventoryService;
-private IrVolTaylorScmInventoryService irVolTaylorScmInventoryService;
-
-// InventoryRequest para Taylor SCM
-InventoryRequest inventoryRequestFxSptTaylor = new InventoryRequest("FX_SPT", "inventory", "SCM", "TRIM", "FX", "SPT", unit, dataDatePart, "N/A");
-InventoryRequest inventoryRequestInfCrvTaylor = new InventoryRequest("INF_CRV", "inventory", "SCM", "TRIM", "INF", "CRV", unit, dataDatePart, "N/A");
-InventoryRequest inventoryRequestIrCrvTaylor = new InventoryRequest("IR_CRV", "inventory", "SCM", "TRIM", "IR", "CRV", unit, dataDatePart, "N/A");
-InventoryRequest inventoryRequestInfVolTaylor = new InventoryRequest("INF_VOL", "inventory", "SCM", "TRIM", "INF", "VOL", unit, dataDatePart, "N/A");
-InventoryRequest inventoryRequestIrVolTaylor = new InventoryRequest("IR_VOL", "inventory", "SCM", "TRIM", "IR", "VOL", unit, dataDatePart, "N/A");
-
-// Obtener listas de Factor
-List<Factor> factorListFxSptTaylor = fxSptTaylorScmInventoryService.getInventory(inventoryRequestFxSptTaylor);
-List<Factor> factorListInfCrvTaylor = infCrvTaylorScmInventoryService.getInventory(inventoryRequestInfCrvTaylor);
-List<Factor> factorListIrCrvTaylor = irCrvTaylorScmInventoryService.getInventory(inventoryRequestIrCrvTaylor);
-List<Factor> factorListInfVolTaylor = infVolTaylorScmInventoryService.getInventory(inventoryRequestInfVolTaylor);
-List<Factor> factorListIrVolTaylor = irVolTaylorScmInventoryService.getInventory(inventoryRequestIrVolTaylor);
-
-// Agregar al JSON completo
-entireReportJson.addAll(factorListFxSptTaylor);
-entireReportJson.addAll(factorListInfCrvTaylor);
-entireReportJson.addAll(factorListIrCrvTaylor);
-entireReportJson.addAll(factorListInfVolTaylor);
-entireReportJson.addAll(factorListIrVolTaylor);
-
-// Construcción de reportes CSV
-List<CsvBeanFullRevalReport> csvBeanFullRevalReportsFxSptTaylor = buildReport(new BuildCsvFullRevalReportFxSpt(), factorListFxSptTaylor, "FX", "SPT");
-List<CsvBeanFullRevalReport> csvBeanFullRevalReportsInfCrvTaylor = buildReport(new BuildCsvFullRevalReportInfCrv(), factorListInfCrvTaylor, "INF", "CRV");
-List<CsvBeanFullRevalReport> csvBeanFullRevalReportsIrCrvTaylor = buildReport(new BuildCsvFullRevalReportIrCrv(), factorListIrCrvTaylor, "IR", "CRV");
-List<CsvBeanFullRevalReport> csvBeanFullRevalReportsInfVolTaylor = buildReport(new BuildCsvFullRevalReportInfVol(), factorListInfVolTaylor, "INF", "VOL");
-List<CsvBeanFullRevalReport> csvBeanFullRevalReportsIrVolTaylor = buildReport(new BuildCsvFullRevalReportIrVol(), factorListIrVolTaylor, "IR", "VOL");
-
-// Agregar al reporte completo
-csvBeanFullRevalReports.addAll(csvBeanFullRevalReportsFxSptTaylor);
-csvBeanFullRevalReports.addAll(csvBeanFullRevalReportsInfCrvTaylor);
-csvBeanFullRevalReports.addAll(csvBeanFullRevalReportsIrCrvTaylor);
-csvBeanFullRevalReports.addAll(csvBeanFullRevalReportsInfVolTaylor);
-csvBeanFullRevalReports.addAll(csvBeanFullRevalReportsIrVolTaylor);
+asset = "FX"
+factor = "Spot"
+subType = null
+name = "AUD-USD"
+overnight = null
+stat = null
+unt = "NY"
+ado = null
+returnmodel = "ADD"
+temp = "N/A"
+days = "N/A"
+lab = "N/A"
+swapMat = "N/A"
+optionMat = "N/A"
+skeW = "N/A"
+interpolationForm = "N/A"
+valueInterpolate = "N/A"
+lastinterpol = "N/A"
+calibrationMet = "N/A"
+rateConv = "N/A"
+spreadCur = "N/A"
+businessDayS = "N/A"
+proxyMtdigy = "N/A"
+proxyado = "N/A"
+startdate = "N/A"
