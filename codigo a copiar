@@ -1,111 +1,40 @@
-/**
- * Esta función (`TriFunction<Factor, Object, PointCrv, T>`) se define con tres argumentos porque,
- * en ciertos casos como el procesamiento de Swaptions, es necesario un objeto adicional (`item`)
- * además del `Factor` y el `PointCrv` para construir correctamente el CsvBean.
- *
- * Por ejemplo, en el caso de Swaptions, el método de construcción de CsvBean requiere:
- *   - El `Factor` que contiene la información de riesgo,
- *   - El `SwaptionObject` (item) que contiene detalles adicionales del instrumento,
- *   - Y el `PointCrv` que representa un punto específico de la curva.
- *
- * En estos casos, el `item` se "inyecta" o "captura" en la lambda que se pasa a métodos que solo
- * aceptan una `BiFunction<Factor, PointCrv, T>`, haciendo posible reutilizar un flujo genérico.
- *
- * Ejemplo de uso con item capturado:
- *
- *     TriFunction<Factor, Object, PointCrv, T> getCsvBeanFunction = ...;
- *     Object item = swaption;
- *     BiFunction<Factor, PointCrv, T> fn = (f, p) -> getCsvBeanFunction.apply(f, item, p);
- *
- * Esto permite seguir usando métodos genéricos como `processProxiesGeneric` que no conocen ni
- * manejan el `item` directamente, manteniendo una estructura flexible y reutilizable.
- *
- * En casos donde el `item` no es necesario (como en productos históricos simples),
- * se puede pasar una función equivalente que simplemente ignore el argumento extra.
- */
-    protected <T, U> void processPoints(Factor factor, List<T> items, List<U> res,
-                                        Function<T, List<PointCrv>> getPointsFunction,
-                                        TriFunction<Factor, Object, PointCrv, U> getCsvBeanFunction) {
-        for (T item : items) {
-            List<PointCrv> pointCrvs = getPointsFunction.apply(item);
-            for (PointCrv point : pointCrvs) {
-                if (shouldProcessWithProxy(point, factor)) {
-                    processProxiesGeneric(point, factor, res, (f, p) -> getCsvBeanFunction.apply(f, item, p));
-                } else {
-                    addCsvBeanWithoutProxy(factor, point, res, (f, p) -> getCsvBeanFunction.apply(f, item,(PointCrv) p));
-                }
-            }
-        }
+   protected boolean isMatchingProxy(ProxyObject proxyObj, PointCrv p) {
+        return ((proxyObj.getProxy().getAxisX() == null && p.getAxisX() == null) ||
+                (proxyObj.getProxy().getAxisX() != null && proxyObj.getProxy().getAxisX().equalsIgnoreCase(p.getAxisX()))) &&
+                ((proxyObj.getProxy().getDays() == null && p.getDays() == null) ||
+                        (proxyObj.getProxy().getDays() != null && proxyObj.getProxy().getDays().equalsIgnoreCase(valueOrNA(p.getDays())))) &&
+                ((proxyObj.getProxy().getStrike() == null && p.getStrike() == null) ||
+                        (proxyObj.getProxy().getStrike().equalsIgnoreCase(p.getStrike())));
     }
-    private ArrayList<CsvBeanStressTestHipoteticReport> buildFromTemplate(Factor factor) {
-        ArrayList<CsvBeanStressTestHipoteticReport> res = new ArrayList<>();
-        List<PointCrv> points = (null!= factor.getRfInfo().getRfBody().getPoints())? factor.getRfInfo().getRfBody().getPoints():new ArrayList<>();
-        processPoints(factor, points, res,
-                Collections::singletonList,
-                (f, item, p) -> getCsvBeanStressTestHipoteticReport(f, p));
-        return res;
+    protected boolean isMatchingProxy(ProxyObject proxyObj, ZeroCouponPoints p) {
+        return ((proxyObj.getProxy().getAxisX() == null && p.getAxisX() == null) ||
+                (proxyObj.getProxy().getAxisX() != null && proxyObj.getProxy().getAxisX().equalsIgnoreCase(p.getAxisX()))) &&
+                ((proxyObj.getProxy().getDays() == null && p.getDays() == null) ||
+                        (proxyObj.getProxy().getDays() != null && proxyObj.getProxy().getDays().equalsIgnoreCase(valueOrNA(p.getDays()))));
     }
-    private List<CsvBeanStressTestHipoteticReport> buildFromTemplateAtm(Factor factor) {
-        List<CsvBeanStressTestHipoteticReport> res = new ArrayList<>();
-        List<SwaptionObject> swaptionObjectList = (null != factor.getRfInfo().getRfBody().getTemplateAtm()) ? factor.getRfInfo().getRfBody().getTemplateAtm() : new ArrayList<>();
-        if (isValidList(swaptionObjectList)) {
-            processPoints(factor, swaptionObjectList, res,
-                    SwaptionObject::getPoints,
-                    (f, swaption, p) -> getCsvBeanStressTestHipoteticReport(f, (SwaptionObject) swaption, p));
-        }
-        return res;
-    }
-    protected <T> void processProxiesGeneric(PointCrv point, Factor factor, List<T> res,
-                                         BiFunction<Factor, PointCrv, T> createBeanFunction) {
-        List<ProxyObject> proxies = factor.getRfInfo().getProxies();
-        for (ProxyObject proxyObj : proxies) {
-            if (isMatchingProxy(proxyObj, point)) {
-                T csvBean = createBeanFunction.apply(factor, point);
-                if (csvBean instanceof CsvBeanStressTestHistoricReport) {
-                    setProxy((CsvBeanStressTestHistoricReport) csvBean, proxyObj.getProxy(), factor);
-                } else if (csvBean instanceof CsvBeanStressTestHipoteticReport) {
-                    setProxy((CsvBeanStressTestHipoteticReport) csvBean, proxyObj.getProxy(), factor);
-                }
-                res.add(csvBean);
-            }
-        }
-    }
+    public Optional<ProxyObject> pointHasProxy(PointCrv p, Factor factor) {
 
-    private List<CsvBeanStressTestHistoricReport> buildFromTemplateVol(Factor factor) {
-        List<CsvBeanStressTestHistoricReport> res = new ArrayList<>();
-        List<SwaptionObject> swaptionObjectList = (null != factor.getRfInfo().getRfBody().getTemplateVol()) ? factor.getRfInfo().getRfBody().getTemplateVol() : new ArrayList<>();
-        if (isValidList(swaptionObjectList)) {
-            processPoints(factor, swaptionObjectList, res,
-                    SwaptionObject::getPoints,
-                    (f, swaption, p) -> getCsvBeanStressTestHistoricReport(f, (SwaptionObject) swaption, p));
-        }
-        return res;     private ArrayList<CsvBeanStressTestHistoricReport> getPoints(Factor factor) {
-        ArrayList<CsvBeanStressTestHistoricReport> res = new ArrayList<>();
-        List<PointCrv> points = (null != factor.getRfInfo().getRfBody().getPoints()) ? factor.getRfInfo().getRfBody().getPoints() : new ArrayList<>();
-        processPoints(factor, points, res,
-                Collections::singletonList,
-                (f, item, p) -> getCsvBeanStressTestHistoricReport(f, p));
-        return res;
-    }
-    private void processPoints(Factor factor, List<InnerPointObject> points, ArrayList<CsvBeanStressTestHistoricReport> res) {
-        for (InnerPointObject point : points) {
-            if (shouldProcessWithProxy(point, factor)) {
-                processProxiesGeneric(point, factor, res, this::getCsvBeanStressTestHistoricReport);
-            } else {
-                addCsvBeanWithoutProxy(factor, point, res, (f, p) -> getCsvBeanStressTestHistoricReport(f, (InnerPointObject) p));
-            }
+        try {
+            List<ProxyObject> proxies = factor.getRfInfo().getProxies();
+            return proxies.stream().filter(proxyObject ->
+                            ((proxyObject.getProxy().getAxisX() == null && p.getAxisX() == null) ||
+                                    (isNonNull(proxyObject.getProxy().getAxisX()) && proxyObject.getProxy().getAxisX().equalsIgnoreCase(p.getAxisX())))
+                            && ((proxyObject.getProxy().getDays() == null && p.getDays() == null) ||
+                                    (isNonNull(proxyObject.getProxy().getDays()) && proxyObject.getProxy().getDays().equalsIgnoreCase(valueOrNull(p.getDays()))))
+                            && (proxyObject.getProxy().getStrike() == null && p.getStrike() == null) ||
+                                    (isNonNull(proxyObject.getProxy().getStrike()) && proxyObject.getProxy().getStrike().equalsIgnoreCase(p.getStrike()))
+            ).findFirst();
+        } catch (Exception e) {
+            log.error("Error in pointHasProxy", e);
+            return Optional.empty();
         }
     }
-    }     protected <T> void addCsvBeanWithoutProxy(Factor factor, Object point, List<T> res, BiFunction<Factor, Object, T> createBeanFunction) {
-        T csvBean = createBeanFunction.apply(factor, point);
-        if(csvBean instanceof CsvBeanStressTestHistoricReport) {
-            setEntireRegProxyAsNA((CsvBeanStressTestHistoricReport) csvBean);
-        } else if (csvBean instanceof CsvBeanStressTestHipoteticReport) {
-            setEntireRegProxyAsNA((CsvBeanStressTestHipoteticReport) csvBean);
-        }
-        res.add(csvBean);
+    protected boolean shouldProcessWithProxy(PointCrv point, Factor factor) {
+        return pointHasProxy(point, factor).isPresent() && hasAnyProxy(factor);
     }
-@FunctionalInterface
-public interface TriFunction<A, B, C, R> {
-    R apply(A a, B b, C c);
-}
+    protected boolean shouldProcessWithProxy(InnerPointObject point, Factor factor) {
+        return pointHasProxy(point, factor).isPresent() && hasAnyProxy(factor);
+    }
+   boolean isNonNull(Object obj) {
+        return obj != null;
+    }
