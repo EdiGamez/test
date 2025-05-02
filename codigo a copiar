@@ -1,25 +1,86 @@
-asset = "FX"
-factor = "Spot"
-subType = null
-name = "AUD-USD"
-overnight = null
-stat = null
-unt = "NY"
-ado = null
-returnmodel = "ADD"
-temp = "N/A"
-days = "N/A"
-lab = "N/A"
-swapMat = "N/A"
-optionMat = "N/A"
-skeW = "N/A"
-interpolationForm = "N/A"
-valueInterpolate = "N/A"
-lastinterpol = "N/A"
-calibrationMet = "N/A"
-rateConv = "N/A"
-spreadCur = "N/A"
-businessDayS = "N/A"
-proxyMtdigy = "N/A"
-proxyado = "N/A"
-startdate = "N/A"
+    protected <T, U> void processPoints(Factor factor, List<T> items, List<U> res,
+                                        Function<T, List<PointCrv>> getPointsFunction,
+                                        TriFunction<Factor, Object, PointCrv, U> getCsvBeanFunction) {
+        for (T item : items) {
+            List<PointCrv> pointCrvs = getPointsFunction.apply(item);
+            for (PointCrv point : pointCrvs) {
+                if (shouldProcessWithProxy(point, factor)) {
+                    processProxiesGeneric(point, factor, res, (f, p) -> getCsvBeanFunction.apply(f, item, p));
+                } else {
+                    addCsvBeanWithoutProxy(factor, point, res, (f, p) -> getCsvBeanFunction.apply(f, item,(PointCrv) p));
+                }
+            }
+        }
+    }
+    private ArrayList<CsvBeanStressTestHipoteticReport> buildFromTemplate(Factor factor) {
+        ArrayList<CsvBeanStressTestHipoteticReport> res = new ArrayList<>();
+        List<PointCrv> points = (null!= factor.getRfInfo().getRfBody().getPoints())? factor.getRfInfo().getRfBody().getPoints():new ArrayList<>();
+        processPoints(factor, points, res,
+                Collections::singletonList,
+                (f, item, p) -> getCsvBeanStressTestHipoteticReport(f, p));
+        return res;
+    }
+    private List<CsvBeanStressTestHipoteticReport> buildFromTemplateAtm(Factor factor) {
+        List<CsvBeanStressTestHipoteticReport> res = new ArrayList<>();
+        List<SwaptionObject> swaptionObjectList = (null != factor.getRfInfo().getRfBody().getTemplateAtm()) ? factor.getRfInfo().getRfBody().getTemplateAtm() : new ArrayList<>();
+        if (isValidList(swaptionObjectList)) {
+            processPoints(factor, swaptionObjectList, res,
+                    SwaptionObject::getPoints,
+                    (f, swaption, p) -> getCsvBeanStressTestHipoteticReport(f, (SwaptionObject) swaption, p));
+        }
+        return res;
+    }
+    protected <T> void processProxiesGeneric(PointCrv point, Factor factor, List<T> res,
+                                         BiFunction<Factor, PointCrv, T> createBeanFunction) {
+        List<ProxyObject> proxies = factor.getRfInfo().getProxies();
+        for (ProxyObject proxyObj : proxies) {
+            if (isMatchingProxy(proxyObj, point)) {
+                T csvBean = createBeanFunction.apply(factor, point);
+                if (csvBean instanceof CsvBeanStressTestHistoricReport) {
+                    setProxy((CsvBeanStressTestHistoricReport) csvBean, proxyObj.getProxy(), factor);
+                } else if (csvBean instanceof CsvBeanStressTestHipoteticReport) {
+                    setProxy((CsvBeanStressTestHipoteticReport) csvBean, proxyObj.getProxy(), factor);
+                }
+                res.add(csvBean);
+            }
+        }
+    }
+
+    private List<CsvBeanStressTestHistoricReport> buildFromTemplateVol(Factor factor) {
+        List<CsvBeanStressTestHistoricReport> res = new ArrayList<>();
+        List<SwaptionObject> swaptionObjectList = (null != factor.getRfInfo().getRfBody().getTemplateVol()) ? factor.getRfInfo().getRfBody().getTemplateVol() : new ArrayList<>();
+        if (isValidList(swaptionObjectList)) {
+            processPoints(factor, swaptionObjectList, res,
+                    SwaptionObject::getPoints,
+                    (f, swaption, p) -> getCsvBeanStressTestHistoricReport(f, (SwaptionObject) swaption, p));
+        }
+        return res;     private ArrayList<CsvBeanStressTestHistoricReport> getPoints(Factor factor) {
+        ArrayList<CsvBeanStressTestHistoricReport> res = new ArrayList<>();
+        List<PointCrv> points = (null != factor.getRfInfo().getRfBody().getPoints()) ? factor.getRfInfo().getRfBody().getPoints() : new ArrayList<>();
+        processPoints(factor, points, res,
+                Collections::singletonList,
+                (f, item, p) -> getCsvBeanStressTestHistoricReport(f, p));
+        return res;
+    }
+    private void processPoints(Factor factor, List<InnerPointObject> points, ArrayList<CsvBeanStressTestHistoricReport> res) {
+        for (InnerPointObject point : points) {
+            if (shouldProcessWithProxy(point, factor)) {
+                processProxiesGeneric(point, factor, res, this::getCsvBeanStressTestHistoricReport);
+            } else {
+                addCsvBeanWithoutProxy(factor, point, res, (f, p) -> getCsvBeanStressTestHistoricReport(f, (InnerPointObject) p));
+            }
+        }
+    }
+    }     protected <T> void addCsvBeanWithoutProxy(Factor factor, Object point, List<T> res, BiFunction<Factor, Object, T> createBeanFunction) {
+        T csvBean = createBeanFunction.apply(factor, point);
+        if(csvBean instanceof CsvBeanStressTestHistoricReport) {
+            setEntireRegProxyAsNA((CsvBeanStressTestHistoricReport) csvBean);
+        } else if (csvBean instanceof CsvBeanStressTestHipoteticReport) {
+            setEntireRegProxyAsNA((CsvBeanStressTestHipoteticReport) csvBean);
+        }
+        res.add(csvBean);
+    }
+@FunctionalInterface
+public interface TriFunction<A, B, C, R> {
+    R apply(A a, B b, C c);
+}
