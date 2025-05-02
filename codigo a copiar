@@ -1,3 +1,11 @@
+import static org.junit.Assert.*;
+import org.junit.Before;
+import org.junit.Test;
+import java.util.ArrayList;
+import java.util.List;
+
+public class ProxyObjectTest {
+
     private BuildCsvStressTestReport buildCsvStressTestReport;
     private Factor factor;
     private List<PointCrv> pointCrvs;
@@ -5,7 +13,7 @@
     private InnerPointObject innerPointObject;
     private PointCrv pointCrv;
     private ProxyObject proxyObj;
-    ZeroCouponPoints zeroCouponPoints;
+    private ZeroCouponPoints zeroCouponPoints;
 
     @Before
     public void setUp() {
@@ -17,7 +25,7 @@
         // Configuración de datos de prueba
         pointCrv = new PointCrv();
         pointCrv.setAxisX("someAxis");
-        pointCrv.setDays(10);
+        pointCrv.setDays(10);  // Días como entero
         pointCrv.setStrike("2.5");
         pointCrvs.add(pointCrv);
 
@@ -25,7 +33,7 @@
         proxyObj = new ProxyObject();
         Proxy proxy = new Proxy();
         proxy.setAxisX("someAxis");
-        proxy.setDays("10");
+        proxy.setDays(10);  // Días como entero
         proxy.setStrike("2.5");
         proxy.setMethodology("someMethodology");
         proxyObj.setProxy(proxy);
@@ -34,7 +42,7 @@
         innerPointObject = new InnerPointObject();
         zeroCouponPoints = new ZeroCouponPoints();
         zeroCouponPoints.setAxisX("someAxis");
-        zeroCouponPoints.setDays("10");
+        zeroCouponPoints.setDays(10);  // Días como entero
         zeroCouponPoints.setAxisY("someAxisY");
         innerPointObject.setPoint(zeroCouponPoints);
 
@@ -43,3 +51,119 @@
         rfInfo.setProxies(proxies);
         factor.setRfInfo(rfInfo);
     }
+
+    // Test para el método isMatchingProxy con PointCrv
+    @Test
+    public void testIsMatchingProxy_PointCrv_AllConditionsTrue() {
+        // Los valores en pointCrv y proxyObj coinciden
+        assertTrue(isMatchingProxy(proxyObj, pointCrv));
+    }
+
+    @Test
+    public void testIsMatchingProxy_PointCrv_AxisXFalse() {
+        pointCrv.setAxisX("differentAxis");
+        // AxisX no coincide
+        assertFalse(isMatchingProxy(proxyObj, pointCrv));
+    }
+
+    @Test
+    public void testIsMatchingProxy_PointCrv_DaysFalse() {
+        pointCrv.setDays(20);  // Valor diferente
+        // Days no coincide
+        assertFalse(isMatchingProxy(proxyObj, pointCrv));
+    }
+
+    @Test
+    public void testIsMatchingProxy_PointCrv_StrikeFalse() {
+        pointCrv.setStrike("3.0"); // Valor diferente
+        // Strike no coincide
+        assertFalse(isMatchingProxy(proxyObj, pointCrv));
+    }
+
+    @Test
+    public void testIsMatchingProxy_PointCrv_AxisXTrue_DaysTrue_StrikeFalse() {
+        pointCrv.setStrike("3.0");
+        // AxisX y Days coinciden, pero Strike no
+        assertFalse(isMatchingProxy(proxyObj, pointCrv));
+    }
+
+    @Test
+    public void testIsMatchingProxy_PointCrv_AllConditionsFalse() {
+        pointCrv.setAxisX("differentAxis");
+        pointCrv.setDays(20);
+        pointCrv.setStrike("3.0");
+        // Ninguna condición coincide
+        assertFalse(isMatchingProxy(proxyObj, pointCrv));
+    }
+
+    // Test para el método isMatchingProxy con ZeroCouponPoints
+    @Test
+    public void testIsMatchingProxy_ZeroCouponPoints_AllConditionsTrue() {
+        // Los valores en zeroCouponPoints y proxyObj coinciden
+        assertTrue(isMatchingProxy(proxyObj, zeroCouponPoints));
+    }
+
+    @Test
+    public void testIsMatchingProxy_ZeroCouponPoints_AxisXFalse() {
+        zeroCouponPoints.setAxisX("differentAxis");
+        // AxisX no coincide
+        assertFalse(isMatchingProxy(proxyObj, zeroCouponPoints));
+    }
+
+    @Test
+    public void testIsMatchingProxy_ZeroCouponPoints_DaysFalse() {
+        zeroCouponPoints.setDays(20);  // Valor diferente
+        // Days no coincide
+        assertFalse(isMatchingProxy(proxyObj, zeroCouponPoints));
+    }
+
+    @Test
+    public void testIsMatchingProxy_ZeroCouponPoints_AllConditionsFalse() {
+        zeroCouponPoints.setAxisX("differentAxis");
+        zeroCouponPoints.setDays(20);
+        // Ninguna condición coincide
+        assertFalse(isMatchingProxy(proxyObj, zeroCouponPoints));
+    }
+
+    // Test para el método pointHasProxy
+    @Test
+    public void testPointHasProxy_Found() {
+        // pointCrv y proxyObj coinciden, por lo que el proxy debe ser encontrado
+        assertTrue(pointHasProxy(pointCrv, factor).isPresent());
+    }
+
+    @Test
+    public void testPointHasProxy_NotFound() {
+        pointCrv.setAxisX("differentAxis"); // Cambiar el valor para que no coincidan
+        // No debe encontrar el proxy
+        assertFalse(pointHasProxy(pointCrv, factor).isPresent());
+    }
+
+    // Test para shouldProcessWithProxy
+    @Test
+    public void testShouldProcessWithProxy_Found() {
+        // Si pointHasProxy devuelve un valor presente, la prueba debería devolver true
+        assertTrue(shouldProcessWithProxy(pointCrv, factor));
+    }
+
+    @Test
+    public void testShouldProcessWithProxy_NotFound() {
+        pointCrv.setAxisX("differentAxis"); // Cambiar el valor para que no coincidan
+        // No debería procesar si no se encuentra el proxy
+        assertFalse(shouldProcessWithProxy(pointCrv, factor));
+    }
+
+    // Test para shouldProcessWithProxy con InnerPointObject
+    @Test
+    public void testShouldProcessWithProxy_InnerPointObject_Found() {
+        // Si pointHasProxy devuelve un valor presente, la prueba debería devolver true
+        assertTrue(shouldProcessWithProxy(innerPointObject, factor));
+    }
+
+    @Test
+    public void testShouldProcessWithProxy_InnerPointObject_NotFound() {
+        innerPointObject.getPoint().setAxisX("differentAxis");
+        // No debería procesar si no se encuentra el proxy
+        assertFalse(shouldProcessWithProxy(innerPointObject, factor));
+    }
+}
