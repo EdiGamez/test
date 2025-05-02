@@ -1,3 +1,28 @@
+/**
+ * Esta función (`TriFunction<Factor, Object, PointCrv, T>`) se define con tres argumentos porque,
+ * en ciertos casos como el procesamiento de Swaptions, es necesario un objeto adicional (`item`)
+ * además del `Factor` y el `PointCrv` para construir correctamente el CsvBean.
+ *
+ * Por ejemplo, en el caso de Swaptions, el método de construcción de CsvBean requiere:
+ *   - El `Factor` que contiene la información de riesgo,
+ *   - El `SwaptionObject` (item) que contiene detalles adicionales del instrumento,
+ *   - Y el `PointCrv` que representa un punto específico de la curva.
+ *
+ * En estos casos, el `item` se "inyecta" o "captura" en la lambda que se pasa a métodos que solo
+ * aceptan una `BiFunction<Factor, PointCrv, T>`, haciendo posible reutilizar un flujo genérico.
+ *
+ * Ejemplo de uso con item capturado:
+ *
+ *     TriFunction<Factor, Object, PointCrv, T> getCsvBeanFunction = ...;
+ *     Object item = swaption;
+ *     BiFunction<Factor, PointCrv, T> fn = (f, p) -> getCsvBeanFunction.apply(f, item, p);
+ *
+ * Esto permite seguir usando métodos genéricos como `processProxiesGeneric` que no conocen ni
+ * manejan el `item` directamente, manteniendo una estructura flexible y reutilizable.
+ *
+ * En casos donde el `item` no es necesario (como en productos históricos simples),
+ * se puede pasar una función equivalente que simplemente ignore el argumento extra.
+ */
     protected <T, U> void processPoints(Factor factor, List<T> items, List<U> res,
                                         Function<T, List<PointCrv>> getPointsFunction,
                                         TriFunction<Factor, Object, PointCrv, U> getCsvBeanFunction) {
