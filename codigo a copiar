@@ -1,40 +1,123 @@
-   protected boolean isMatchingProxy(ProxyObject proxyObj, PointCrv p) {
-        return ((proxyObj.getProxy().getAxisX() == null && p.getAxisX() == null) ||
-                (proxyObj.getProxy().getAxisX() != null && proxyObj.getProxy().getAxisX().equalsIgnoreCase(p.getAxisX()))) &&
-                ((proxyObj.getProxy().getDays() == null && p.getDays() == null) ||
-                        (proxyObj.getProxy().getDays() != null && proxyObj.getProxy().getDays().equalsIgnoreCase(valueOrNA(p.getDays())))) &&
-                ((proxyObj.getProxy().getStrike() == null && p.getStrike() == null) ||
-                        (proxyObj.getProxy().getStrike().equalsIgnoreCase(p.getStrike())));
-    }
-    protected boolean isMatchingProxy(ProxyObject proxyObj, ZeroCouponPoints p) {
-        return ((proxyObj.getProxy().getAxisX() == null && p.getAxisX() == null) ||
-                (proxyObj.getProxy().getAxisX() != null && proxyObj.getProxy().getAxisX().equalsIgnoreCase(p.getAxisX()))) &&
-                ((proxyObj.getProxy().getDays() == null && p.getDays() == null) ||
-                        (proxyObj.getProxy().getDays() != null && proxyObj.getProxy().getDays().equalsIgnoreCase(valueOrNA(p.getDays()))));
-    }
-    public Optional<ProxyObject> pointHasProxy(PointCrv p, Factor factor) {
+    @Test
+    public void testIsMatchingProxy_PointCrv_AllConditionsTrue() {
+        // Configurar los valores para las pruebas
+        Mockito.when(proxyObj.getProxy().getAxisX()).thenReturn("AxisXValue");
+        Mockito.when(pointCrv.getAxisX()).thenReturn("AxisXValue");
 
-        try {
-            List<ProxyObject> proxies = factor.getRfInfo().getProxies();
-            return proxies.stream().filter(proxyObject ->
-                            ((proxyObject.getProxy().getAxisX() == null && p.getAxisX() == null) ||
-                                    (isNonNull(proxyObject.getProxy().getAxisX()) && proxyObject.getProxy().getAxisX().equalsIgnoreCase(p.getAxisX())))
-                            && ((proxyObject.getProxy().getDays() == null && p.getDays() == null) ||
-                                    (isNonNull(proxyObject.getProxy().getDays()) && proxyObject.getProxy().getDays().equalsIgnoreCase(valueOrNull(p.getDays()))))
-                            && (proxyObject.getProxy().getStrike() == null && p.getStrike() == null) ||
-                                    (isNonNull(proxyObject.getProxy().getStrike()) && proxyObject.getProxy().getStrike().equalsIgnoreCase(p.getStrike()))
-            ).findFirst();
-        } catch (Exception e) {
-            log.error("Error in pointHasProxy", e);
-            return Optional.empty();
-        }
+        Mockito.when(proxyObj.getProxy().getDays()).thenReturn("DaysValue");
+        Mockito.when(pointCrv.getDays()).thenReturn("DaysValue");
+
+        Mockito.when(proxyObj.getProxy().getStrike()).thenReturn("StrikeValue");
+        Mockito.when(pointCrv.getStrike()).thenReturn("StrikeValue");
+
+        // Ejecutar la prueba
+        assertTrue(isMatchingProxy(proxyObj, pointCrv));
     }
-    protected boolean shouldProcessWithProxy(PointCrv point, Factor factor) {
-        return pointHasProxy(point, factor).isPresent() && hasAnyProxy(factor);
+
+    @Test
+    public void testIsMatchingProxy_PointCrv_AllConditionsFalse() {
+        // Configurar los valores para las pruebas
+        Mockito.when(proxyObj.getProxy().getAxisX()).thenReturn("AxisXValue");
+        Mockito.when(pointCrv.getAxisX()).thenReturn("DifferentAxisXValue");
+
+        Mockito.when(proxyObj.getProxy().getDays()).thenReturn("DaysValue");
+        Mockito.when(pointCrv.getDays()).thenReturn("DifferentDaysValue");
+
+        Mockito.when(proxyObj.getProxy().getStrike()).thenReturn("StrikeValue");
+        Mockito.when(pointCrv.getStrike()).thenReturn("DifferentStrikeValue");
+
+        // Ejecutar la prueba
+        assertFalse(isMatchingProxy(proxyObj, pointCrv));
     }
-    protected boolean shouldProcessWithProxy(InnerPointObject point, Factor factor) {
-        return pointHasProxy(point, factor).isPresent() && hasAnyProxy(factor);
+
+    @Test
+    public void testIsMatchingProxy_ZeroCouponPoints_AllConditionsTrue() {
+        // Configurar los valores para las pruebas
+        Mockito.when(proxyObj.getProxy().getAxisX()).thenReturn("AxisXValue");
+        Mockito.when(zeroCouponPoints.getAxisX()).thenReturn("AxisXValue");
+
+        Mockito.when(proxyObj.getProxy().getDays()).thenReturn("DaysValue");
+        Mockito.when(zeroCouponPoints.getDays()).thenReturn("DaysValue");
+
+        // Ejecutar la prueba
+        assertTrue(isMatchingProxy(proxyObj, zeroCouponPoints));
     }
-   boolean isNonNull(Object obj) {
-        return obj != null;
+
+    @Test
+    public void testIsMatchingProxy_ZeroCouponPoints_AllConditionsFalse() {
+        // Configurar los valores para las pruebas
+        Mockito.when(proxyObj.getProxy().getAxisX()).thenReturn("AxisXValue");
+        Mockito.when(zeroCouponPoints.getAxisX()).thenReturn("DifferentAxisXValue");
+
+        Mockito.when(proxyObj.getProxy().getDays()).thenReturn("DaysValue");
+        Mockito.when(zeroCouponPoints.getDays()).thenReturn("DifferentDaysValue");
+
+        // Ejecutar la prueba
+        assertFalse(isMatchingProxy(proxyObj, zeroCouponPoints));
     }
+
+    @Test
+    public void testPointHasProxy() {
+        // Configurar valores de prueba para PointCrv
+        Mockito.when(proxyObj.getProxy().getAxisX()).thenReturn("AxisXValue");
+        Mockito.when(pointCrv.getAxisX()).thenReturn("AxisXValue");
+        
+        Mockito.when(proxyObj.getProxy().getDays()).thenReturn("DaysValue");
+        Mockito.when(pointCrv.getDays()).thenReturn("DaysValue");
+        
+        Mockito.when(proxyObj.getProxy().getStrike()).thenReturn("StrikeValue");
+        Mockito.when(pointCrv.getStrike()).thenReturn("StrikeValue");
+        
+        // Simular que factor tiene proxies
+        Mockito.when(factor.getRfInfo().getProxies()).thenReturn(Collections.singletonList(proxyObj));
+
+        // Ejecutar la prueba
+        assertTrue(pointHasProxy(pointCrv, factor).isPresent());
+    }
+
+    @Test
+    public void testPointHasProxy_NotMatching() {
+        // Configurar valores de prueba para PointCrv
+        Mockito.when(proxyObj.getProxy().getAxisX()).thenReturn("AxisXValue");
+        Mockito.when(pointCrv.getAxisX()).thenReturn("DifferentAxisXValue");
+
+        Mockito.when(proxyObj.getProxy().getDays()).thenReturn("DaysValue");
+        Mockito.when(pointCrv.getDays()).thenReturn("DifferentDaysValue");
+
+        // Simular que factor tiene proxies
+        Mockito.when(factor.getRfInfo().getProxies()).thenReturn(Collections.singletonList(proxyObj));
+
+        // Ejecutar la prueba
+        assertFalse(pointHasProxy(pointCrv, factor).isPresent());
+    }
+
+    @Test
+    public void testShouldProcessWithProxy() {
+        // Configurar valores de prueba
+        Mockito.when(pointCrv.getAxisX()).thenReturn("AxisXValue");
+        Mockito.when(pointCrv.getDays()).thenReturn("DaysValue");
+
+        Mockito.when(pointHasProxy(pointCrv, factor)).thenReturn(Optional.of(proxyObj));
+        Mockito.when(hasAnyProxy(factor)).thenReturn(true);
+
+        // Ejecutar la prueba
+        assertTrue(shouldProcessWithProxy(pointCrv, factor));
+    }
+
+    @Test
+    public void testShouldProcessWithProxy_NoMatchingProxy() {
+        // Configurar valores de prueba
+        Mockito.when(pointCrv.getAxisX()).thenReturn("AxisXValue");
+        Mockito.when(pointCrv.getDays()).thenReturn("DifferentDaysValue");
+
+        Mockito.when(pointHasProxy(pointCrv, factor)).thenReturn(Optional.empty());
+
+        // Ejecutar la prueba
+        assertFalse(shouldProcessWithProxy(pointCrv, factor));
+    }
+
+    // Métodos simulados adicionales como 'hasAnyProxy'
+    private boolean hasAnyProxy(Factor factor) {
+        return true; // Simulación de la lógica
+    }
+}
