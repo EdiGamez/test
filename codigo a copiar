@@ -1,3 +1,32 @@
+import static org.junit.Assert.*;
+import org.junit.Before;
+import org.junit.Test;
+import org.mockito.Mockito;
+
+public class ProxyObjectTest {
+
+    private ProxyObject proxyObj;
+    private PointCrv pointCrv;
+    private ZeroCouponPoints zeroCouponPoints;
+    private Factor factor;
+
+    @Before
+    public void setUp() {
+        // Crear un objeto ProxyObject simulado
+        proxyObj = Mockito.mock(ProxyObject.class);
+        Proxy proxy = Mockito.mock(Proxy.class);
+        Mockito.when(proxyObj.getProxy()).thenReturn(proxy);
+
+        // Crear un objeto PointCrv simulado
+        pointCrv = Mockito.mock(PointCrv.class);
+
+        // Crear un objeto ZeroCouponPoints simulado
+        zeroCouponPoints = Mockito.mock(ZeroCouponPoints.class);
+
+        // Crear Factor simulado
+        factor = Mockito.mock(Factor.class);
+    }
+
     @Test
     public void testIsMatchingProxy_PointCrv_AllConditionsTrue() {
         // Configurar los valores para las pruebas
