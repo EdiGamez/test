@@ -1,29 +1,281 @@
-cib-rifare-unixbatchrfr
+package com.sgt.rfr.rfrmomservice.service;
 
-cib-rifare-librfrinventory
+import com.isb.rfrutils.domain.momservice.Input;
+import com.isb.rfrutils.domain.momservice.NewMsgGenericRequest;
+import com.isb.rfrutils.domain.momservice.NewMsgGenericResponse;
+import com.isb.rfrutils.domain.momservice.Output;
+import com.isb.rfrutils.domain.request.StaticsListPkCodRequest;
+import com.isb.rfrutils.domain.request.StaticsListRequest;
+import com.isb.rfrutils.exception.RfrException;
+import com.isb.rfrutils.services.LoggerService;
+import com.isb.rfrutils.services.RestKafkaWriterConsumerService;
+import com.isb.rfrutils.services.RestSigomConsumerService;
+import com.isb.rfrutils.util.RfrCommonCTES;
+import com.sgt.rfr.rfrmomservice.database.model.function.GetAdoDatapointFunctionRequest;
+import com.sgt.rfr.rfrmomservice.database.model.function.GetAdoUnderlyingFunctionRequest;
+import com.sgt.rfr.rfrmomservice.database.model.procedure.GetUnderlyingWithAdoRequest;
+import com.sgt.rfr.rfrmomservice.database.model.procedure.GetUnderlyingWithAdoResponse;
+import com.sgt.rfr.rfrmomservice.database.repository.RfrSchemaRepository;
+import com.sgt.rfr.rfrmomservice.util.constants.Constants;
+import com.sgt.rfr.rfrmomservice.util.scheduler.Scheduler;
+import com.sgt.rfr.rfrmomservice.util.serializer.UtilMomSerializer;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
-cib-rifare-tdmsystemupdater
+import java.math.BigDecimal;
+import java.util.HashMap;
+import java.util.List;
+import java.util.stream.Collectors;
 
-cib-rifare-svcrfrinventory
+@Service
+@Transactional
+public class GetAdoUnderlyingService {
 
-cib-rifare-svcmom
+    @Autowired
+    private LoggerService log;
 
-cib-rifare-svcgetados
+    @Autowired
+    private RestSigomConsumerService rcs;
 
-cib-rifare-svcprocessmonit
+    @Autowired
+    private RfrSchemaRepository rfrSchemaRepository;
 
-cib-rifare-svckafkawriter
+    @Autowired
+    private RestKafkaWriterConsumerService kWriterService;
 
-cib-rifare-svcgenericloads
+    @Autowired
+    private UtilMomSerializer utilMomSerializer;
 
-cib-rifare-svckafkareader
+    private static HashMap<String, BigDecimal> unitMap;
+    private static HashMap<String, BigDecimal> assetClassMap;
+    private static HashMap<String, BigDecimal> factorTypeMap;
+    private static HashMap<BigDecimal, String> subTypeMap;
 
-cib-rifare-svcgateway
+    public NewMsgGenericResponse getAdoUnderlying(NewMsgGenericRequest request) throws RfrException {
+        List<Output> outputListResult = request.getOutputs();
+        int errorFlag = 0;
+        String errorMessage = null;
 
-cib-rifare-extractoraps
+        try {
+            log.logInfo(RfrCommonCTES.Messages.MESSAGE_START + " getParamList -> NewMsgGenericRequest: " + request.toString());
+            Scheduler.lockStatics();
+            initStaticTables(log, rcs);
 
-cib-rifare-librfrutils
+            if (processListAdosDatapoints(request, outputListResult)) {
+                return buildResponse(request, outputListResult, errorFlag, errorMessage);
+            }
 
-cib-rifare-libconsuacxapi
+            if (processAdoDatapoint(request, outputListResult)) {
+                return buildResponse(request, outputListResult, errorFlag, errorMessage);
+            }
 
-cib-rifare-svcrfrsigom
+            if (processAdoUnderlying(request, outputListResult)) {
+                return buildResponse(request, outputListResult, errorFlag, errorMessage);
+            }
+
+            log.logError("No podemos identificar la operación para la petición: " + request);
+            errorFlag = 1;
+            errorMessage = RfrCommonCTES.Messages.INFO_NO_DATA_AVAILABLE;
+
+        } catch (Exception e) {
+            errorFlag = 1;
+            errorMessage = RfrCommonCTES.Messages.INFO_NO_DATA_AVAILABLE;
+        } finally {
+            Scheduler.unlockStatics();
+        }
+
+        return buildResponse(request, outputListResult, errorFlag, errorMessage);
+    }
+
+    boolean processListAdosDatapoints(NewMsgGenericRequest request, List<Output> outputListResult) {
+        if (checkIfIsLookingListAdosDatapoints(request)) {
+            List<GetUnderlyingWithAdoResponse> responseList = executeGetUnderlyingWithAdoPointProcedure(request);
+            if (responseList != null && !responseList.isEmpty()) {
+                outputListResult.addAll(responseList.stream()
+                        .map(response -> buildOutputAdo("ado", response.getPlAdo(), response.getTenorCode(), null))
+                        .collect(Collectors.toList()));
+            } else {
+                log.logWarning(RfrCommonCTES.Messages.INFO_NO_DATA_AVAILABLE);
+            }
+            return true;
+        }
+        return false;
+    }
+
+    boolean processAdoDatapoint(NewMsgGenericRequest request, List<Output> outputListResult) {
+        if (!"FX_VOL".equalsIgnoreCase(request.getAssetClass() + "_" + request.getFactorType())
+                && checkIfIsLookingTheAdoOfDatapoint(request)) {
+            String ado = executeGetAdoDatapointFunction(request);
+            if (ado != null) {
+                outputListResult.add(buildOutputAdo("ado", ado, null, null));
+            } else {
+                log.logWarning(RfrCommonCTES.Messages.INFO_NO_DATA_AVAILABLE);
+            }
+            return true;
+        }
+        return false;
+    }
+
+    private boolean processAdoUnderlying(NewMsgGenericRequest request, List<Output> outputListResult) {
+        if (("FX_VOL".equalsIgnoreCase(request.getAssetClass() + "_" + request.getFactorType())
+                && checkIfIsLookingTheAdoOfDatapoint(request)) || checkIfIsLookingAdoUnderlying(request)) {
+            String ado = executeGetAdoUnderlyingFunction(request);
+            if (ado != null) {
+                outputListResult.add(buildOutputAdo("ado", ado, null, null));
+            } else {
+                log.logWarning(RfrCommonCTES.Messages.INFO_NO_DATA_AVAILABLE);
+            }
+            return true;
+        }
+        return false;
+    }
+
+    private NewMsgGenericResponse buildResponse(NewMsgGenericRequest request, List<Output> outputListResult, int errorFlag, String errorMessage) {
+        NewMsgGenericResponse response = new NewMsgGenericResponse();
+        response.setIdFunctionality(request.getIdFunctionality());
+        response.setUnit(request.getUnit());
+        response.setAssetClass(request.getAssetClass());
+        response.setFactorType(request.getFactorType());
+        response.setInputs(request.getInputs());
+        response.setOutputs(outputListResult);
+        response.setOperation(request.getOperation());
+        response.setSourceSystem(request.getSourceSystem());
+        response.setResponseQueue(request.getResponseQueue());
+        response.setErrorFlag(errorFlag);
+        response.setErrorMessage(errorMessage);
+        log.logInfo("Mensaje a enviar: " + utilMomSerializer.objectToJson(response));
+        return response;
+    }
+
+    private Output buildOutputAdo(String name, String value, String axisX, String date) {
+        Output output = new Output();
+        output.setName(name);
+        output.setValue(value);
+        output.setAxisX(axisX);
+        output.setDate(date);
+        return output;
+    }
+
+    private List<GetUnderlyingWithAdoResponse> executeGetUnderlyingWithAdoPointProcedure(NewMsgGenericRequest request) {
+        BigDecimal assetClassPk = assetClassMap.get(request.getAssetClass());
+        BigDecimal factorTypePk = factorTypeMap.get(request.getFactorType());
+        BigDecimal unitPk = unitMap.get(request.getUnit());
+        BigDecimal subtypePk = null;
+        String underlyingCode = getValueFromInputName(request.getInputs(), Constants.UNDERLYING);
+        GetUnderlyingWithAdoRequest underlyingWithAdoRequest = new GetUnderlyingWithAdoRequest(assetClassPk,
+                factorTypePk, unitPk, subtypePk, underlyingCode);
+        List<GetUnderlyingWithAdoResponse> underlyingWithAdoResponseList = rfrSchemaRepository
+                .callProcedure_P_GetUnderlyingWithAdoPoint(underlyingWithAdoRequest);
+        return underlyingWithAdoResponseList;
+    }
+
+    private String executeGetAdoDatapointFunction(NewMsgGenericRequest request) {
+        BigDecimal assetClassPk = assetClassMap.get(request.getAssetClass());
+        BigDecimal factorTypePk = factorTypeMap.get(request.getFactorType());
+        BigDecimal unitPk = unitMap.get(request.getUnit());
+        String underlyingCode = getValueFromInputName(request.getInputs(), Constants.UNDERLYING);
+        String axisX = getValueFromInputName(request.getInputs(), Constants.AXIS_X);
+        String axisY = getValueFromInputName(request.getInputs(), Constants.AXIS_Y);
+        String axisZ = getValueFromInputName(request.getInputs(), Constants.AXIS_Z);
+        GetAdoDatapointFunctionRequest adoDatapointFunctionRequest = new GetAdoDatapointFunctionRequest(assetClassPk,
+                factorTypePk, unitPk, underlyingCode, axisX, axisY, axisZ);
+        String ado = rfrSchemaRepository.callFunction_F_GetAdoDatapoint(adoDatapointFunctionRequest);
+        return ado;
+    }
+
+    private String executeGetAdoUnderlyingFunction(NewMsgGenericRequest request) {
+        BigDecimal assetClassPk = assetClassMap.get(request.getAssetClass());
+        BigDecimal factorTypePk = factorTypeMap.get(request.getFactorType());
+        BigDecimal unitPk = unitMap.get(request.getUnit());
+        String underlyingCode = getValueFromInputName(request.getInputs(), Constants.UNDERLYING);
+        GetAdoUnderlyingFunctionRequest adoDatapointFunctionRequest = new GetAdoUnderlyingFunctionRequest(assetClassPk,
+                factorTypePk, unitPk, underlyingCode);
+        String ado = rfrSchemaRepository.callFunction_F_GetADoUnderlying(adoDatapointFunctionRequest);
+        return ado;
+    }
+
+    private boolean checkIfIsLookingListAdosDatapoints(NewMsgGenericRequest request) {
+        boolean isLookingListAdosDatapoints = request.getOutputs().stream()
+                .anyMatch(output -> RfrCommonCTES.GenericIntegrationCtes.OUTPUT_FIELD_ADO_DATAPOINT
+                        .equalsIgnoreCase(output.getName()));
+        return isLookingListAdosDatapoints;
+    }
+
+    private boolean checkIfIsLookingTheAdoOfDatapoint(NewMsgGenericRequest request) {
+        boolean isLookingAdoDatapoint = false;
+        boolean hasUnderlyingWithValue = request.getInputs().stream()
+                .anyMatch(input -> input.getName().equals(Constants.UNDERLYING)
+                        && (input.getValueFilter() != null && !input.getValueFilter().isEmpty()));
+        boolean hasAxisXOrAxisY = request.getInputs().stream()
+                .anyMatch(input -> (input.getName().equals(Constants.AXIS_X) || input.getName().equals(Constants.AXIS_Y))
+                        && (input.getValueFilter() != null && !input.getValueFilter().isEmpty()));
+        if (hasUnderlyingWithValue && hasAxisXOrAxisY) {
+            log.logDebug(
+                    "Se cumple la condición: Hay al menos un elemento 'underlying' con 'value' no nulo ni vacío, y al menos uno 'axisX' o 'axisY' con 'value' no nulo ni vacío.");
+            isLookingAdoDatapoint = true;
+        } else {
+            log.logDebug(
+                    "No se cumple la condición: : Hay al menos un elemento 'underlying' con 'value' no nulo ni vacío, y al menos uno 'axisX' o 'axisY' con 'value' no nulo ni vacío.");
+        }
+        return isLookingAdoDatapoint;
+    }
+
+    private boolean checkIfIsLookingAdoUnderlying(NewMsgGenericRequest request) {
+        boolean isLookingAdoUnderlying = false;
+        boolean hasUnderlyingWithValue = request.getInputs().stream()
+                .anyMatch(input -> input.getName().equals(Constants.UNDERLYING)
+                        && (input.getValueFilter() != null && !input.getValueFilter().isEmpty()));
+        boolean hasNotAxisXAndAxisY = request.getInputs().stream()
+                .noneMatch(input -> (input.getName().equals(Constants.AXIS_X) || input.getName().equals(Constants.AXIS_Y))
+                        && (input.getValueFilter() != null && !input.getValueFilter().isEmpty()));
+        boolean isNotLookingListAdosDatapoints = !checkIfIsLookingListAdosDatapoints(request);
+        if (hasUnderlyingWithValue && hasNotAxisXAndAxisY && isNotLookingListAdosDatapoints) {
+            log.logDebug(
+                    "Se cumple la condición: Hay al menos un elemento 'underlying' con 'value' no nulo ni vacío, y no tiene ningun 'axisX' o 'axisY' con 'value' no nulo ni vacío.");
+            isLookingAdoUnderlying = true;
+        } else {
+            log.logDebug(
+                    "Se cumple la condición: Hay al menos un elemento 'underlying' con 'value' no nulo ni vacío, y no tiene ningun 'axisX' o 'axisY' con 'value' no nulo ni vacío.");
+        }
+        return isLookingAdoUnderlying;
+    }
+
+    private String getValueFromInputName(List<Input> inputList, String inputName) {
+        String propertyValue = inputList.stream()
+                .filter(input -> input.getName().equals(inputName)
+                        && (input.getValueFilter() != null && !input.getValueFilter().isEmpty()))
+                .findFirst().map(Input::getValueFilter).orElse(null);
+        return propertyValue;
+    }
+
+    //TODO: revisar que siga funcionando
+    public static void initStaticTables(LoggerService log, RestSigomConsumerService rcs) throws RfrException {
+        if (log != null) {
+            log.logDebug("initStaticTables");
+
+            if (unitMap == null) {
+                unitMap = rcs.getStaticList(new StaticsListRequest("Unit"));
+            }
+            if (assetClassMap == null) {
+                assetClassMap = rcs.getStaticList(new StaticsListRequest("AssetClass"));
+            }
+            if (factorTypeMap == null) {
+                factorTypeMap = rcs.getStaticList(new StaticsListRequest("FactorType"));
+            }
+            if (subTypeMap == null) {
+                subTypeMap = rcs.getStaticListPkCode(new StaticsListPkCodRequest("Subtype"));
+            }
+            if (unitMap.isEmpty() || assetClassMap.isEmpty() || factorTypeMap.isEmpty() || subTypeMap.isEmpty()) {
+                log.logWarning(RfrCommonCTES.Messages.WARN_STATIC_MAPS_EMPTY);
+            }
+        }
+    }
+
+    public static void resetMaps() {
+        unitMap = null;
+        assetClassMap = null;
+        factorTypeMap = null;
+        subTypeMap = null;
+    }
+}
