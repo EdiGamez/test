@@ -1,84 +1,112 @@
- public NewMsgGenericResponse getAdoUnderlying(NewMsgGenericRequest request) throws RfrException {
-        List<Output> outputListResult = request.getOutputs();
-        int errorFlag = 0;
-        String errorMessage = null;
-        try {
-            log.logInfo(RfrCommonCTES.Messages.MESSAGE_START + " getParamList -> NewMsgGenericRequest: " + request.toString());
-            Scheduler.lockStatics();
-            initStaticTables(log,rcs);
-            if (processListAdosDatapoints(request, outputListResult)) {
-                return buildResponse(request, outputListResult, errorFlag, errorMessage);
-            }
-            if (processAdoDatapoint(request, outputListResult)) {
-                return buildResponse(request, outputListResult, errorFlag, errorMessage);
-            }
-            if (processAdoUnderlying(request, outputListResult)) {
-                return buildResponse(request, outputListResult, errorFlag, errorMessage);
-            }
-            log.logError("No podemos identificar la operación para la petición: " + request);
-            errorFlag = 1;
-            errorMessage = RfrCommonCTES.Messages.INFO_NO_DATA_AVAILABLE;
-        } catch (Exception e) {
-            errorFlag = 1;
-            errorMessage = RfrCommonCTES.Messages.INFO_NO_DATA_AVAILABLE;
-        } finally {
-            Scheduler.unlockStatics();
-        }
-        return buildResponse(request, outputListResult, errorFlag, errorMessage);
+@ExtendWith(MockitoExtension.class)
+class AdoUnderlyingServiceTest {
+
+    @InjectMocks
+    private AdoUnderlyingService service; // Cambia esto al nombre real de tu clase
+
+    @Mock
+    private Logger log;
+
+    @Mock
+    private UtilMomSerializer utilMomSerializer;
+
+    @Mock
+    private RcsService rcs; // Si usas una clase para inicializar `initStaticTables`
+
+    private NewMsgGenericRequest request;
+    private List<Output> outputList;
+
+    @BeforeEach
+    void setUp() {
+        request = new NewMsgGenericRequest();
+        request.setAssetClass("IR");
+        request.setFactorType("VOL");
+        request.setOutputs(new ArrayList<>());
+        request.setIdFunctionality("funcId");
+        request.setUnit("unit");
+        request.setInputs(List.of());
+        request.setOperation("GET");
+        request.setSourceSystem("SYS");
+        request.setResponseQueue("QUEUE");
+
+        outputList = request.getOutputs();
     }
-    private boolean processListAdosDatapoints(NewMsgGenericRequest request, List<Output> outputListResult) {
-        if (checkIfIsLookingListAdosDatapoints(request)) {
-            List<GetUnderlyingWithAdoResponse> responseList = executeGetUnderlyingWithAdoPointProcedure(request);
-            if (responseList != null && !responseList.isEmpty()) {
-                outputListResult.addAll(responseList.stream()
-                        .map(response -> buildOutputAdo("ado", response.getPlAdo(), response.getTenorCode(), null))
-                        .collect(Collectors.toList()));
-            } else {
-                log.logWarning(RfrCommonCTES.Messages.INFO_NO_DATA_AVAILABLE);
-            }
-            return true;
-        }
-        return false;
+
+    @Test
+    void shouldReturnOutputsFromListAdosDatapoints() {
+        // Setup para que el primer proceso devuelva true
+        AdoUnderlyingService spyService = Mockito.spy(service);
+
+        Mockito.doReturn(true).when(spyService).checkIfIsLookingListAdosDatapoints(request);
+        List<GetUnderlyingWithAdoResponse> mockResponseList = List.of(
+                new GetUnderlyingWithAdoResponse("ADO1", "1M")
+        );
+        Mockito.doReturn(mockResponseList).when(spyService).executeGetUnderlyingWithAdoPointProcedure(request);
+
+        NewMsgGenericResponse response = spyService.getAdoUnderlying(request);
+
+        assertEquals(0, response.getErrorFlag());
+        assertEquals(1, response.getOutputs().size());
+        assertEquals("ADO1", response.getOutputs().get(0).getAdo());
     }
-    private boolean processAdoDatapoint(NewMsgGenericRequest request, List<Output> outputListResult) {
-        if (!"FX_VOL".equalsIgnoreCase(request.getAssetClass() + "_" + request.getFactorType())
-                && checkIfIsLookingTheAdoOfDatapoint(request)) {
-            String ado = executeGetAdoDatapointFunction(request);
-            if (ado != null) {
-                outputListResult.add(buildOutputAdo("ado", ado, null, null));
-            } else {
-                log.logWarning(RfrCommonCTES.Messages.INFO_NO_DATA_AVAILABLE);
-            }
-            return true;
-        }
-        return false;
+
+    @Test
+    void shouldReturnOutputFromAdoDatapoint() {
+        AdoUnderlyingService spyService = Mockito.spy(service);
+
+        Mockito.doReturn(false).when(spyService).checkIfIsLookingListAdosDatapoints(request);
+        Mockito.doReturn(true).when(spyService).checkIfIsLookingTheAdoOfDatapoint(request);
+        Mockito.doReturn("ADO_DP").when(spyService).executeGetAdoDatapointFunction(request);
+
+        NewMsgGenericResponse response = spyService.getAdoUnderlying(request);
+
+        assertEquals(0, response.getErrorFlag());
+        assertEquals(1, response.getOutputs().size());
+        assertEquals("ADO_DP", response.getOutputs().get(0).getAdo());
     }
-    private boolean processAdoUnderlying(NewMsgGenericRequest request, List<Output> outputListResult) {
-        if (("FX_VOL".equalsIgnoreCase(request.getAssetClass() + "_" + request.getFactorType())
-                && checkIfIsLookingTheAdoOfDatapoint(request)) || checkIfIsLookingAdoUnderlying(request)) {
-            String ado = executeGetAdoUnderlyingFunction(request);
-            if (ado != null) {
-                outputListResult.add(buildOutputAdo("ado", ado, null, null));
-            } else {
-                log.logWarning(RfrCommonCTES.Messages.INFO_NO_DATA_AVAILABLE);
-            }
-            return true;
-        }
-        return false;
+
+    @Test
+    void shouldReturnOutputFromAdoUnderlying() {
+        request.setAssetClass("FX");
+        request.setFactorType("VOL");
+
+        AdoUnderlyingService spyService = Mockito.spy(service);
+
+        Mockito.doReturn(false).when(spyService).checkIfIsLookingListAdosDatapoints(request);
+        Mockito.doReturn(true).when(spyService).checkIfIsLookingTheAdoOfDatapoint(request);
+        Mockito.doReturn("ADO_U").when(spyService).executeGetAdoUnderlyingFunction(request);
+
+        NewMsgGenericResponse response = spyService.getAdoUnderlying(request);
+
+        assertEquals(0, response.getErrorFlag());
+        assertEquals(1, response.getOutputs().size());
+        assertEquals("ADO_U", response.getOutputs().get(0).getAdo());
     }
-    private NewMsgGenericResponse buildResponse(NewMsgGenericRequest request, List<Output> outputListResult, int errorFlag, String errorMessage) {
-        NewMsgGenericResponse response = new NewMsgGenericResponse();
-        response.setIdFunctionality(request.getIdFunctionality());
-        response.setUnit(request.getUnit());
-        response.setAssetClass(request.getAssetClass());
-        response.setFactorType(request.getFactorType());
-        response.setInputs(request.getInputs());
-        response.setOutputs(outputListResult);
-        response.setOperation(request.getOperation());
-        response.setSourceSystem(request.getSourceSystem());
-        response.setResponseQueue(request.getResponseQueue());
-        response.setErrorFlag(errorFlag);
-        response.setErrorMessage(errorMessage);
-        log.logInfo("Mensaje a enviar: " + utilMomSerializer.objectToJson(response));
-        return response;
+
+    @Test
+    void shouldReturnErrorWhenNoProcessMatches() {
+        AdoUnderlyingService spyService = Mockito.spy(service);
+
+        Mockito.doReturn(false).when(spyService).checkIfIsLookingListAdosDatapoints(request);
+        Mockito.doReturn(false).when(spyService).checkIfIsLookingTheAdoOfDatapoint(request);
+        Mockito.doReturn(false).when(spyService).checkIfIsLookingAdoUnderlying(request);
+
+        NewMsgGenericResponse response = spyService.getAdoUnderlying(request);
+
+        assertEquals(1, response.getErrorFlag());
+        assertEquals(RfrCommonCTES.Messages.INFO_NO_DATA_AVAILABLE, response.getErrorMessage());
+        assertTrue(response.getOutputs().isEmpty());
     }
+
+    @Test
+    void shouldReturnErrorWhenExceptionOccurs() {
+        AdoUnderlyingService spyService = Mockito.spy(service);
+
+        Mockito.doThrow(new RuntimeException("Unexpected")).when(spyService).initStaticTables(any(), any());
+
+        NewMsgGenericResponse response = spyService.getAdoUnderlying(request);
+
+        assertEquals(1, response.getErrorFlag());
+        assertEquals(RfrCommonCTES.Messages.INFO_NO_DATA_AVAILABLE, response.getErrorMessage());
+    }
+}
