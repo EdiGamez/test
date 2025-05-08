@@ -1,8 +1,8 @@
-@ExtendWith(MockitoExtension.class)
-class AdoUnderlyingServiceTest {
+@RunWith(MockitoJUnitRunner.class)
+public class AdoUnderlyingServiceTest {
 
     @InjectMocks
-    private AdoUnderlyingService service; // Cambia esto al nombre real de tu clase
+    private AdoUnderlyingService service; // Cambia por el nombre real de tu clase
 
     @Mock
     private Logger log;
@@ -11,37 +11,33 @@ class AdoUnderlyingServiceTest {
     private UtilMomSerializer utilMomSerializer;
 
     @Mock
-    private RcsService rcs; // Si usas una clase para inicializar `initStaticTables`
+    private RcsService rcs;
 
     private NewMsgGenericRequest request;
-    private List<Output> outputList;
 
-    @BeforeEach
-    void setUp() {
+    @Before
+    public void setUp() {
         request = new NewMsgGenericRequest();
         request.setAssetClass("IR");
         request.setFactorType("VOL");
         request.setOutputs(new ArrayList<>());
         request.setIdFunctionality("funcId");
         request.setUnit("unit");
-        request.setInputs(List.of());
+        request.setInputs(Collections.emptyList());
         request.setOperation("GET");
         request.setSourceSystem("SYS");
         request.setResponseQueue("QUEUE");
-
-        outputList = request.getOutputs();
     }
 
     @Test
-    void shouldReturnOutputsFromListAdosDatapoints() {
-        // Setup para que el primer proceso devuelva true
+    public void testProcessListAdosDatapoints() throws Exception {
         AdoUnderlyingService spyService = Mockito.spy(service);
 
         Mockito.doReturn(true).when(spyService).checkIfIsLookingListAdosDatapoints(request);
-        List<GetUnderlyingWithAdoResponse> mockResponseList = List.of(
+        List<GetUnderlyingWithAdoResponse> mockList = Arrays.asList(
                 new GetUnderlyingWithAdoResponse("ADO1", "1M")
         );
-        Mockito.doReturn(mockResponseList).when(spyService).executeGetUnderlyingWithAdoPointProcedure(request);
+        Mockito.doReturn(mockList).when(spyService).executeGetUnderlyingWithAdoPointProcedure(request);
 
         NewMsgGenericResponse response = spyService.getAdoUnderlying(request);
 
@@ -51,7 +47,7 @@ class AdoUnderlyingServiceTest {
     }
 
     @Test
-    void shouldReturnOutputFromAdoDatapoint() {
+    public void testProcessAdoDatapoint() throws Exception {
         AdoUnderlyingService spyService = Mockito.spy(service);
 
         Mockito.doReturn(false).when(spyService).checkIfIsLookingListAdosDatapoints(request);
@@ -66,7 +62,7 @@ class AdoUnderlyingServiceTest {
     }
 
     @Test
-    void shouldReturnOutputFromAdoUnderlying() {
+    public void testProcessAdoUnderlying() throws Exception {
         request.setAssetClass("FX");
         request.setFactorType("VOL");
 
@@ -74,17 +70,17 @@ class AdoUnderlyingServiceTest {
 
         Mockito.doReturn(false).when(spyService).checkIfIsLookingListAdosDatapoints(request);
         Mockito.doReturn(true).when(spyService).checkIfIsLookingTheAdoOfDatapoint(request);
-        Mockito.doReturn("ADO_U").when(spyService).executeGetAdoUnderlyingFunction(request);
+        Mockito.doReturn("ADO_UNDERLYING").when(spyService).executeGetAdoUnderlyingFunction(request);
 
         NewMsgGenericResponse response = spyService.getAdoUnderlying(request);
 
         assertEquals(0, response.getErrorFlag());
         assertEquals(1, response.getOutputs().size());
-        assertEquals("ADO_U", response.getOutputs().get(0).getAdo());
+        assertEquals("ADO_UNDERLYING", response.getOutputs().get(0).getAdo());
     }
 
     @Test
-    void shouldReturnErrorWhenNoProcessMatches() {
+    public void testNoProcessMatches() throws Exception {
         AdoUnderlyingService spyService = Mockito.spy(service);
 
         Mockito.doReturn(false).when(spyService).checkIfIsLookingListAdosDatapoints(request);
@@ -99,10 +95,10 @@ class AdoUnderlyingServiceTest {
     }
 
     @Test
-    void shouldReturnErrorWhenExceptionOccurs() {
+    public void testExceptionHandling() throws Exception {
         AdoUnderlyingService spyService = Mockito.spy(service);
 
-        Mockito.doThrow(new RuntimeException("Unexpected")).when(spyService).initStaticTables(any(), any());
+        Mockito.doThrow(new RuntimeException("Failure")).when(spyService).initStaticTables(any(), any());
 
         NewMsgGenericResponse response = spyService.getAdoUnderlying(request);
 
