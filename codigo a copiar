@@ -1,80 +1,29 @@
-cib-rifare-unixbatchrfr	6.58.0-SNAPSHOT		04/09/2025
-cib-rifare-librfrinventory	1.10.0-SNAPSHOT		04/15/2025
-cib-rifare-librfrinventory	1.10.0		04/15/2025
-cib-rifare-unixbatchrfr	6.58.0		04/23/2025
-cib-rifare-librfrinventory	1.11.0-SNAPSHOT		04/23/2025
-cib-rifare-tdmsystemupdater	1.0.9		04/25/2025
-cib-rifare-unixbatchrfr	6.59.0-SNAPSHOT		04/25/2025
-cib-rifare-librfrinventory	1.10.1-SNAPSHOT		04/28/2025
-cib-rifare-librfrinventory	1.10.1		04/29/2025
-cib-rifare-unixbatchrfr	6.58.1-SNAPSHOT		04/30/2025
-cib-rifare-unixbatchrfr	6.58.1		04/30/2025
-cib-rifare-svcrfrinventory	1.15.1-SNAPSHOT		04/30/2025
-cib-rifare-svcrfrinventory	1.15.1		04/30/2025
-cib-rifare-unixbatchrfr	6.59.0		04/30/2025
-cib-rifare-librfrinventory	1.11.0		04/30/2025
-cib-rifare-unixbatchrfr	6.60.0-SNAPSHOT		05/02/2025
-cib-rifare-svcrfrinventory	1.16.0-SNAPSHOT		05/05/2025
-cib-rifare-svcmom	6.34.0-SNAPSHOT		05/07/2025
-cib-rifare-unixbatchrfr	6.60.0		
-cib-rifare-unixbatchrfr	6.56.0		02/12/2025
-cib-rifare-svcrfrinventory	1.13.0		02/12/2025
-cib-rifare-svcgetados	6.22.0-SNAPSHOT		02/24/2025
-cib-rifare-librfrinventory	1.8.0		02/25/2025
-cib-rifare-svcrfrinventory	1.14.0-SNAPSHOT		02/25/2025
-cib-rifare-librfrinventory	1.8.1-SNAPSHOT		03/03/2025
-cib-rifare-librfrinventory	1.8.1		03/03/2025
-cib-rifare-tdmsystemupdater	1.0.5-SNAPSHOT		03/05/2025
-cib-rifare-tdmsystemupdater	1.0.6-SNAPSHOT		03/05/2025
-cib-rifare-tdmsystemupdater	1.0.7-SNAPSHOT		03/05/2025
-cib-rifare-tdmsystemupdater	1.0.9-SNAPSHOT		03/05/2025
-cib-rifare-unixbatchrfr	6.57.0-SNAPSHOT		03/10/2025
-cib-rifare-svcrfrinventory	1.14.0		03/11/2025
-cib-rifare-svcgetados	6.22.0		03/11/2025
-cib-rifare-svcmom	6.33.0		03/12/2025
-cib-rifare-unixbatchrfr	6.57.0		03/17/2025
-cib-rifare-librfrinventory	1.9.0-SNAPSHOT		03/20/2025
-cib-rifare-svcrfrinventory	1.15.0-SNAPSHOT		03/21/2025
-cib-rifare-librfrinventory	1.9.0		03/21/2025
-cib-rifare-svcrfrinventory	1.15.0		03/24/2025
-Application	Version	Description	Created
-cib-rifare-svcgetados	6.21.0		01/16/2025
-cib-rifare-svcgetados	6.21.1-SNAPSHOT		01/16/2025
-cib-rifare-svcgetados	6.21.1		01/16/2025
-cib-rifare-unixbatchrfr	6.55.0-SNAPSHOT		01/21/2025
-cib-rifare-svcprocessmonit	1.0.0-SNAPSHOT		01/21/2025
-cib-rifare-svckafkawriter	6.27.0-SNAPSHOT		01/21/2025
-cib-rifare-svcmom	6.33.0-SNAPSHOT		01/21/2025
-cib-rifare-svcgenericloads	6.19.0-SNAPSHOT		01/21/2025
-cib-rifare-svckafkareader	6.37.0-SNAPSHOT		01/21/2025
-cib-rifare-svcgateway	6.14.0-SNAPSHOT		01/21/2025
-cib-rifare-unixbatchrfr	6.55.0		01/21/2025
-cib-rifare-librfrinventory	1.7.0		01/28/2025
-cib-rifare-librfrinventory	1.8.0-SNAPSHOT		01/28/2025
-cib-rifare-extractoraps	1.3.0-SNAPSHOT		01/30/2025
-cib-rifare-tdmsystemupdater	1.0.0-SNAPSHOT		01/30/2025
-cib-rifare-librfrutils	7.15.0-SNAPSHOT		01/30/2025
-cib-rifare-libconsuacxapi	1.3.0-SNAPSHOT		01/30/2025
-cib-rifare-unixbatchrfr	6.56.0-SNAPSHOT		01/31/2025
-cib-rifare-librfrinventory	1.7.1-SNAPSHOT		02/11/2025
-cib-rifare-librfrinventory	1.7.1		02/12/2025
-cib-rifare-unixbatchrfr	0.0.0		01/09/2025
-cib-rifare-librfrutils	0.0.0		01/09/2025
-cib-rifare-svcgateway	0.0.0		01/09/2025
-cib-rifare-svckafkareader	0.0.0		01/09/2025
-cib-rifare-svcrfrsigom	0.0.0		01/09/2025
-cib-rifare-svcgetados	0.0.0		01/09/2025
-cib-rifare-svcmom	0.0.0		01/09/2025
-cib-rifare-libconsuacxapi	0.0.0		01/09/2025
-cib-rifare-svcrfrinventory	0.0.0		01/09/2025
-cib-rifare-extractoraps	0.0.0		01/09/2025
-cib-rifare-svcprocessmonit	0.0.0		01/09/2025
-cib-rifare-librfrinventory	0.0.0		01/09/2025
-cib-rifare-tdmsystemupdater	0.0.0		01/09/2025
-cib-rifare-svcrfrsigom	6.61.0-SNAPSHOT		01/10/2025
-cib-rifare-svcgenericloads	0.0.0		01/10/2025
-cib-rifare-svckafkawriter	0.0.0		01/10/2025
-cib-rifare-svcrfrinventory	1.13.0-SNAPSHOT		01/13/2025
-cib-rifare-librfrinventory	1.7.0-SNAPSHOT		01/14/2025
-cib-rifare-svcgetados	6.20.4-SNAPSHOT		01/14/2025
-cib-rifare-svcgetados	6.21.0-SNAPSHOT		01/16/2025
+cib-rifare-unixbatchrfr
+
+cib-rifare-librfrinventory
+
+cib-rifare-tdmsystemupdater
+
+cib-rifare-svcrfrinventory
+
+cib-rifare-svcmom
+
+cib-rifare-svcgetados
+
+cib-rifare-svcprocessmonit
+
+cib-rifare-svckafkawriter
+
+cib-rifare-svcgenericloads
+
+cib-rifare-svckafkareader
+
+cib-rifare-svcgateway
+
+cib-rifare-extractoraps
+
+cib-rifare-librfrutils
+
+cib-rifare-libconsuacxapi
+
+cib-rifare-svcrfrsigom
