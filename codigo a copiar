@@ -1,271 +1,171 @@
-package com.sgt.rfr.rfrmomservice.service;
+import static org.junit.Assert.*;
+import static org.mockito.Mockito.*;
 
-import java.io.IOException;
-import java.math.BigDecimal;
+import com.fasterxml.jackson.databind.ObjectMapper;
+import com.google.gson.GsonBuilder;
+import org.junit.Before;
+import org.junit.Test;
+import org.junit.runner.RunWith;
+import org.mockito.*;
+import org.mockito.junit.MockitoJUnitRunner;
+
 import java.sql.SQLException;
 import java.text.SimpleDateFormat;
 import java.time.Duration;
 import java.time.Instant;
-import java.util.Date;
-import java.util.HashMap;
-import java.util.List;
+import java.util.*;
 
-import com.sgt.rfr.rfrmomservice.util.cache.CacheBatchInMemoryService;
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.stereotype.Service;
-import org.springframework.transaction.annotation.Transactional;
+@RunWith(MockitoJUnitRunner.class)
+public class UpdInfMomServiceTest {
 
-import com.fasterxml.jackson.core.JsonParseException;
-import com.fasterxml.jackson.databind.JsonMappingException;
-import com.fasterxml.jackson.databind.ObjectMapper;
-import com.google.gson.Gson;
-import com.google.gson.GsonBuilder;
-import com.isb.rfrutils.domain.momservice.MomResult;
-import com.isb.rfrutils.domain.momservice.NewMsgMomUpdInfoRequest;
-import com.isb.rfrutils.domain.momservice.UpdMomInfResponse;
-import com.isb.rfrutils.domain.request.MsgGenericRequestSCM;
-import com.isb.rfrutils.domain.request.SigomModInfoCleanRequest;
-import com.isb.rfrutils.domain.request.StaticsListRequest;
-import com.isb.rfrutils.exception.RfrException;
-import com.isb.rfrutils.services.LoggerService;
-import com.isb.rfrutils.services.MonitorMOM;
-import com.isb.rfrutils.services.RestKafkaWriterConsumerService;
-import com.isb.rfrutils.services.RestSigomConsumerService;
-import com.isb.rfrutils.util.RfrCommonCTES;
-import com.sgt.rfr.rfrmomservice.database.repository.MsgCacheProcessRepo;
-import com.sgt.rfr.rfrmomservice.util.scheduler.Scheduler;
+    @InjectMocks
+    private UpdInfMomService service; // Asume que esta es la clase que contiene updMomInf
 
-//TODO: Revisar funcionalidad
-//TODO: Reponer comentarios de nuevos metodos
-@Service
-@Transactional
-public class UpdInfMomService {
+    @Mock private CacheProcessRepo cacheProcessRepo;
+    @Mock private CacheBatchInMemoryService cacheBatchInMemoryService;
+    @Mock private RestSigomConsumerService rcs;
+    @Mock private MomMonitorService monitor;
+    @Mock private LoggerService log;
 
-    @Autowired
-    private LoggerService log;
+    @Captor
+    private ArgumentCaptor<String> stringCaptor;
 
-    @Autowired
-    private RestSigomConsumerService rcs;
-    
-    @Autowired
-    private RestKafkaWriterConsumerService kafkaWriterService;
-    
-    @Autowired
-    private MsgCacheProcessRepo cacheProcessRepo;
-    
-    @Autowired
-    private MonitorMOM monitor;
-    
-    @Autowired
-	private CacheBatchInMemoryService cacheBatchInMemoryService;
-    
-    private static HashMap<String, BigDecimal> assetClassMap;
-    private static HashMap<String, BigDecimal> factorTypeMap;
-    
-    private Instant inicio = null;
-    private Long contador = 0l;
+    private NewMsgMomUpdInfoRequest request;
+    private HeaderCtrl headerCtrl;
+    private MomResult momResult;
 
-	/**
-	 * Generate kafka modelability message response
-	 * @param request
-	 * @return
-	 * @throws RfrException
-	 */
-	public MsgGenericRequestSCM mpeOpeInvoke(NewMsgMomUpdInfoRequest request) throws RfrException {
-		// Se desencadena el proceso de envio de inventario al MPE
-		SimpleDateFormat dateFormatYYYYMMDD = new SimpleDateFormat(RfrCommonCTES.DATEFORMAT_YYYYMMDD);
-		SimpleDateFormat dateFormatTimestamp = new SimpleDateFormat("yyyyMMddHHmmss");
-		String timestamp  = dateFormatTimestamp.format(new Date());
-		String idFunctionality = request.getMomResult().getAssetClass() + "_" + request.getMomResult().getFactorType() + "_" + RfrCommonCTES.Operations.SE_MPE.toUpperCase() + "_" + timestamp;
-		MsgGenericRequestSCM mpeRequest = new MsgGenericRequestSCM();
-		mpeRequest.setIdFunctionality(idFunctionality);
-		mpeRequest.setUnit("ES");
-		mpeRequest.setSourceSystem(RfrCommonCTES.SOURCE_SYS_RFR);
-		mpeRequest.setType(RfrCommonCTES.TYPE_SYS_RFR);
-		mpeRequest.setAssetClass(request.getMomResult().getAssetClass());
-		mpeRequest.setFactorType(request.getMomResult().getFactorType());
-		mpeRequest.setOperation(RfrCommonCTES.Operations.SE_MPE);
-		mpeRequest.setCalcDate(dateFormatYYYYMMDD.format(new Date()));
-		mpeRequest.setResponseQueue("");
-		String[] idSplited = request.getHeaderCtrl().getIdFunctionality().split("_", -1);
-		String idFunctionMom = idSplited[0] + "_" + idSplited[1];
-		log.logInfo("Borramos del mapa el idFunctionality de MOM: "+idFunctionMom);
-		cacheBatchInMemoryService.clearState(idFunctionMom);
-		return mpeRequest;
-	}
+    @Before
+    public void setup() {
+        headerCtrl = new HeaderCtrl();
+        headerCtrl.setIdFunctionality("FUNC_01");
+        headerCtrl.setCurrent(1);
+        headerCtrl.setTotal(1);
 
-	/**
-	 * Obtención de la PK del Underlying
-	 *
-	 * @param request
-	 * @return
-	 * @throws RfrException
-	 */
-public Boolean updMomInf(NewMsgMomUpdInfoRequest request) throws RfrException {
-    initializeStaticMaps(rcs);
-    validateStaticMaps();
+        momResult = new MomResult();
+        momResult.setAssetClass("Equity");
+        momResult.setFactorType("Risk");
+        momResult.setFlag("Y");
 
-    Boolean isAllBatchProcessed = false;
-    ObjectMapper objectMapper = new ObjectMapper();
+        request = new NewMsgMomUpdInfoRequest();
+        request.setHeaderCtrl(headerCtrl);
+        request.setOperation("CREATE");
+        request.setMomResult(momResult);
 
-    try {
-        Scheduler.lockStatics();
-        logRequestStart(request);
-
-        String idFunction = processRequestAndCache(request);
-        int numTotMsg = updateBatchCount(idFunction);
-
-        if (numTotMsg == 1) {
-            startTimer();
-        }
-
-        if (numTotMsg == request.getHeaderCtrl().getTotal()) {
-            processAllMessages(request, idFunction, objectMapper);
-            isAllBatchProcessed = true;
-        }
-
-        log.logDebug(RfrCommonCTES.Messages.MESSAGE_END + "updMomInf");
-    } catch (Exception e) {
-        log.logException(e);
-    } finally {
-        Scheduler.unlockStatics();
+        when(cacheBatchInMemoryService.getBatches()).thenReturn(new HashMap<>());
     }
 
-    return isAllBatchProcessed;
-}
+    @Test
+    public void test_updMomInf_batchFullyProcessed_returnsTrue() throws Exception {
+        Map<String, Integer> batchMap = new HashMap<>();
+        batchMap.put("FUNC_01", 0);
+        when(cacheBatchInMemoryService.getBatches()).thenReturn(batchMap);
 
-private static void initializeStaticMaps(RestSigomConsumerService rcs) {
-    if (assetClassMap == null) {
-        assetClassMap = rcs.getStaticList(new StaticsListRequest("AssetClass"));
-    }
-    if (factorTypeMap == null) {
-        factorTypeMap = rcs.getStaticList(new StaticsListRequest("FactorType"));
-    }
-}
+        List<String> messages = Collections.singletonList(
+                new GsonBuilder().serializeNulls().create().toJson(request)
+        );
+        when(cacheProcessRepo.readMsgFromCache(anyString(), anyString(), anyString(), anyString()))
+                .thenReturn(messages);
 
-private void validateStaticMaps() {
-    if (assetClassMap.isEmpty() || factorTypeMap.isEmpty()) {
-        log.logWarning(RfrCommonCTES.Messages.WARN_STATIC_MAPS_EMPTY);
-    }
-}
+        boolean result = service.updMomInf(request);
 
-private void logRequestStart(NewMsgMomUpdInfoRequest request) {
-    log.logInfo(RfrCommonCTES.Messages.MESSAGE_START + " updMomInf -> NewMsgMomUpdInfoRequest: " + request.toString());
-}
-
-private String processRequestAndCache(NewMsgMomUpdInfoRequest request) throws RfrException, SQLException {
-    SimpleDateFormat dateFormat = new SimpleDateFormat(RfrCommonCTES.DATEFORMAT);
-    String msgInsert = new GsonBuilder().serializeNulls().create().toJson(request);
-    log.logDebug("Objeto parseado a String con formato JSON ---> " + msgInsert);
-
-    String[] idSplited = request.getHeaderCtrl().getIdFunctionality().split("_", -1);
-    String idFunction = idSplited[0] + "_" + idSplited[1];
-
-    cacheProcessRepo.callInsertMessageIntoCache(
-        idFunction,
-        request.getMomResult().getAssetClass(),
-        request.getMomResult().getFactorType(),
-        request.getOperation(),
-        msgInsert,
-        request.getHeaderCtrl().getCurrent(),
-        request.getHeaderCtrl().getTotal(),
-        dateFormat.format(new Date())
-    );
-
-    return idFunction;
-}
-
-private int updateBatchCount(String idFunction) {
-    cacheBatchInMemoryService.getBatches().merge(idFunction, 1, Integer::sum);
-    return cacheBatchInMemoryService.getBatches().get(idFunction);
-}
-
-private void startTimer() {
-    inicio = Instant.now();
-    log.logInfo("--------------------Se inicia el temporizador----------------");
-}
-
-private void processAllMessages(NewMsgMomUpdInfoRequest request, String idFunction, ObjectMapper objectMapper) throws Exception {
-    Instant fin = Instant.now();
-    long duracion = Duration.between(inicio, fin).getSeconds();
-    log.logInfo("---------Duración conteo de todos los mensajes------------UpdInfMomService------------- " + duracion);
-    contador = 0L;
-
-    log.logInfo("Se empiezan a procesar todos los mensajes de Mod");
-    List<String> messages = cacheProcessRepo.readMsgFromCache(
-        idFunction,
-        request.getMomResult().getAssetClass(),
-        request.getMomResult().getFactorType(),
-        request.getOperation()
-    );
-
-    cleanModInfo(request);
-
-    for (String message : messages) {
-        processMessage(message, idFunction, objectMapper);
+        assertTrue(result);
+        verify(rcs, times(1)).updMomInf(any(MomResult.class));
+        verify(monitor, times(1)).notifyModelabilityRequestSended(any());
     }
 
-    log.logInfo("Se acaba de procesar todos los mensajes de Mod");
-}
+    @Test
+    public void test_updMomInf_batchNotFullyProcessed_returnsFalse() throws Exception {
+        headerCtrl.setTotal(2); // current = 1, total = 2, no se completa el batch
+        Map<String, Integer> batchMap = new HashMap<>();
+        batchMap.put("FUNC_01", 1); // Simula un contador en 1
+        when(cacheBatchInMemoryService.getBatches()).thenReturn(batchMap);
 
-private void cleanModInfo(NewMsgMomUpdInfoRequest request) throws RfrException {
-    SigomModInfoCleanRequest cleanModInfoReq = new SigomModInfoCleanRequest();
-    cleanModInfoReq.setAssetClass(assetClassMap.get(request.getMomResult().getAssetClass()));
-    cleanModInfoReq.setFactorType(factorTypeMap.get(request.getMomResult().getFactorType()));
-    cleanModInfoReq.setNewFlag("1");
-    rcs.cleanModInfo(cleanModInfoReq);
-}
+        boolean result = service.updMomInf(request);
 
-private void processMessage(String message, String idFunction, ObjectMapper objectMapper) throws Exception {
-    NewMsgMomUpdInfoRequest msgRequest = objectMapper.readValue(message, NewMsgMomUpdInfoRequest.class);
-    MomResult momR = createMomResult(msgRequest, idFunction);
-
-    log.logInfo("Request a sigom ---> " + momR.toString());
-    rcs.updMomInf(momR);
-    monitor.notifyModelabilityRequestSended(momR);
-}
-
-private MomResult createMomResult(NewMsgMomUpdInfoRequest msgRequest, String idFunction) {
-    MomResult momR = new MomResult();
-    momR.setFlag(null);
-    momR.setIdFuncioality(idFunction);
-    momR.setUnderlying(msgRequest.getMomResult().getUnderlying());
-    momR.setAssetClass(msgRequest.getMomResult().getAssetClass());
-    momR.setFactorType(msgRequest.getMomResult().getFactorType());
-    momR.setAxisX(msgRequest.getMomResult().getAxisX());
-    momR.setAxisY(msgRequest.getMomResult().getAxisY());
-    momR.setAxisZ(msgRequest.getMomResult().getAxisZ());
-    momR.setLostDate(msgRequest.getMomResult().getLostDate());
-    momR.setFlagDate(msgRequest.getMomResult().getFlagDate());
-    momR.setFlag(determineFlag(msgRequest));
-    momR.setNewFlag("1");
-    return momR;
-}
-
-private String determineFlag(NewMsgMomUpdInfoRequest msgRequest) {
-    if (msgRequest.getMomResult() != null && RfrCommonCTES.MomFlag.FLAG_Y.equalsIgnoreCase(msgRequest.getMomResult().getFlag())) {
-        return "1";
-    } else if (RfrCommonCTES.MomFlag.FLAG_N.equalsIgnoreCase(msgRequest.getMomResult().getFlag())) {
-        return "0";
-    }
-    return null;
-}
-    /**
-	 * UpdMomInfResponse old version
-     * @param request
-     * @return
-     * @throws RfrException
-     */
-    public Boolean updMomInfRest(NewMsgMomUpdInfoRequest request) throws RfrException {
-		Boolean updMomInfResponse= updMomInf(request);
-		log.logInfo(updMomInfResponse.toString());
-		MsgGenericRequestSCM mpeRequest = mpeOpeInvoke(request);
-		log.logInfo(mpeRequest.toString());
-		return updMomInfResponse;
+        assertFalse(result);
+        verify(cacheProcessRepo, never()).readMsgFromCache(anyString(), anyString(), anyString(), anyString());
+        verify(rcs, never()).updMomInf(any());
     }
 
-	public static void resetMaps(){
-    	assetClassMap = null;
-    	factorTypeMap = null;
+    @Test
+    public void test_updMomInf_throwsException_returnsFalse() throws Exception {
+        doThrow(new RuntimeException("Simulated failure")).when(cacheProcessRepo)
+                .callInsertMessageIntoCache(any(), any(), any(), any(), any(), anyInt(), anyInt(), any());
+
+        boolean result = service.updMomInf(request);
+
+        assertFalse(result);
+        verify(log, times(1)).logException(any());
+    }
+
+    @Test
+    public void test_determineFlag_returnsCorrectValues() {
+        NewMsgMomUpdInfoRequest req = new NewMsgMomUpdInfoRequest();
+        MomResult result = new MomResult();
+        req.setMomResult(result);
+
+        result.setFlag("Y");
+        assertEquals("1", service.determineFlag(req));
+
+        result.setFlag("N");
+        assertEquals("0", service.determineFlag(req));
+
+        result.setFlag("Z");
+        assertNull(service.determineFlag(req));
+    }
+
+    @Test
+    public void test_processRequestAndCache_returnsCorrectId() throws Exception {
+        String expectedId = "FUNC_01";
+
+        String idFunction = service.processRequestAndCache(request);
+
+        assertEquals(expectedId, idFunction);
+        verify(cacheProcessRepo, times(1)).callInsertMessageIntoCache(
+                eq("FUNC_01"),
+                eq("Equity"),
+                eq("Risk"),
+                eq("CREATE"),
+                anyString(),
+                eq(1),
+                eq(1),
+                any()
+        );
+    }
+
+    @Test
+    public void test_updateBatchCount_incrementsProperly() {
+        Map<String, Integer> batchMap = new HashMap<>();
+        batchMap.put("FUNC_01", 2);
+        when(cacheBatchInMemoryService.getBatches()).thenReturn(batchMap);
+
+        int result = service.updateBatchCount("FUNC_01");
+        assertEquals(3, result);
+    }
+
+    @Test
+    public void test_processAllMessages_executesSuccessfully() throws Exception {
+        List<String> messages = new ArrayList<>();
+        ObjectMapper mapper = new ObjectMapper();
+        messages.add(mapper.writeValueAsString(request));
+
+        when(cacheProcessRepo.readMsgFromCache(any(), any(), any(), any()))
+                .thenReturn(messages);
+
+        service.processAllMessages(request, "FUNC_01", mapper);
+
+        verify(rcs, times(1)).updMomInf(any());
+        verify(monitor, times(1)).notifyModelabilityRequestSended(any());
+    }
+
+    @Test
+    public void test_processMessage_executesSuccessfully() throws Exception {
+        ObjectMapper mapper = new ObjectMapper();
+        String msg = new GsonBuilder().serializeNulls().create().toJson(request);
+
+        service.processMessage(msg, "FUNC_01", mapper);
+
+        verify(rcs).updMomInf(any(MomResult.class));
+        verify(monitor).notifyModelabilityRequestSended(any(MomResult.class));
     }
 }
