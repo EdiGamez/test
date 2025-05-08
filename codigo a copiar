@@ -1,169 +1,80 @@
-import static org.junit.Assert.*;
-import org.junit.Before;
-import org.junit.Test;
-import java.util.ArrayList;
-import java.util.List;
-
-public class ProxyObjectTest {
-
-    private BuildCsvStressTestReport buildCsvStressTestReport;
-    private Factor factor;
-    private List<PointCrv> pointCrvs;
-    private List<CsvBeanStressTestHistoricReport> result;
-    private InnerPointObject innerPointObject;
-    private PointCrv pointCrv;
-    private ProxyObject proxyObj;
-    private ZeroCouponPoints zeroCouponPoints;
-
-    @Before
-    public void setUp() {
-        buildCsvStressTestReport = new BuildCsvStressTestReport();
-        factor = new Factor();
-        pointCrvs = new ArrayList<>();
-        result = new ArrayList<>();
-
-        // Configuración de datos de prueba
-        pointCrv = new PointCrv();
-        pointCrv.setAxisX("someAxis");
-        pointCrv.setDays(10);  // Días como entero
-        pointCrv.setStrike("2.5");
-        pointCrvs.add(pointCrv);
-
-        RfInfo rfInfo = new RfInfo();
-        proxyObj = new ProxyObject();
-        Proxy proxy = new Proxy();
-        proxy.setAxisX("someAxis");
-        proxy.setDays(10);  // Días como entero
-        proxy.setStrike("2.5");
-        proxy.setMethodology("someMethodology");
-        proxyObj.setProxy(proxy);
-
-        // Configuración de InnerPointObject
-        innerPointObject = new InnerPointObject();
-        zeroCouponPoints = new ZeroCouponPoints();
-        zeroCouponPoints.setAxisX("someAxis");
-        zeroCouponPoints.setDays(10);  // Días como entero
-        zeroCouponPoints.setAxisY("someAxisY");
-        innerPointObject.setPoint(zeroCouponPoints);
-
-        List<ProxyObject> proxies = new ArrayList<>();
-        proxies.add(proxyObj);
-        rfInfo.setProxies(proxies);
-        factor.setRfInfo(rfInfo);
-    }
-
-    // Test para el método isMatchingProxy con PointCrv
-    @Test
-    public void testIsMatchingProxy_PointCrv_AllConditionsTrue() {
-        // Los valores en pointCrv y proxyObj coinciden
-        assertTrue(isMatchingProxy(proxyObj, pointCrv));
-    }
-
-    @Test
-    public void testIsMatchingProxy_PointCrv_AxisXFalse() {
-        pointCrv.setAxisX("differentAxis");
-        // AxisX no coincide
-        assertFalse(isMatchingProxy(proxyObj, pointCrv));
-    }
-
-    @Test
-    public void testIsMatchingProxy_PointCrv_DaysFalse() {
-        pointCrv.setDays(20);  // Valor diferente
-        // Days no coincide
-        assertFalse(isMatchingProxy(proxyObj, pointCrv));
-    }
-
-    @Test
-    public void testIsMatchingProxy_PointCrv_StrikeFalse() {
-        pointCrv.setStrike("3.0"); // Valor diferente
-        // Strike no coincide
-        assertFalse(isMatchingProxy(proxyObj, pointCrv));
-    }
-
-    @Test
-    public void testIsMatchingProxy_PointCrv_AxisXTrue_DaysTrue_StrikeFalse() {
-        pointCrv.setStrike("3.0");
-        // AxisX y Days coinciden, pero Strike no
-        assertFalse(isMatchingProxy(proxyObj, pointCrv));
-    }
-
-    @Test
-    public void testIsMatchingProxy_PointCrv_AllConditionsFalse() {
-        pointCrv.setAxisX("differentAxis");
-        pointCrv.setDays(20);
-        pointCrv.setStrike("3.0");
-        // Ninguna condición coincide
-        assertFalse(isMatchingProxy(proxyObj, pointCrv));
-    }
-
-    // Test para el método isMatchingProxy con ZeroCouponPoints
-    @Test
-    public void testIsMatchingProxy_ZeroCouponPoints_AllConditionsTrue() {
-        // Los valores en zeroCouponPoints y proxyObj coinciden
-        assertTrue(isMatchingProxy(proxyObj, zeroCouponPoints));
-    }
-
-    @Test
-    public void testIsMatchingProxy_ZeroCouponPoints_AxisXFalse() {
-        zeroCouponPoints.setAxisX("differentAxis");
-        // AxisX no coincide
-        assertFalse(isMatchingProxy(proxyObj, zeroCouponPoints));
-    }
-
-    @Test
-    public void testIsMatchingProxy_ZeroCouponPoints_DaysFalse() {
-        zeroCouponPoints.setDays(20);  // Valor diferente
-        // Days no coincide
-        assertFalse(isMatchingProxy(proxyObj, zeroCouponPoints));
-    }
-
-    @Test
-    public void testIsMatchingProxy_ZeroCouponPoints_AllConditionsFalse() {
-        zeroCouponPoints.setAxisX("differentAxis");
-        zeroCouponPoints.setDays(20);
-        // Ninguna condición coincide
-        assertFalse(isMatchingProxy(proxyObj, zeroCouponPoints));
-    }
-
-    // Test para el método pointHasProxy
-    @Test
-    public void testPointHasProxy_Found() {
-        // pointCrv y proxyObj coinciden, por lo que el proxy debe ser encontrado
-        assertTrue(pointHasProxy(pointCrv, factor).isPresent());
-    }
-
-    @Test
-    public void testPointHasProxy_NotFound() {
-        pointCrv.setAxisX("differentAxis"); // Cambiar el valor para que no coincidan
-        // No debe encontrar el proxy
-        assertFalse(pointHasProxy(pointCrv, factor).isPresent());
-    }
-
-    // Test para shouldProcessWithProxy
-    @Test
-    public void testShouldProcessWithProxy_Found() {
-        // Si pointHasProxy devuelve un valor presente, la prueba debería devolver true
-        assertTrue(shouldProcessWithProxy(pointCrv, factor));
-    }
-
-    @Test
-    public void testShouldProcessWithProxy_NotFound() {
-        pointCrv.setAxisX("differentAxis"); // Cambiar el valor para que no coincidan
-        // No debería procesar si no se encuentra el proxy
-        assertFalse(shouldProcessWithProxy(pointCrv, factor));
-    }
-
-    // Test para shouldProcessWithProxy con InnerPointObject
-    @Test
-    public void testShouldProcessWithProxy_InnerPointObject_Found() {
-        // Si pointHasProxy devuelve un valor presente, la prueba debería devolver true
-        assertTrue(shouldProcessWithProxy(innerPointObject, factor));
-    }
-
-    @Test
-    public void testShouldProcessWithProxy_InnerPointObject_NotFound() {
-        innerPointObject.getPoint().setAxisX("differentAxis");
-        // No debería procesar si no se encuentra el proxy
-        assertFalse(shouldProcessWithProxy(innerPointObject, factor));
-    }
-}
+cib-rifare-unixbatchrfr	6.58.0-SNAPSHOT		04/09/2025
+cib-rifare-librfrinventory	1.10.0-SNAPSHOT		04/15/2025
+cib-rifare-librfrinventory	1.10.0		04/15/2025
+cib-rifare-unixbatchrfr	6.58.0		04/23/2025
+cib-rifare-librfrinventory	1.11.0-SNAPSHOT		04/23/2025
+cib-rifare-tdmsystemupdater	1.0.9		04/25/2025
+cib-rifare-unixbatchrfr	6.59.0-SNAPSHOT		04/25/2025
+cib-rifare-librfrinventory	1.10.1-SNAPSHOT		04/28/2025
+cib-rifare-librfrinventory	1.10.1		04/29/2025
+cib-rifare-unixbatchrfr	6.58.1-SNAPSHOT		04/30/2025
+cib-rifare-unixbatchrfr	6.58.1		04/30/2025
+cib-rifare-svcrfrinventory	1.15.1-SNAPSHOT		04/30/2025
+cib-rifare-svcrfrinventory	1.15.1		04/30/2025
+cib-rifare-unixbatchrfr	6.59.0		04/30/2025
+cib-rifare-librfrinventory	1.11.0		04/30/2025
+cib-rifare-unixbatchrfr	6.60.0-SNAPSHOT		05/02/2025
+cib-rifare-svcrfrinventory	1.16.0-SNAPSHOT		05/05/2025
+cib-rifare-svcmom	6.34.0-SNAPSHOT		05/07/2025
+cib-rifare-unixbatchrfr	6.60.0		
+cib-rifare-unixbatchrfr	6.56.0		02/12/2025
+cib-rifare-svcrfrinventory	1.13.0		02/12/2025
+cib-rifare-svcgetados	6.22.0-SNAPSHOT		02/24/2025
+cib-rifare-librfrinventory	1.8.0		02/25/2025
+cib-rifare-svcrfrinventory	1.14.0-SNAPSHOT		02/25/2025
+cib-rifare-librfrinventory	1.8.1-SNAPSHOT		03/03/2025
+cib-rifare-librfrinventory	1.8.1		03/03/2025
+cib-rifare-tdmsystemupdater	1.0.5-SNAPSHOT		03/05/2025
+cib-rifare-tdmsystemupdater	1.0.6-SNAPSHOT		03/05/2025
+cib-rifare-tdmsystemupdater	1.0.7-SNAPSHOT		03/05/2025
+cib-rifare-tdmsystemupdater	1.0.9-SNAPSHOT		03/05/2025
+cib-rifare-unixbatchrfr	6.57.0-SNAPSHOT		03/10/2025
+cib-rifare-svcrfrinventory	1.14.0		03/11/2025
+cib-rifare-svcgetados	6.22.0		03/11/2025
+cib-rifare-svcmom	6.33.0		03/12/2025
+cib-rifare-unixbatchrfr	6.57.0		03/17/2025
+cib-rifare-librfrinventory	1.9.0-SNAPSHOT		03/20/2025
+cib-rifare-svcrfrinventory	1.15.0-SNAPSHOT		03/21/2025
+cib-rifare-librfrinventory	1.9.0		03/21/2025
+cib-rifare-svcrfrinventory	1.15.0		03/24/2025
+Application	Version	Description	Created
+cib-rifare-svcgetados	6.21.0		01/16/2025
+cib-rifare-svcgetados	6.21.1-SNAPSHOT		01/16/2025
+cib-rifare-svcgetados	6.21.1		01/16/2025
+cib-rifare-unixbatchrfr	6.55.0-SNAPSHOT		01/21/2025
+cib-rifare-svcprocessmonit	1.0.0-SNAPSHOT		01/21/2025
+cib-rifare-svckafkawriter	6.27.0-SNAPSHOT		01/21/2025
+cib-rifare-svcmom	6.33.0-SNAPSHOT		01/21/2025
+cib-rifare-svcgenericloads	6.19.0-SNAPSHOT		01/21/2025
+cib-rifare-svckafkareader	6.37.0-SNAPSHOT		01/21/2025
+cib-rifare-svcgateway	6.14.0-SNAPSHOT		01/21/2025
+cib-rifare-unixbatchrfr	6.55.0		01/21/2025
+cib-rifare-librfrinventory	1.7.0		01/28/2025
+cib-rifare-librfrinventory	1.8.0-SNAPSHOT		01/28/2025
+cib-rifare-extractoraps	1.3.0-SNAPSHOT		01/30/2025
+cib-rifare-tdmsystemupdater	1.0.0-SNAPSHOT		01/30/2025
+cib-rifare-librfrutils	7.15.0-SNAPSHOT		01/30/2025
+cib-rifare-libconsuacxapi	1.3.0-SNAPSHOT		01/30/2025
+cib-rifare-unixbatchrfr	6.56.0-SNAPSHOT		01/31/2025
+cib-rifare-librfrinventory	1.7.1-SNAPSHOT		02/11/2025
+cib-rifare-librfrinventory	1.7.1		02/12/2025
+cib-rifare-unixbatchrfr	0.0.0		01/09/2025
+cib-rifare-librfrutils	0.0.0		01/09/2025
+cib-rifare-svcgateway	0.0.0		01/09/2025
+cib-rifare-svckafkareader	0.0.0		01/09/2025
+cib-rifare-svcrfrsigom	0.0.0		01/09/2025
+cib-rifare-svcgetados	0.0.0		01/09/2025
+cib-rifare-svcmom	0.0.0		01/09/2025
+cib-rifare-libconsuacxapi	0.0.0		01/09/2025
+cib-rifare-svcrfrinventory	0.0.0		01/09/2025
+cib-rifare-extractoraps	0.0.0		01/09/2025
+cib-rifare-svcprocessmonit	0.0.0		01/09/2025
+cib-rifare-librfrinventory	0.0.0		01/09/2025
+cib-rifare-tdmsystemupdater	0.0.0		01/09/2025
+cib-rifare-svcrfrsigom	6.61.0-SNAPSHOT		01/10/2025
+cib-rifare-svcgenericloads	0.0.0		01/10/2025
+cib-rifare-svckafkawriter	0.0.0		01/10/2025
+cib-rifare-svcrfrinventory	1.13.0-SNAPSHOT		01/13/2025
+cib-rifare-librfrinventory	1.7.0-SNAPSHOT		01/14/2025
+cib-rifare-svcgetados	6.20.4-SNAPSHOT		01/14/2025
+cib-rifare-svcgetados	6.21.0-SNAPSHOT		01/16/2025
