@@ -55,19 +55,19 @@ public class ProcessMonitorRepositoryTest {
 
         processMonitorRepository.insertIntoControlObsmodFlow(dataDatePart, flow, assetClass, factorType, idFunctionalityMom, momApply, momApplyEnded, proxyApply, proxyApplyEnded, idFunctionalityProxy);
 
-        verify(query).setParameter("dataDatePart", Date.valueOf(LocalDate.parse(dataDatePart, DateTimeFormatter.ofPattern("yyyy-MM-dd"))));
-        verify(query).setParameter("flow", flow);
-        verify(query).setParameter("assetClass", assetClass);
-        verify(query).setParameter("factorType", factorType);
-        verify(query).setParameter("idFunctionalityMom", idFunctionalityMom);
-        verify(query).setParameter("momApply", momApply);
-        verify(query).setParameter("momApplyEnded", momApplyEnded);
-        verify(query).setParameter("proxyApply", proxyApply);
-        verify(query).setParameter("proxyApplyEnded", proxyApplyEnded);
-        verify(query).setParameter("idFunctionalityProxy", idFunctionalityProxy);
-        verify(query).setParameter("canceled", 'N');
-        verify(query).setParameter("batchCompleted", 'N');
-        verify(query).setParameter("momStartBatch", Timestamp.from(Instant.now()));
+        verify(query).setParameter(eq("dataDatePart"), eq(Date.valueOf(LocalDate.parse(dataDatePart, DateTimeFormatter.ofPattern("yyyy-MM-dd")))));
+        verify(query).setParameter(eq("flow"), eq(flow));
+        verify(query).setParameter(eq("assetClass"), eq(assetClass));
+        verify(query).setParameter(eq("factorType"), eq(factorType));
+        verify(query).setParameter(eq("idFunctionalityMom"), eq(idFunctionalityMom));
+        verify(query).setParameter(eq("momApply"), eq(momApply));
+        verify(query).setParameter(eq("momApplyEnded"), eq(momApplyEnded));
+        verify(query).setParameter(eq("proxyApply"), eq(proxyApply));
+        verify(query).setParameter(eq("proxyApplyEnded"), eq(proxyApplyEnded));
+        verify(query).setParameter(eq("idFunctionalityProxy"), eq(idFunctionalityProxy));
+        verify(query).setParameter(eq("canceled"), eq('N'));
+        verify(query).setParameter(eq("batchCompleted"), eq('N'));
+        verify(query).setParameter(eq("momStartBatch"), any(Timestamp.class));
         verify(query).executeUpdate();
     }
 
@@ -89,18 +89,18 @@ public class ProcessMonitorRepositoryTest {
 
         processMonitorRepository.updateControlObsmodFlow(dataDatePart, flow, assetClass, factorType, idFunctionalityMom, momApply, momApplyEnded, proxyApply, proxyApplyEnded, idFunctionalityProxy);
 
-        verify(query).setParameter("dataDatePart", Date.valueOf(LocalDate.parse(dataDatePart, DateTimeFormatter.ofPattern("yyyy-MM-dd"))));
-        verify(query).setParameter("flow", flow);
-        verify(query).setParameter("assetClass", assetClass);
-        verify(query).setParameter("factorType", factorType);
-        verify(query).setParameter("idFunctionalityMom", idFunctionalityMom);
-        verify(query).setParameter("momApply", momApply);
-        verify(query).setParameter("momApplyEnded", momApplyEnded);
-        verify(query).setParameter("proxyApply", proxyApply);
-        verify(query).setParameter("proxyApplyEnded", proxyApplyEnded);
-        verify(query).setParameter("idFunctionalityProxy", idFunctionalityProxy);
-        verify(query).setParameter("batchCompleted", 'N');
-        verify(query).setParameter("momEndBatch", Timestamp.from(Instant.now()));
+        verify(query).setParameter(eq("dataDatePart"), eq(Date.valueOf(LocalDate.parse(dataDatePart, DateTimeFormatter.ofPattern("yyyy-MM-dd")))));
+        verify(query).setParameter(eq("flow"), eq(flow));
+        verify(query).setParameter(eq("assetClass"), eq(assetClass));
+        verify(query).setParameter(eq("factorType"), eq(factorType));
+        verify(query).setParameter(eq("idFunctionalityMom"), eq(idFunctionalityMom));
+        verify(query).setParameter(eq("momApply"), eq(momApply));
+        verify(query).setParameter(eq("momApplyEnded"), eq(momApplyEnded));
+        verify(query).setParameter(eq("proxyApply"), eq(proxyApply));
+        verify(query).setParameter(eq("proxyApplyEnded"), eq(proxyApplyEnded));
+        verify(query).setParameter(eq("idFunctionalityProxy"), eq(idFunctionalityProxy));
+        verify(query).setParameter(eq("batchCompleted"), eq('N'));
+        verify(query).setParameter(eq("momEndBatch"), any(Timestamp.class));
         verify(query).executeUpdate();
     }
 
@@ -116,12 +116,12 @@ public class ProcessMonitorRepositoryTest {
 
         processMonitorRepository.updateControlObsmodFlowCancelation(flagDate, engine, assetClass, factorType);
 
-        verify(query).setParameter("dataDatePart", Date.valueOf(LocalDate.parse(flagDate, DateTimeFormatter.ofPattern("yyyy-MM-dd"))));
-        verify(query).setParameter("flow", engine.toLowerCase());
-        verify(query).setParameter("assetClass", assetClass);
-        verify(query).setParameter("factorType", factorType);
-        verify(query).setParameter("canceled", "Y");
-        verify(query).setParameter("batchCompleted", "Y");
+        verify(query).setParameter(eq("dataDatePart"), eq(Date.valueOf(LocalDate.parse(flagDate, DateTimeFormatter.ofPattern("yyyy-MM-dd")))));
+        verify(query).setParameter(eq("flow"), eq(engine.toLowerCase()));
+        verify(query).setParameter(eq("assetClass"), eq(assetClass));
+        verify(query).setParameter(eq("factorType"), eq(factorType));
+        verify(query).setParameter(eq("canceled"), eq("Y"));
+        verify(query).setParameter(eq("batchCompleted"), eq("Y"));
         verify(query).executeUpdate();
     }
 }
