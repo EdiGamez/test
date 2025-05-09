@@ -1,108 +1,261 @@
-import static org.mockito.Mockito.*;
+package com.sgt.rfr.rfrmomservice.database.repository;
 
-import jakarta.persistence.EntityManager;
-import jakarta.persistence.Query;
+import com.isb.rfrutils.services.monitorobservabilidad.RfrMonitorObservabilidadFlowService;
+import com.isb.rfrutils.services.monitorobservabilidad.message.ControlObsmodFlowMessage;
+import com.isb.rfrutils.util.UtilSerializer;
+import com.sgt.rfr.rfrmomservice.database.model.table.ControlObsmodFlow;
+import com.sgt.rfr.rfrmomservice.database.model.table.ControlObsmodParametrized;
+import lombok.extern.slf4j.Slf4j;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.stereotype.Repository;
 
-import org.junit.Before;
-import org.junit.Test;
-import org.junit.runner.RunWith;
-import org.mockito.*;
+import javax.persistence.EntityManager;
+import javax.persistence.PersistenceContext;
+import javax.persistence.Query;
+import java.sql.Date;
+import java.sql.Timestamp;
+import java.text.SimpleDateFormat;
+import java.time.Instant;
+import java.time.LocalDate;
+import java.time.format.DateTimeFormatter;
 
-@RunWith(MockitoJUnitRunner.class)
-public class ControlObsmodFlowServiceTest {
+import static com.sgt.rfr.rfrmomservice.util.constants.Constants.*;
 
-    @InjectMocks
-    private ControlObsmodFlowService service;
+@Slf4j
+@Repository
+public class ProcessMonitorRepository {
 
-    @Mock
-    private EntityManager entityManager;
+    @PersistenceContext
+    EntityManager entityManager;
 
-    @Mock
-    private Query query;
+    @Autowired
+    private RfrMonitorObservabilidadFlowService rfrMonitorObservabilidadFlowService;
 
-    @Before
-    public void setUp() {
-        when(entityManager.createNativeQuery(anyString())).thenReturn(query);
-        when(query.setParameter(anyString(), any())).thenReturn(query);
+    @Autowired
+    private UtilSerializer utilSerializer;
+
+
+    //
+    private final String getParametrizationByFlowAcFt = "SELECT * FROM USER_RFR.TRFR_CONTROL_OBSMOD_PARAMETRIZED c WHERE c.FLOW = :flow AND c.ASSET_CLASS = :assetClass AND c.FACTOR_TYPE = :factorType";
+
+    // Insert Query
+    private final String insertQuery = "INSERT INTO USER_RFR.TRFR_CONTROL_OBSMOD_FLOW (DATA_DATE_PART, FLOW, ASSET_CLASS, FACTOR_TYPE, IDFUNCTIONALITY_MOM, MOM_APPLY, MOM_APPLY_ENDED, PROXY_APPLY, PROXY_APPLY_ENDED, IDFUNCTIONALITY_PROXY, CANCELED, BATCH_COMPLETED, MOM_START_BATCH) " +
+            "VALUES (:dataDatePart, :flow, :assetClass, :factorType, :idFunctionalityMom, :momApply, :momApplyEnded, :proxyApply, :proxyApplyEnded, :idFunctionalityProxy, :canceled, :batchCompleted, :momStartBatch)";
+
+    // Update Query
+    private final String updateQuery = "UPDATE USER_RFR.TRFR_CONTROL_OBSMOD_FLOW SET MOM_APPLY = :momApply, MOM_APPLY_ENDED = :momApplyEnded, PROXY_APPLY = :proxyApply, PROXY_APPLY_ENDED = :proxyApplyEnded, IDFUNCTIONALITY_PROXY = :idFunctionalityProxy, BATCH_COMPLETED = :batchCompleted, MOM_END_BATCH = :momEndBatch " +
+            "WHERE DATA_DATE_PART = :dataDatePart AND FLOW = :flow AND ASSET_CLASS = :assetClass AND FACTOR_TYPE = :factorType AND IDFUNCTIONALITY_MOM = :idFunctionalityMom";
+    // Update Query by cancelation
+    private final String updateQueryCancelation = "UPDATE USER_RFR.TRFR_CONTROL_OBSMOD_FLOW SET CANCELED = :canceled, BATCH_COMPLETED = :batchCompleted " +
+            "WHERE DATA_DATE_PART = :dataDatePart AND FLOW = :flow AND ASSET_CLASS = :assetClass AND FACTOR_TYPE = :factorType";
+
+    private final String updateAsBatchEnded = "UPDATE USER_RFR.TRFR_CONTROL_OBSMOD_FLOW SET BATCH_COMPLETED = :batchCompleted " +
+            "WHERE IDFUNCTIONALITY_MOM = :idFunctionalityMom";
+
+    // Select previous register idFunctionalityProxy created when observability messages from MOM were loaded in RFR
+    private final String getBatchParametrizationByIdMom = "SELECT * FROM USER_RFR.TRFR_CONTROL_OBSMOD_FLOW c WHERE c.IDFUNCTIONALITY_MOM = :idFunctionalityMom";
+
+
+    public void insertIntoControlObsmodFlow(String dataDatePart, String flow, String assetClass, String factorType, String idFunctionalityMom, String momApply, String momApplyEnded, String proxyApply, String proxyApplyEnded, String idFunctionalityProxy) {
+        try {
+            DateTimeFormatter formatter = DateTimeFormatter.ofPattern(YYYY_MM_DD);
+            LocalDate localDate = LocalDate.parse(dataDatePart, formatter);
+            java.sql.Date sqlDate = java.sql.Date.valueOf(localDate);
+
+            Timestamp timestampInit = Timestamp.from(Instant.now());
+
+            Query query = entityManager.createNativeQuery(insertQuery);
+            query.setParameter(DATA_DATE_PART, sqlDate);
+            query.setParameter(FLOW, flow);
+            query.setParameter(ASSET_CLASS, assetClass);
+            query.setParameter(FACTOR_TYPE, factorType);
+            query.setParameter(ASSET_CLASS, assetClass);
+            query.setParameter(FACTOR_TYPE, factorType);
+            query.setParameter(ID_FUNCTIONALITY_MOM, idFunctionalityMom);
+            query.setParameter(MOM_APPLY, momApply);
+            query.setParameter(MOM_APPLY_ENDED, momApplyEnded);
+            query.setParameter(PROXY_APPLY, proxyApply);
+            query.setParameter(PROXY_APPLY_ENDED, proxyApplyEnded);
+            query.setParameter(ID_FUNCTIONALITY_PROXY, idFunctionalityProxy);
+            query.setParameter(CANCELED, 'N');
+            query.setParameter(BATCH_COMPLETED, 'N');
+            query.setParameter(MOM_START_BATCH, timestampInit);
+            query.executeUpdate();
+        } catch (Exception e) {
+            log.error("Error inserting into ControlObsmodFlow: " + e.getMessage());
+        }
     }
 
-    @Test
-    public void testInsertIntoControlObsmodFlow_success() {
-        service.insertIntoControlObsmodFlow(
-                "2025-05-08",
-                "flow",
-                "equity",
-                "factor",
-                "idMom",
-                "Y",
-                "N",
-                "Y",
-                "N",
-                "idProxy"
-        );
-
-        verify(entityManager).createNativeQuery(anyString());
-        verify(query, atLeastOnce()).setParameter(anyString(), any());
-        verify(query).executeUpdate();
+    public void insertIntoControlObsmodFlowKafkaNotification(String dataDatePart, String flow, String assetClass, String factorType, String idFunctionalityMom, String momApply, String momApplyEnded, String proxyApply, String proxyApplyEnded, String idFunctionalityProxy) {
+        try {
+            Timestamp timestampInit = Timestamp.from(Instant.now());
+            ControlObsmodFlow controlObsmodFlow = selectFromControlObsmodFlowByIdMom(idFunctionalityMom);
+            if (null != controlObsmodFlow) {
+                sendKafkaNotification(formatDate(controlObsmodFlow.getDataDatePart()), controlObsmodFlow.getFlow(), controlObsmodFlow.getAssetClass(), controlObsmodFlow.getFactorType(), controlObsmodFlow.getIdFunctionalityMom(), controlObsmodFlow.getMomApply(), controlObsmodFlow.getMomApplyEnded(), controlObsmodFlow.getProxyApply(), controlObsmodFlow.getProxyApplyEnded(), controlObsmodFlow.getIdFunctionalityProxy(), controlObsmodFlow.getCanceled(), controlObsmodFlow.getBatchCompleted(), controlObsmodFlow.getMomStartBatch().toString(), null, null, null);
+            } else {
+                sendKafkaNotification(dataDatePart, flow, assetClass, factorType, idFunctionalityMom, momApply, momApplyEnded, proxyApply, proxyApplyEnded, idFunctionalityProxy, "N", "N", timestampInit.toString(), null, null, null);
+            }
+        } catch (Exception e) {
+            log.error("Error sending kafkainserting into ControlObsmodFlow: " + e.getMessage());
+        }
     }
 
-    @Test
-    public void testInsertIntoControlObsmodFlow_exceptionHandled() {
-        when(entityManager.createNativeQuery(anyString())).thenThrow(new RuntimeException("DB error"));
+    public void updateControlObsmodFlow(String dataDatePart, String flow, String assetClass, String factorType, String idFunctionalityMom, String momApply, String momApplyEnded, String proxyApply, String proxyApplyEnded, String idFunctionalityProxy) {
+        try {
+            DateTimeFormatter formatter = DateTimeFormatter.ofPattern(YYYY_MM_DD);
+            LocalDate localDate = LocalDate.parse(dataDatePart, formatter);
+            java.sql.Date sqlDate = java.sql.Date.valueOf(localDate);
 
-        service.insertIntoControlObsmodFlow(
-                "2025-05-08",
-                "flow",
-                "equity",
-                "factor",
-                "idMom",
-                "Y",
-                "N",
-                "Y",
-                "N",
-                "idProxy"
-        );
+            Timestamp timestampEnd = Timestamp.from(Instant.now());
 
-        // No assertion needed, just checking that no exception is thrown out
+            Query query = entityManager.createNativeQuery(updateQuery);
+            query.setParameter(DATA_DATE_PART, sqlDate);
+            query.setParameter(FLOW, flow);
+            query.setParameter(ASSET_CLASS, assetClass);
+            query.setParameter(FACTOR_TYPE, factorType);
+            query.setParameter(ID_FUNCTIONALITY_MOM, idFunctionalityMom);
+            query.setParameter(MOM_APPLY, momApply);
+            query.setParameter(MOM_APPLY_ENDED, momApplyEnded);
+            query.setParameter(PROXY_APPLY, proxyApply);
+            query.setParameter(PROXY_APPLY_ENDED, proxyApplyEnded);
+            query.setParameter(ID_FUNCTIONALITY_PROXY, idFunctionalityProxy);
+            query.setParameter(BATCH_COMPLETED, 'N');
+            query.setParameter(MOM_END_BATCH, timestampEnd);
+            query.executeUpdate();
+        } catch (Exception e) {
+            log.error("Error updating ControlObsmodFlow: " + e.getMessage());
+        }
     }
 
-    @Test
-    public void testUpdateControlObsmodFlow_success() {
-        service.updateControlObsmodFlow(
-                "2025-05-08",
-                "flow",
-                "equity",
-                "factor",
-                "idMom",
-                "Y",
-                "N",
-                "Y",
-                "N",
-                "idProxy"
-        );
-
-        verify(entityManager).createNativeQuery(anyString());
-        verify(query, atLeastOnce()).setParameter(anyString(), any());
-        verify(query).executeUpdate();
+    public void updateControlObsmodFlowKafkaNotification(String dataDatePart, String flow, String assetClass, String factorType, String idFunctionalityMom, String momApply, String momApplyEnded, String proxyApply, String proxyApplyEnded, String idFunctionalityProxy) {
+        try {
+            Timestamp timestampEnd = Timestamp.from(Instant.now());
+            ControlObsmodFlow controlObsmodFlow = selectFromControlObsmodFlowByIdMom(idFunctionalityMom);
+            if (null != controlObsmodFlow) {
+                sendKafkaNotification(formatDate(controlObsmodFlow.getDataDatePart()), controlObsmodFlow.getFlow(), controlObsmodFlow.getAssetClass(), controlObsmodFlow.getFactorType(), controlObsmodFlow.getIdFunctionalityMom(), controlObsmodFlow.getMomApply(), controlObsmodFlow.getMomApplyEnded(), controlObsmodFlow.getProxyApply(), controlObsmodFlow.getProxyApplyEnded(), controlObsmodFlow.getIdFunctionalityProxy(), controlObsmodFlow.getCanceled(), controlObsmodFlow.getBatchCompleted(), controlObsmodFlow.getMomStartBatch().toString(), controlObsmodFlow.getMomEndBatch().toString(), null, null);
+            } else {
+                sendKafkaNotification(dataDatePart, flow, assetClass, factorType, idFunctionalityMom, momApply, momApplyEnded, proxyApply, proxyApplyEnded, idFunctionalityProxy, null, "N", null, timestampEnd.toString(), null, null);
+            }
+        } catch (Exception e) {
+            log.error("Error sending kafka updating into ControlObsmodFlow: " + e.getMessage());
+        }
     }
 
-    @Test
-    public void testUpdateControlObsmodFlow_exceptionHandled() {
-        when(entityManager.createNativeQuery(anyString())).thenThrow(new RuntimeException("DB error"));
 
-        service.updateControlObsmodFlow(
-                "2025-05-08",
-                "flow",
-                "equity",
-                "factor",
-                "idMom",
-                "Y",
-                "N",
-                "Y",
-                "N",
-                "idProxy"
-        );
-
-        // No assertion needed, just checking that no exception is thrown out
+    public void updateControlObsmodFlowCancelation(String flagDate, String engine, String assetClass, String factorType) {
+        try {
+            DateTimeFormatter formatter = DateTimeFormatter.ofPattern("yyyy-MM-dd");
+            LocalDate localDate = LocalDate.parse(flagDate, formatter);
+            java.sql.Date sqlDate = java.sql.Date.valueOf(localDate);
+            Query query = entityManager.createNativeQuery(updateQueryCancelation);
+            query.setParameter(DATA_DATE_PART, sqlDate);
+            query.setParameter(FLOW, engine.toLowerCase());
+            query.setParameter(ASSET_CLASS, assetClass);
+            query.setParameter(FACTOR_TYPE, factorType);
+            query.setParameter(CANCELED, "Y");
+            query.setParameter(BATCH_COMPLETED, "Y");
+            query.executeUpdate();
+            String messageSucess = "Sucess cancelling batches for: " + flagDate + "/" + engine + "/" + assetClass + "/" + factorType;
+            log.info(messageSucess);
+            sendKafkaNotification(formatDate(sqlDate), engine.toLowerCase(), assetClass, factorType, null, null, null, null, null, null, "Y", null, null, null, null, null);
+        } catch (Exception e) {
+            String messageError = "Error updating ControlObsmodFlow: " + flagDate + "/" + engine + "/" + assetClass + "/" + factorType;
+            log.error(messageError);
+            log.error(e.getMessage());
+        }
     }
+
+    public void updateAsBatchEnded(String idFunctionMom) {
+        try {
+            Query query = entityManager.createNativeQuery(updateAsBatchEnded);
+            query.setParameter("idFunctionalityMom", idFunctionMom);
+            query.setParameter("batchCompleted", "Y");
+            query.executeUpdate();
+            log.info("updateAsBatchEnded: " + idFunctionMom);
+        } catch (Exception e) {
+            log.error("Error updating as Ended ControlObsmodFlow: " + e.getMessage());
+        }
+    }
+
+    public void updateAsBatchEndedKafkaNotification(String idFunctionMom) {
+        try {
+            Timestamp timestampEnd = Timestamp.from(Instant.now());
+            ControlObsmodFlow controlObsmodFlow = selectFromControlObsmodFlowByIdMom(idFunctionMom);
+            if (null != controlObsmodFlow) {
+                sendKafkaNotification(formatDate(controlObsmodFlow.getDataDatePart()), controlObsmodFlow.getFlow(), controlObsmodFlow.getAssetClass(), controlObsmodFlow.getFactorType(), controlObsmodFlow.getIdFunctionalityMom(), controlObsmodFlow.getMomApply(), controlObsmodFlow.getMomApplyEnded(), controlObsmodFlow.getProxyApply(), controlObsmodFlow.getProxyApplyEnded(), controlObsmodFlow.getIdFunctionalityProxy(), controlObsmodFlow.getCanceled(), "Y", controlObsmodFlow.getMomStartBatch().toString(), controlObsmodFlow.getMomEndBatch().toString(), null, null);
+            } else {
+                sendKafkaNotification(null, null, null, null, idFunctionMom, null, null, null, null, null, null, "Y", null, null, null, null);
+            }
+        } catch (Exception e) {
+            log.error("Error sending kafka updating into ControlObsmodFlow: " + e.getMessage());
+        }
+    }
+
+    public ControlObsmodParametrized selectFromControlObsmodParametrizedByFlowAcFt(String flow, String assetClass, String factorType) {
+        ControlObsmodParametrized results = null;
+        try {
+            Query q = entityManager.createNativeQuery(getParametrizationByFlowAcFt, ControlObsmodParametrized.class);
+            q.setParameter("flow", flow);
+            q.setParameter("assetClass", assetClass);
+            q.setParameter("factorType", factorType);
+            results = (ControlObsmodParametrized) q.getSingleResult();
+        } catch (Exception e) {
+            log.error("Error selecting from ControlObsmodParametrized: " + e.getMessage());
+        }
+        return results;
+    }
+
+    public ControlObsmodFlow selectFromControlObsmodFlowByIdMom(String idFunctionalityMom) {
+        ControlObsmodFlow results = null;
+        try {
+            Query q = entityManager.createNativeQuery(getBatchParametrizationByIdMom, ControlObsmodFlow.class);
+            q.setParameter("idFunctionalityMom", idFunctionalityMom);
+            results = (ControlObsmodFlow) q.getSingleResult();
+            if (results == null) {
+                log.error(getBatchParametrizationByIdMom + "with idFunctionalityMom=" + idFunctionalityMom + " did not return any register");
+                throw new RuntimeException("");
+            }
+        } catch (Exception e) {
+            log.error("Error selecting from ControlObsmodParametrized: " + e.getMessage());
+        }
+        return results;
+    }
+
+    private void sendKafkaNotification(
+            String dataDatePart,
+            String flow,
+            String assetClass,
+            String factorType,
+            String idFunctionalityMom,
+            String momApply,
+            String momApplyEnded,
+            String proxyApply,
+            String proxyApplyEnded,
+            String idFunctionalityProxy,
+            String canceled,
+            String batchCompleted,
+            String momStartBatch,
+            String momEndBatch,
+            String proxyStartBatch,
+            String proxyEndBatch
+    ) {
+        ControlObsmodFlowMessage controlObsmodFlowMessage = new ControlObsmodFlowMessage(dataDatePart, flow, assetClass, factorType, idFunctionalityMom, momApply, momApplyEnded, proxyApply, proxyApplyEnded, idFunctionalityProxy, canceled, batchCompleted, momStartBatch, momEndBatch, proxyStartBatch, proxyEndBatch);
+        try {
+            rfrMonitorObservabilidadFlowService.sendMessageToKafkaWriter(controlObsmodFlowMessage);
+            String sendNotificationMessageLog = "Sended kafka notification: " + utilSerializer.objectToJson(controlObsmodFlowMessage);
+            log.info(sendNotificationMessageLog);
+        } catch (Exception e) {
+            log.error(e.getMessage());
+        }
+    }
+
+    private String formatDate(Date date) {
+        String result = null;
+        if (date != null) {
+            SimpleDateFormat formatter = new SimpleDateFormat("yyyyMMdd");
+            result = formatter.format(date);
+        }
+        return result;
+    }
+
 }
