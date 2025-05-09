@@ -86,20 +86,6 @@ public class ProcessMonitorRepository {
         }
     }
 
-    public void insertIntoControlObsmodFlowKafkaNotification(String dataDatePart, String flow, String assetClass, String factorType, String idFunctionalityMom, String momApply, String momApplyEnded, String proxyApply, String proxyApplyEnded, String idFunctionalityProxy) {
-        try {
-            Timestamp timestampInit = Timestamp.from(Instant.now());
-            ControlObsmodFlow controlObsmodFlow = selectFromControlObsmodFlowByIdMom(idFunctionalityMom);
-            if (null != controlObsmodFlow) {
-                sendKafkaNotification(formatDate(controlObsmodFlow.getDataDatePart()), controlObsmodFlow.getFlow(), controlObsmodFlow.getAssetClass(), controlObsmodFlow.getFactorType(), controlObsmodFlow.getIdFunctionalityMom(), controlObsmodFlow.getMomApply(), controlObsmodFlow.getMomApplyEnded(), controlObsmodFlow.getProxyApply(), controlObsmodFlow.getProxyApplyEnded(), controlObsmodFlow.getIdFunctionalityProxy(), controlObsmodFlow.getCanceled(), controlObsmodFlow.getBatchCompleted(), controlObsmodFlow.getMomStartBatch().toString(), null, null, null);
-            } else {
-                sendKafkaNotification(dataDatePart, flow, assetClass, factorType, idFunctionalityMom, momApply, momApplyEnded, proxyApply, proxyApplyEnded, idFunctionalityProxy, "N", "N", timestampInit.toString(), null, null, null);
-            }
-        } catch (Exception e) {
-            log.error("Error sending kafkainserting into ControlObsmodFlow: " + e.getMessage());
-        }
-    }
-
     public void updateControlObsmodFlow(String dataDatePart, String flow, String assetClass, String factorType, String idFunctionalityMom, String momApply, String momApplyEnded, String proxyApply, String proxyApplyEnded, String idFunctionalityProxy) {
         try {
             DateTimeFormatter formatter = DateTimeFormatter.ofPattern(YYYY_MM_DD);
@@ -127,19 +113,6 @@ public class ProcessMonitorRepository {
         }
     }
 
-    public void updateControlObsmodFlowKafkaNotification(String dataDatePart, String flow, String assetClass, String factorType, String idFunctionalityMom, String momApply, String momApplyEnded, String proxyApply, String proxyApplyEnded, String idFunctionalityProxy) {
-        try {
-            Timestamp timestampEnd = Timestamp.from(Instant.now());
-            ControlObsmodFlow controlObsmodFlow = selectFromControlObsmodFlowByIdMom(idFunctionalityMom);
-            if (null != controlObsmodFlow) {
-                sendKafkaNotification(formatDate(controlObsmodFlow.getDataDatePart()), controlObsmodFlow.getFlow(), controlObsmodFlow.getAssetClass(), controlObsmodFlow.getFactorType(), controlObsmodFlow.getIdFunctionalityMom(), controlObsmodFlow.getMomApply(), controlObsmodFlow.getMomApplyEnded(), controlObsmodFlow.getProxyApply(), controlObsmodFlow.getProxyApplyEnded(), controlObsmodFlow.getIdFunctionalityProxy(), controlObsmodFlow.getCanceled(), controlObsmodFlow.getBatchCompleted(), controlObsmodFlow.getMomStartBatch().toString(), controlObsmodFlow.getMomEndBatch().toString(), null, null);
-            } else {
-                sendKafkaNotification(dataDatePart, flow, assetClass, factorType, idFunctionalityMom, momApply, momApplyEnded, proxyApply, proxyApplyEnded, idFunctionalityProxy, null, "N", null, timestampEnd.toString(), null, null);
-            }
-        } catch (Exception e) {
-            log.error("Error sending kafka updating into ControlObsmodFlow: " + e.getMessage());
-        }
-    }
 
 
     public void updateControlObsmodFlowCancelation(String flagDate, String engine, String assetClass, String factorType) {
@@ -164,98 +137,4 @@ public class ProcessMonitorRepository {
             log.error(e.getMessage());
         }
     }
-
-    public void updateAsBatchEnded(String idFunctionMom) {
-        try {
-            Query query = entityManager.createNativeQuery(updateAsBatchEnded);
-            query.setParameter("idFunctionalityMom", idFunctionMom);
-            query.setParameter("batchCompleted", "Y");
-            query.executeUpdate();
-            log.info("updateAsBatchEnded: " + idFunctionMom);
-        } catch (Exception e) {
-            log.error("Error updating as Ended ControlObsmodFlow: " + e.getMessage());
-        }
-    }
-
-    public void updateAsBatchEndedKafkaNotification(String idFunctionMom) {
-        try {
-            Timestamp timestampEnd = Timestamp.from(Instant.now());
-            ControlObsmodFlow controlObsmodFlow = selectFromControlObsmodFlowByIdMom(idFunctionMom);
-            if (null != controlObsmodFlow) {
-                sendKafkaNotification(formatDate(controlObsmodFlow.getDataDatePart()), controlObsmodFlow.getFlow(), controlObsmodFlow.getAssetClass(), controlObsmodFlow.getFactorType(), controlObsmodFlow.getIdFunctionalityMom(), controlObsmodFlow.getMomApply(), controlObsmodFlow.getMomApplyEnded(), controlObsmodFlow.getProxyApply(), controlObsmodFlow.getProxyApplyEnded(), controlObsmodFlow.getIdFunctionalityProxy(), controlObsmodFlow.getCanceled(), "Y", controlObsmodFlow.getMomStartBatch().toString(), controlObsmodFlow.getMomEndBatch().toString(), null, null);
-            } else {
-                sendKafkaNotification(null, null, null, null, idFunctionMom, null, null, null, null, null, null, "Y", null, null, null, null);
-            }
-        } catch (Exception e) {
-            log.error("Error sending kafka updating into ControlObsmodFlow: " + e.getMessage());
-        }
-    }
-
-    public ControlObsmodParametrized selectFromControlObsmodParametrizedByFlowAcFt(String flow, String assetClass, String factorType) {
-        ControlObsmodParametrized results = null;
-        try {
-            Query q = entityManager.createNativeQuery(getParametrizationByFlowAcFt, ControlObsmodParametrized.class);
-            q.setParameter("flow", flow);
-            q.setParameter("assetClass", assetClass);
-            q.setParameter("factorType", factorType);
-            results = (ControlObsmodParametrized) q.getSingleResult();
-        } catch (Exception e) {
-            log.error("Error selecting from ControlObsmodParametrized: " + e.getMessage());
-        }
-        return results;
-    }
-
-    public ControlObsmodFlow selectFromControlObsmodFlowByIdMom(String idFunctionalityMom) {
-        ControlObsmodFlow results = null;
-        try {
-            Query q = entityManager.createNativeQuery(getBatchParametrizationByIdMom, ControlObsmodFlow.class);
-            q.setParameter("idFunctionalityMom", idFunctionalityMom);
-            results = (ControlObsmodFlow) q.getSingleResult();
-            if (results == null) {
-                log.error(getBatchParametrizationByIdMom + "with idFunctionalityMom=" + idFunctionalityMom + " did not return any register");
-                throw new RuntimeException("");
-            }
-        } catch (Exception e) {
-            log.error("Error selecting from ControlObsmodParametrized: " + e.getMessage());
-        }
-        return results;
-    }
-
-    private void sendKafkaNotification(
-            String dataDatePart,
-            String flow,
-            String assetClass,
-            String factorType,
-            String idFunctionalityMom,
-            String momApply,
-            String momApplyEnded,
-            String proxyApply,
-            String proxyApplyEnded,
-            String idFunctionalityProxy,
-            String canceled,
-            String batchCompleted,
-            String momStartBatch,
-            String momEndBatch,
-            String proxyStartBatch,
-            String proxyEndBatch
-    ) {
-        ControlObsmodFlowMessage controlObsmodFlowMessage = new ControlObsmodFlowMessage(dataDatePart, flow, assetClass, factorType, idFunctionalityMom, momApply, momApplyEnded, proxyApply, proxyApplyEnded, idFunctionalityProxy, canceled, batchCompleted, momStartBatch, momEndBatch, proxyStartBatch, proxyEndBatch);
-        try {
-            rfrMonitorObservabilidadFlowService.sendMessageToKafkaWriter(controlObsmodFlowMessage);
-            String sendNotificationMessageLog = "Sended kafka notification: " + utilSerializer.objectToJson(controlObsmodFlowMessage);
-            log.info(sendNotificationMessageLog);
-        } catch (Exception e) {
-            log.error(e.getMessage());
-        }
-    }
-
-    private String formatDate(Date date) {
-        String result = null;
-        if (date != null) {
-            SimpleDateFormat formatter = new SimpleDateFormat("yyyyMMdd");
-            result = formatter.format(date);
-        }
-        return result;
-    }
-
 }
