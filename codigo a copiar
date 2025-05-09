@@ -1,140 +1,127 @@
 package com.sgt.rfr.rfrmomservice.database.repository;
 
-import com.isb.rfrutils.services.monitorobservabilidad.RfrMonitorObservabilidadFlowService;
-import com.isb.rfrutils.services.monitorobservabilidad.message.ControlObsmodFlowMessage;
-import com.isb.rfrutils.util.UtilSerializer;
-import com.sgt.rfr.rfrmomservice.database.model.table.ControlObsmodFlow;
-import com.sgt.rfr.rfrmomservice.database.model.table.ControlObsmodParametrized;
-import lombok.extern.slf4j.Slf4j;
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.stereotype.Repository;
+import static org.mockito.Mockito.*;
+import static org.junit.Assert.*;
 
 import javax.persistence.EntityManager;
-import javax.persistence.PersistenceContext;
 import javax.persistence.Query;
+
+import org.junit.Before;
+import org.junit.Test;
+import org.mockito.InjectMocks;
+import org.mockito.Mock;
+import org.mockito.MockitoAnnotations;
+
 import java.sql.Date;
 import java.sql.Timestamp;
-import java.text.SimpleDateFormat;
 import java.time.Instant;
 import java.time.LocalDate;
 import java.time.format.DateTimeFormatter;
 
-import static com.sgt.rfr.rfrmomservice.util.constants.Constants.*;
+public class ProcessMonitorRepositoryTest {
 
-@Slf4j
-@Repository
-public class ProcessMonitorRepository {
+    @Mock
+    private EntityManager entityManager;
 
-    @PersistenceContext
-    EntityManager entityManager;
-
-    @Autowired
+    @Mock
     private RfrMonitorObservabilidadFlowService rfrMonitorObservabilidadFlowService;
 
-    @Autowired
+    @Mock
     private UtilSerializer utilSerializer;
 
+    @InjectMocks
+    private ProcessMonitorRepository processMonitorRepository;
 
-    //
-    private final String getParametrizationByFlowAcFt = "SELECT * FROM USER_RFR.TRFR_CONTROL_OBSMOD_PARAMETRIZED c WHERE c.FLOW = :flow AND c.ASSET_CLASS = :assetClass AND c.FACTOR_TYPE = :factorType";
-
-    // Insert Query
-    private final String insertQuery = "INSERT INTO USER_RFR.TRFR_CONTROL_OBSMOD_FLOW (DATA_DATE_PART, FLOW, ASSET_CLASS, FACTOR_TYPE, IDFUNCTIONALITY_MOM, MOM_APPLY, MOM_APPLY_ENDED, PROXY_APPLY, PROXY_APPLY_ENDED, IDFUNCTIONALITY_PROXY, CANCELED, BATCH_COMPLETED, MOM_START_BATCH) " +
-            "VALUES (:dataDatePart, :flow, :assetClass, :factorType, :idFunctionalityMom, :momApply, :momApplyEnded, :proxyApply, :proxyApplyEnded, :idFunctionalityProxy, :canceled, :batchCompleted, :momStartBatch)";
-
-    // Update Query
-    private final String updateQuery = "UPDATE USER_RFR.TRFR_CONTROL_OBSMOD_FLOW SET MOM_APPLY = :momApply, MOM_APPLY_ENDED = :momApplyEnded, PROXY_APPLY = :proxyApply, PROXY_APPLY_ENDED = :proxyApplyEnded, IDFUNCTIONALITY_PROXY = :idFunctionalityProxy, BATCH_COMPLETED = :batchCompleted, MOM_END_BATCH = :momEndBatch " +
-            "WHERE DATA_DATE_PART = :dataDatePart AND FLOW = :flow AND ASSET_CLASS = :assetClass AND FACTOR_TYPE = :factorType AND IDFUNCTIONALITY_MOM = :idFunctionalityMom";
-    // Update Query by cancelation
-    private final String updateQueryCancelation = "UPDATE USER_RFR.TRFR_CONTROL_OBSMOD_FLOW SET CANCELED = :canceled, BATCH_COMPLETED = :batchCompleted " +
-            "WHERE DATA_DATE_PART = :dataDatePart AND FLOW = :flow AND ASSET_CLASS = :assetClass AND FACTOR_TYPE = :factorType";
-
-    private final String updateAsBatchEnded = "UPDATE USER_RFR.TRFR_CONTROL_OBSMOD_FLOW SET BATCH_COMPLETED = :batchCompleted " +
-            "WHERE IDFUNCTIONALITY_MOM = :idFunctionalityMom";
-
-    // Select previous register idFunctionalityProxy created when observability messages from MOM were loaded in RFR
-    private final String getBatchParametrizationByIdMom = "SELECT * FROM USER_RFR.TRFR_CONTROL_OBSMOD_FLOW c WHERE c.IDFUNCTIONALITY_MOM = :idFunctionalityMom";
-
-
-    public void insertIntoControlObsmodFlow(String dataDatePart, String flow, String assetClass, String factorType, String idFunctionalityMom, String momApply, String momApplyEnded, String proxyApply, String proxyApplyEnded, String idFunctionalityProxy) {
-        try {
-            DateTimeFormatter formatter = DateTimeFormatter.ofPattern(YYYY_MM_DD);
-            LocalDate localDate = LocalDate.parse(dataDatePart, formatter);
-            java.sql.Date sqlDate = java.sql.Date.valueOf(localDate);
-
-            Timestamp timestampInit = Timestamp.from(Instant.now());
-
-            Query query = entityManager.createNativeQuery(insertQuery);
-            query.setParameter(DATA_DATE_PART, sqlDate);
-            query.setParameter(FLOW, flow);
-            query.setParameter(ASSET_CLASS, assetClass);
-            query.setParameter(FACTOR_TYPE, factorType);
-            query.setParameter(ASSET_CLASS, assetClass);
-            query.setParameter(FACTOR_TYPE, factorType);
-            query.setParameter(ID_FUNCTIONALITY_MOM, idFunctionalityMom);
-            query.setParameter(MOM_APPLY, momApply);
-            query.setParameter(MOM_APPLY_ENDED, momApplyEnded);
-            query.setParameter(PROXY_APPLY, proxyApply);
-            query.setParameter(PROXY_APPLY_ENDED, proxyApplyEnded);
-            query.setParameter(ID_FUNCTIONALITY_PROXY, idFunctionalityProxy);
-            query.setParameter(CANCELED, 'N');
-            query.setParameter(BATCH_COMPLETED, 'N');
-            query.setParameter(MOM_START_BATCH, timestampInit);
-            query.executeUpdate();
-        } catch (Exception e) {
-            log.error("Error inserting into ControlObsmodFlow: " + e.getMessage());
-        }
+    @Before
+    public void setUp() {
+        MockitoAnnotations.initMocks(this);
     }
 
-    public void updateControlObsmodFlow(String dataDatePart, String flow, String assetClass, String factorType, String idFunctionalityMom, String momApply, String momApplyEnded, String proxyApply, String proxyApplyEnded, String idFunctionalityProxy) {
-        try {
-            DateTimeFormatter formatter = DateTimeFormatter.ofPattern(YYYY_MM_DD);
-            LocalDate localDate = LocalDate.parse(dataDatePart, formatter);
-            java.sql.Date sqlDate = java.sql.Date.valueOf(localDate);
+    @Test
+    public void testInsertIntoControlObsmodFlow() {
+        String dataDatePart = "2023-05-09";
+        String flow = "testFlow";
+        String assetClass = "testAssetClass";
+        String factorType = "testFactorType";
+        String idFunctionalityMom = "testIdFunctionalityMom";
+        String momApply = "testMomApply";
+        String momApplyEnded = "testMomApplyEnded";
+        String proxyApply = "testProxyApply";
+        String proxyApplyEnded = "testProxyApplyEnded";
+        String idFunctionalityProxy = "testIdFunctionalityProxy";
 
-            Timestamp timestampEnd = Timestamp.from(Instant.now());
+        Query query = mock(Query.class);
+        when(entityManager.createNativeQuery(anyString())).thenReturn(query);
 
-            Query query = entityManager.createNativeQuery(updateQuery);
-            query.setParameter(DATA_DATE_PART, sqlDate);
-            query.setParameter(FLOW, flow);
-            query.setParameter(ASSET_CLASS, assetClass);
-            query.setParameter(FACTOR_TYPE, factorType);
-            query.setParameter(ID_FUNCTIONALITY_MOM, idFunctionalityMom);
-            query.setParameter(MOM_APPLY, momApply);
-            query.setParameter(MOM_APPLY_ENDED, momApplyEnded);
-            query.setParameter(PROXY_APPLY, proxyApply);
-            query.setParameter(PROXY_APPLY_ENDED, proxyApplyEnded);
-            query.setParameter(ID_FUNCTIONALITY_PROXY, idFunctionalityProxy);
-            query.setParameter(BATCH_COMPLETED, 'N');
-            query.setParameter(MOM_END_BATCH, timestampEnd);
-            query.executeUpdate();
-        } catch (Exception e) {
-            log.error("Error updating ControlObsmodFlow: " + e.getMessage());
-        }
+        processMonitorRepository.insertIntoControlObsmodFlow(dataDatePart, flow, assetClass, factorType, idFunctionalityMom, momApply, momApplyEnded, proxyApply, proxyApplyEnded, idFunctionalityProxy);
+
+        verify(query).setParameter("dataDatePart", Date.valueOf(LocalDate.parse(dataDatePart, DateTimeFormatter.ofPattern("yyyy-MM-dd"))));
+        verify(query).setParameter("flow", flow);
+        verify(query).setParameter("assetClass", assetClass);
+        verify(query).setParameter("factorType", factorType);
+        verify(query).setParameter("idFunctionalityMom", idFunctionalityMom);
+        verify(query).setParameter("momApply", momApply);
+        verify(query).setParameter("momApplyEnded", momApplyEnded);
+        verify(query).setParameter("proxyApply", proxyApply);
+        verify(query).setParameter("proxyApplyEnded", proxyApplyEnded);
+        verify(query).setParameter("idFunctionalityProxy", idFunctionalityProxy);
+        verify(query).setParameter("canceled", 'N');
+        verify(query).setParameter("batchCompleted", 'N');
+        verify(query).setParameter("momStartBatch", Timestamp.from(Instant.now()));
+        verify(query).executeUpdate();
     }
 
+    @Test
+    public void testUpdateControlObsmodFlow() {
+        String dataDatePart = "2023-05-09";
+        String flow = "testFlow";
+        String assetClass = "testAssetClass";
+        String factorType = "testFactorType";
+        String idFunctionalityMom = "testIdFunctionalityMom";
+        String momApply = "testMomApply";
+        String momApplyEnded = "testMomApplyEnded";
+        String proxyApply = "testProxyApply";
+        String proxyApplyEnded = "testProxyApplyEnded";
+        String idFunctionalityProxy = "testIdFunctionalityProxy";
 
+        Query query = mock(Query.class);
+        when(entityManager.createNativeQuery(anyString())).thenReturn(query);
 
-    public void updateControlObsmodFlowCancelation(String flagDate, String engine, String assetClass, String factorType) {
-        try {
-            DateTimeFormatter formatter = DateTimeFormatter.ofPattern("yyyy-MM-dd");
-            LocalDate localDate = LocalDate.parse(flagDate, formatter);
-            java.sql.Date sqlDate = java.sql.Date.valueOf(localDate);
-            Query query = entityManager.createNativeQuery(updateQueryCancelation);
-            query.setParameter(DATA_DATE_PART, sqlDate);
-            query.setParameter(FLOW, engine.toLowerCase());
-            query.setParameter(ASSET_CLASS, assetClass);
-            query.setParameter(FACTOR_TYPE, factorType);
-            query.setParameter(CANCELED, "Y");
-            query.setParameter(BATCH_COMPLETED, "Y");
-            query.executeUpdate();
-            String messageSucess = "Sucess cancelling batches for: " + flagDate + "/" + engine + "/" + assetClass + "/" + factorType;
-            log.info(messageSucess);
-            sendKafkaNotification(formatDate(sqlDate), engine.toLowerCase(), assetClass, factorType, null, null, null, null, null, null, "Y", null, null, null, null, null);
-        } catch (Exception e) {
-            String messageError = "Error updating ControlObsmodFlow: " + flagDate + "/" + engine + "/" + assetClass + "/" + factorType;
-            log.error(messageError);
-            log.error(e.getMessage());
-        }
+        processMonitorRepository.updateControlObsmodFlow(dataDatePart, flow, assetClass, factorType, idFunctionalityMom, momApply, momApplyEnded, proxyApply, proxyApplyEnded, idFunctionalityProxy);
+
+        verify(query).setParameter("dataDatePart", Date.valueOf(LocalDate.parse(dataDatePart, DateTimeFormatter.ofPattern("yyyy-MM-dd"))));
+        verify(query).setParameter("flow", flow);
+        verify(query).setParameter("assetClass", assetClass);
+        verify(query).setParameter("factorType", factorType);
+        verify(query).setParameter("idFunctionalityMom", idFunctionalityMom);
+        verify(query).setParameter("momApply", momApply);
+        verify(query).setParameter("momApplyEnded", momApplyEnded);
+        verify(query).setParameter("proxyApply", proxyApply);
+        verify(query).setParameter("proxyApplyEnded", proxyApplyEnded);
+        verify(query).setParameter("idFunctionalityProxy", idFunctionalityProxy);
+        verify(query).setParameter("batchCompleted", 'N');
+        verify(query).setParameter("momEndBatch", Timestamp.from(Instant.now()));
+        verify(query).executeUpdate();
+    }
+
+    @Test
+    public void testUpdateControlObsmodFlowCancelation() {
+        String flagDate = "2023-05-09";
+        String engine = "testEngine";
+        String assetClass = "testAssetClass";
+        String factorType = "testFactorType";
+
+        Query query = mock(Query.class);
+        when(entityManager.createNativeQuery(anyString())).thenReturn(query);
+
+        processMonitorRepository.updateControlObsmodFlowCancelation(flagDate, engine, assetClass, factorType);
+
+        verify(query).setParameter("dataDatePart", Date.valueOf(LocalDate.parse(flagDate, DateTimeFormatter.ofPattern("yyyy-MM-dd"))));
+        verify(query).setParameter("flow", engine.toLowerCase());
+        verify(query).setParameter("assetClass", assetClass);
+        verify(query).setParameter("factorType", factorType);
+        verify(query).setParameter("canceled", "Y");
+        verify(query).setParameter("batchCompleted", "Y");
+        verify(query).executeUpdate();
     }
 }
