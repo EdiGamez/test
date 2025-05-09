@@ -1,72 +1,55 @@
-    public void updateControlObsmodFlowCancelation(String flagDate, String engine, String assetClass, String factorType) {
-        try {
-            DateTimeFormatter formatter = DateTimeFormatter.ofPattern("yyyy-MM-dd");
-            LocalDate localDate = LocalDate.parse(flagDate, formatter);
-            java.sql.Date sqlDate = java.sql.Date.valueOf(localDate);
-            Query query = entityManager.createNativeQuery(updateQueryCancelation);
-            query.setParameter(DATA_DATE_PART, sqlDate);
-            query.setParameter(FLOW, engine.toLowerCase());
-            query.setParameter(ASSET_CLASS, assetClass);
-            query.setParameter(FACTOR_TYPE, factorType);
-            query.setParameter(CANCELED, "Y");
-            query.setParameter(BATCH_COMPLETED, "Y");
-            query.executeUpdate();
-            String messageSucess = "Sucess cancelling batches for: " + flagDate + "/" + engine + "/" + assetClass + "/" + factorType;
-            log.info(messageSucess);
-            sendKafkaNotification(formatDate(sqlDate), engine.toLowerCase(), assetClass, factorType, null, null, null, null, null, null, "Y", null, null, null, null, null);
-        } catch (Exception e) {
-            String messageError = "Error updating ControlObsmodFlow: " + flagDate + "/" + engine + "/" + assetClass + "/" + factorType;
-            log.error(messageError);
-            log.error(e.getMessage());
-        }
+import static org.mockito.Mockito.*;
+
+import org.junit.Before;
+import org.junit.Test;
+import javax.persistence.EntityManager;
+import javax.persistence.Query;
+import java.sql.Date;
+import java.sql.Timestamp;
+import java.time.LocalDate;
+import java.time.format.DateTimeFormatter;
+
+public class ControlObsmodServiceTest {
+
+    private ControlObsmodService service;
+    private EntityManager entityManager;
+    private Query mockQuery;
+
+    @Before
+    public void setup() {
+        entityManager = mock(EntityManager.class);
+        mockQuery = mock(Query.class);
+
+        service = new ControlObsmodService();
+        service.entityManager = entityManager; // inyectar manualmente si no hay DI
+
+        when(entityManager.createNativeQuery(anyString())).thenReturn(mockQuery);
+        when(mockQuery.setParameter(anyString(), any())).thenReturn(mockQuery);
     }
-  public void updateControlObsmodFlow(String dataDatePart, String flow, String assetClass, String factorType, String idFunctionalityMom, String momApply, String momApplyEnded, String proxyApply, String proxyApplyEnded, String idFunctionalityProxy) {
-        try {
-            DateTimeFormatter formatter = DateTimeFormatter.ofPattern(YYYY_MM_DD);
-            LocalDate localDate = LocalDate.parse(dataDatePart, formatter);
-            java.sql.Date sqlDate = java.sql.Date.valueOf(localDate);
-            Timestamp timestampEnd = Timestamp.from(Instant.now());
-            Query query = entityManager.createNativeQuery(updateQuery);
-            query.setParameter(DATA_DATE_PART, sqlDate);
-            query.setParameter(FLOW, flow);
-            query.setParameter(ASSET_CLASS, assetClass);
-            query.setParameter(FACTOR_TYPE, factorType);
-            query.setParameter(ID_FUNCTIONALITY_MOM, idFunctionalityMom);
-            query.setParameter(MOM_APPLY, momApply);
-            query.setParameter(MOM_APPLY_ENDED, momApplyEnded);
-            query.setParameter(PROXY_APPLY, proxyApply);
-            query.setParameter(PROXY_APPLY_ENDED, proxyApplyEnded);
-            query.setParameter(ID_FUNCTIONALITY_PROXY, idFunctionalityProxy);
-            query.setParameter(BATCH_COMPLETED, 'N');
-            query.setParameter(MOM_END_BATCH, timestampEnd);
-            query.executeUpdate();
-        } catch (Exception e) {
-            log.error("Error updating ControlObsmodFlow: " + e.getMessage());
-        }
-    }    public void insertIntoControlObsmodFlow(String dataDatePart, String flow, String assetClass, String factorType, String idFunctionalityMom, String momApply, String momApplyEnded, String proxyApply, String proxyApplyEnded, String idFunctionalityProxy) {
-        try {
-            DateTimeFormatter formatter = DateTimeFormatter.ofPattern(YYYY_MM_DD);
-            LocalDate localDate = LocalDate.parse(dataDatePart, formatter);
-            java.sql.Date sqlDate = java.sql.Date.valueOf(localDate);
-            Timestamp timestampInit = Timestamp.from(Instant.now());
-            Query query = entityManager.createNativeQuery(insertQuery);
-            query.setParameter(DATA_DATE_PART, sqlDate);
-            query.setParameter(FLOW, flow);
-            query.setParameter(ASSET_CLASS, assetClass);
-            query.setParameter(FACTOR_TYPE, factorType);
-            query.setParameter(ASSET_CLASS, assetClass);
-            query.setParameter(FACTOR_TYPE, factorType);
-            query.setParameter(ID_FUNCTIONALITY_MOM, idFunctionalityMom);
-            query.setParameter(MOM_APPLY, momApply);
-            query.setParameter(MOM_APPLY_ENDED, momApplyEnded);
-            query.setParameter(PROXY_APPLY, proxyApply);
-            query.setParameter(PROXY_APPLY_ENDED, proxyApplyEnded);
-            query.setParameter(ID_FUNCTIONALITY_PROXY, idFunctionalityProxy);
-            query.setParameter(CANCELED, 'N');
-            query.setParameter(BATCH_COMPLETED, 'N');
-            query.setParameter(MOM_START_BATCH, timestampInit);
-            query.executeUpdate();
-        } catch (Exception e) {
-            log.error("Error inserting into ControlObsmodFlow: " + e.getMessage());
-        }
+
+    @Test
+    public void testUpdateControlObsmodFlowCancelation_success() {
+        service.updateControlObsmodFlowCancelation("2025-05-08", "ENGINE_X", "ASSET_A", "TYPE_1");
+
+        verify(entityManager).createNativeQuery(anyString());
+        verify(mockQuery, times(1)).executeUpdate();
     }
+
+    @Test
+    public void testUpdateControlObsmodFlow_success() {
+        service.updateControlObsmodFlow("2025-05-08", "FLOW_X", "ASSET_B", "TYPE_2", 
+            "FUNC_MOM", "Y", "Y", "N", "N", "FUNC_PROXY");
+
+        verify(entityManager).createNativeQuery(anyString());
+        verify(mockQuery, times(1)).executeUpdate();
+    }
+
+    @Test
+    public void testInsertIntoControlObsmodFlow_success() {
+        service.insertIntoControlObsmodFlow("2025-05-08", "FLOW_Y", "ASSET_C", "TYPE_3", 
+            "FUNC_MOM", "Y", "Y", "Y", "Y", "FUNC_PROXY");
+
+        verify(entityManager).createNativeQuery(anyString());
+        verify(mockQuery, times(1)).executeUpdate();
+    }
+}
