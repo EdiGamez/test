@@ -1,127 +1,97 @@
-package com.sgt.rfr.rfrmomservice.database.repository;
+package com.sgt.rfr.rfrinventorylib.services.inventory.operation.inventory.scm.taylor.curves.infcrv;
 
-import static org.mockito.Mockito.*;
-import static org.junit.Assert.*;
+import com.sgt.rfr.rfrinventorylib.database.procedures.model.api.points.GetUnderlyingPointRequest;
+import com.sgt.rfr.rfrinventorylib.database.procedures.model.api.points.GetUnderlyingPointResponse;
+import com.sgt.rfr.rfrinventorylib.database.procedures.model.api.proxies.GetSigomProxyRequest;
+import com.sgt.rfr.rfrinventorylib.database.procedures.model.api.proxies.GetSigomProxyResponse;
+import com.sgt.rfr.rfrinventorylib.database.procedures.model.api.underlying.GetUnderlyingsRequest;
+import com.sgt.rfr.rfrinventorylib.database.procedures.model.api.underlying.GetUnderlyingsResponse;
+import com.sgt.rfr.rfrinventorylib.database.procedures.model.db.FactorDb;
+import com.sgt.rfr.rfrinventorylib.database.procedures.model.db.points.SigomNativePoint;
+import com.sgt.rfr.rfrinventorylib.database.procedures.model.db.proxies.SigomProxies;
+import com.sgt.rfr.rfrinventorylib.database.procedures.model.db.underlying.UnderlyingDbResponse;
+import com.sgt.rfr.rfrinventorylib.database.rfr.pkgtaylorservicesrfr2.repository.RfrPkgTaylorServicesRfr2Repository;
+import com.sgt.rfr.rfrinventorylib.services.auxiliar.builder.InventoryFactory;
+import com.sgt.rfr.rfrinventorylib.services.auxiliar.builder.RestRequestFactory;
+import com.sgt.rfr.rfrinventorylib.services.auxiliar.kafka.messages.jsonrequest.InventoryRequest;
+import com.sgt.rfr.rfrinventorylib.services.auxiliar.kafka.messages.jsonresponse.Factor;
+import com.sgt.rfr.rfrinventorylib.util.predicates.UtilPredicates;
+import com.sgt.rfr.rfrinventorylib.util.scheduler.SchedulerInventory;
+import com.sgt.rfr.rfrinventorylib.util.serializer.UtilSerializerInventory;
+import lombok.extern.slf4j.Slf4j;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.stereotype.Service;
 
-import javax.persistence.EntityManager;
-import javax.persistence.Query;
+import java.util.Arrays;
+import java.util.Comparator;
+import java.util.List;
+import java.util.concurrent.atomic.AtomicInteger;
+import java.util.stream.Collectors;
 
-import org.junit.Before;
-import org.junit.Test;
-import org.mockito.InjectMocks;
-import org.mockito.Mock;
-import org.mockito.MockitoAnnotations;
+@Service
+@Slf4j
+public class InfCrvTaylorScmInventoryService  {
 
-import java.sql.Date;
-import java.sql.Timestamp;
-import java.time.Instant;
-import java.time.LocalDate;
-import java.time.format.DateTimeFormatter;
+    @Autowired
+    private SchedulerInventory schedulerInventory;
 
-public class ProcessMonitorRepositoryTest {
+    @Autowired
+    private RfrPkgTaylorServicesRfr2Repository rcs;
 
-    @Mock
-    private EntityManager entityManager;
+    @Autowired
+    private ParserTaylorInfCrvService jsonParser;
 
-    @Mock
-    private RfrMonitorObservabilidadFlowService rfrMonitorObservabilidadFlowService;
+    @Autowired
+    private UtilSerializerInventory utilSerializer;
 
-    @Mock
-    private UtilSerializer utilSerializer;
+    @Autowired
+    private UtilPredicates utilPredicates;
 
-    @InjectMocks
-    private ProcessMonitorRepository processMonitorRepository;
+    @Autowired
+    private InventoryFactory inventoryFactory;
 
-    @Before
-    public void setUp() {
-        MockitoAnnotations.initMocks(this);
+    @Autowired
+    private RestRequestFactory restRequestFactory;
+
+    public List<Factor> getInventory(InventoryRequest inventoryRequest) {
+        List<UnderlyingDbResponse> underlyingList = getUnderlyingsFromDb(inventoryRequest);
+        Integer totalSizeInventary = underlyingList.size();
+        AtomicInteger current = new AtomicInteger(0);
+        return underlyingList.stream()
+                .map(underlyingDb -> buildFactorDb(underlyingDb, inventoryRequest))
+                .filter(
+                        (utilPredicates.hasReturnModel(inventoryRequest))
+                                .and(utilPredicates.isNativePointsFullFilled(inventoryRequest)
+                                        .or(utilPredicates.isTemplatePointsFullFilled(inventoryRequest))))
+                .sorted(Comparator.comparing(f -> f.getUnderlyingDbResponse().getName()))
+                .collect(Collectors.toList())
+                .stream()
+                .map(factorDb -> jsonParser.buildJsonFactor(inventoryRequest, totalSizeInventary, current.incrementAndGet(), factorDb))
+                .collect(Collectors.toList());
+    }
+    private FactorDb buildFactorDb(UnderlyingDbResponse underlyingDb, InventoryRequest inventoryRequest) {
+        List<SigomNativePoint> nativePoints = getListPoints(underlyingDb, inventoryRequest);
+        List<SigomProxies> returnAndParProxies = getListParProxies(underlyingDb, inventoryRequest);
+        return new FactorDb(underlyingDb, null, nativePoints, returnAndParProxies, null, null);
+    }
+    private List<UnderlyingDbResponse> getUnderlyingsFromDb(InventoryRequest inventoryRequest) {
+        GetUnderlyingsRequest underlyingsRequest = restRequestFactory.buildGetUnderlyingsRequest(inventoryRequest);
+        GetUnderlyingsResponse underlyings = rcs.callTaylorGetUnderlyingsInfCrv(underlyingsRequest);
+        return inventoryFactory.getUnderlyingsFromDb(underlyings);
     }
 
-    @Test
-    public void testInsertIntoControlObsmodFlow() {
-        String dataDatePart = "2023-05-09";
-        String flow = "testFlow";
-        String assetClass = "testAssetClass";
-        String factorType = "testFactorType";
-        String idFunctionalityMom = "testIdFunctionalityMom";
-        String momApply = "testMomApply";
-        String momApplyEnded = "testMomApplyEnded";
-        String proxyApply = "testProxyApply";
-        String proxyApplyEnded = "testProxyApplyEnded";
-        String idFunctionalityProxy = "testIdFunctionalityProxy";
-
-        Query query = mock(Query.class);
-        when(entityManager.createNativeQuery(anyString())).thenReturn(query);
-
-        processMonitorRepository.insertIntoControlObsmodFlow(dataDatePart, flow, assetClass, factorType, idFunctionalityMom, momApply, momApplyEnded, proxyApply, proxyApplyEnded, idFunctionalityProxy);
-
-        verify(query).setParameter(eq("dataDatePart"), eq(Date.valueOf(LocalDate.parse(dataDatePart, DateTimeFormatter.ofPattern("yyyy-MM-dd")))));
-        verify(query).setParameter(eq("flow"), eq(flow));
-        verify(query).setParameter(eq("assetClass"), eq(assetClass));
-        verify(query).setParameter(eq("factorType"), eq(factorType));
-        verify(query).setParameter(eq("idFunctionalityMom"), eq(idFunctionalityMom));
-        verify(query).setParameter(eq("momApply"), eq(momApply));
-        verify(query).setParameter(eq("momApplyEnded"), eq(momApplyEnded));
-        verify(query).setParameter(eq("proxyApply"), eq(proxyApply));
-        verify(query).setParameter(eq("proxyApplyEnded"), eq(proxyApplyEnded));
-        verify(query).setParameter(eq("idFunctionalityProxy"), eq(idFunctionalityProxy));
-        verify(query).setParameter(eq("canceled"), eq('N'));
-        verify(query).setParameter(eq("batchCompleted"), eq('N'));
-        verify(query).setParameter(eq("momStartBatch"), any(Timestamp.class));
-        verify(query).executeUpdate();
+    private List<SigomNativePoint> getListPoints(UnderlyingDbResponse underDb, InventoryRequest inventoryRequest) {
+        GetUnderlyingPointRequest pointRequest = restRequestFactory.buildGetUnderlyingPointRequest(inventoryRequest, underDb);
+        GetUnderlyingPointResponse pointList = rcs.callTaylorGetUnderlyingPoint_InfCrv(pointRequest);
+        List<SigomNativePoint> sigomNativePoints = inventoryFactory.getNativeListPoints(underDb, pointList);
+        return sigomNativePoints.stream()
+                .filter(sp -> sp.getPoint().getAdo() != null)
+                .filter(utilPredicates.distinctByKey(sp -> Arrays.asList(sp.getPoint().getTenor(), sp.getPoint().getNrdays(), sp.getPoint().getAdo())))
+                .collect(Collectors.toList());
     }
-
-    @Test
-    public void testUpdateControlObsmodFlow() {
-        String dataDatePart = "2023-05-09";
-        String flow = "testFlow";
-        String assetClass = "testAssetClass";
-        String factorType = "testFactorType";
-        String idFunctionalityMom = "testIdFunctionalityMom";
-        String momApply = "testMomApply";
-        String momApplyEnded = "testMomApplyEnded";
-        String proxyApply = "testProxyApply";
-        String proxyApplyEnded = "testProxyApplyEnded";
-        String idFunctionalityProxy = "testIdFunctionalityProxy";
-
-        Query query = mock(Query.class);
-        when(entityManager.createNativeQuery(anyString())).thenReturn(query);
-
-        processMonitorRepository.updateControlObsmodFlow(dataDatePart, flow, assetClass, factorType, idFunctionalityMom, momApply, momApplyEnded, proxyApply, proxyApplyEnded, idFunctionalityProxy);
-
-        verify(query).setParameter(eq("dataDatePart"), eq(Date.valueOf(LocalDate.parse(dataDatePart, DateTimeFormatter.ofPattern("yyyy-MM-dd")))));
-        verify(query).setParameter(eq("flow"), eq(flow));
-        verify(query).setParameter(eq("assetClass"), eq(assetClass));
-        verify(query).setParameter(eq("factorType"), eq(factorType));
-        verify(query).setParameter(eq("idFunctionalityMom"), eq(idFunctionalityMom));
-        verify(query).setParameter(eq("momApply"), eq(momApply));
-        verify(query).setParameter(eq("momApplyEnded"), eq(momApplyEnded));
-        verify(query).setParameter(eq("proxyApply"), eq(proxyApply));
-        verify(query).setParameter(eq("proxyApplyEnded"), eq(proxyApplyEnded));
-        verify(query).setParameter(eq("idFunctionalityProxy"), eq(idFunctionalityProxy));
-        verify(query).setParameter(eq("batchCompleted"), eq('N'));
-        verify(query).setParameter(eq("momEndBatch"), any(Timestamp.class));
-        verify(query).executeUpdate();
-    }
-
-    @Test
-    public void testUpdateControlObsmodFlowCancelation() {
-        String flagDate = "2023-05-09";
-        String engine = "testEngine";
-        String assetClass = "testAssetClass";
-        String factorType = "testFactorType";
-
-        Query query = mock(Query.class);
-        when(entityManager.createNativeQuery(anyString())).thenReturn(query);
-
-        processMonitorRepository.updateControlObsmodFlowCancelation(flagDate, engine, assetClass, factorType);
-
-        verify(query).setParameter(eq("dataDatePart"), eq(Date.valueOf(LocalDate.parse(flagDate, DateTimeFormatter.ofPattern("yyyy-MM-dd")))));
-        verify(query).setParameter(eq("flow"), eq(engine.toLowerCase()));
-        verify(query).setParameter(eq("assetClass"), eq(assetClass));
-        verify(query).setParameter(eq("factorType"), eq(factorType));
-        verify(query).setParameter(eq("canceled"), eq("Y"));
-        verify(query).setParameter(eq("batchCompleted"), eq("Y"));
-        verify(query).executeUpdate();
+    private List<SigomProxies> getListParProxies(UnderlyingDbResponse underDb, InventoryRequest inventoryRequest) {
+        GetSigomProxyRequest proxReq = restRequestFactory.buildGetSigomProxyRequest(inventoryRequest, underDb);
+        GetSigomProxyResponse proxResp = rcs.callTaylorGetReturnProxy_InfCrv(proxReq);
+        return inventoryFactory.getListReturnProxies(proxResp);
     }
 }
