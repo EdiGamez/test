@@ -1,135 +1,53 @@
-procedure 	P_GetUnderlyings_CSPCRV	(
-												I_nUnit					in number,
-												I_dDataDatePart			in date default null,
-												O_rUnderlyingList		out sys_refcursor
-											)
-	is
-		nIsLive number;
-		nProc	number;
-		nUnit	number;
-	begin
-
-		if I_dDataDatePart is null then
-			nIsLive:=1;
-			nUnit:=I_nUnit;
-		else
-			nProc:=PKG_RFR_API.F_IsToExtractHistData(I_dDataDatePart);
-			if nProc=0 then
-				nIsLive:=1;
-				nUnit:=I_nUnit;
-			elsif nProc=1 then
-				nIsLive:=0;
-
-				select
-					PKG_RFR_AUX.F_GetUnitByCode(CODE,1,I_dDataDatePart)
-				into
-					nUnit
-				from
-					T_RFR_UNIT_S
-				where
-					PK=I_nUnit
-				;
-
-				if nUnit is null then
-					nIsLive:=-1;
-				end if;
-
-			else
-				nIsLive:=-1;
-			end if;
-		end if;
-
-		if nIsLive>-1 then
-			if O_rUnderlyingList%ISOPEN then
-				close O_rUnderlyingList;
-			end if;
-
-			open O_rUnderlyingList for
-								select
-									ASSET.CODE																AssetClass,
-									FACTORTY.CODE															FactorType,
-									SUBTY.CODE																FSubtype,
-									PKG_RFR_AUX.F_GetUnderlyingHistID(RFR.CODE,RFR.ASSET_CLASS,RFR.FACTOR_TYPE,NULL) UnderlyingId,
-									RFR.PK	 																UnderlyingId_Historical,
-									RFR.CODE 																Name,
-									UNDERSTATUS.DESCRIPTION													Status,
-									REFRFR.CODE																RefName,
-									CCY.CODE																Currency,
-									OWNER.CODE																OwnerUnit,
-									null																	ReconstructedFlag,
-									null																	MarketExchange,
-									ZCTEMPLATE.PK															ZCTemplateId,
-									ZCTEMPLATE.CODE															ZCTemplate,
-									MODTEMPLATE.CODE														ModelabTemplate,
-									OBSVTEMPLATE.CODE														ObservabTemplate,
-									nvl(UNDERUNIT.PADOFULLREV,UNDERUNIT.ADOFULLREV)							UnitAdo,
-									UNDERUNIT.ADOFULLREV													UnitAdoReal,
-									UNDERUNIT.PADOFULLREV													UnitAdoProxy,
-									null																	ActivityScope,
-									null																	ActivityApproval,
-									null																	PriceType,
-									RETURNMODEL.CODE														ReturnModel,
-									decode(UNDERUNIT.RETMODFULLREV,3.65,UNDERUNIT.APARAMFULLREV,null)		AParameter,
-									null																	Metric,
-									null																	Isin,
-									ENT.CODE                                                                Issuer,
-                                    CREDITSP.EXTRATING														ExternalRating,
-									CREDITSP.SENIORITY														Seniority,
-									CREDITSP.SECTOR															Sector,
-                                    CREDITSP.COUNTRY                                                        Country,
-									PKG_RFR.F_GetListPerimeterUnit(UNDERUNIT.PK)							PerimeterList
-								from
-									T_RFR_UNDERLYING_S 			RFR,
-									T_RFR_STATUS_S				UNDERSTATUS,
-									T_RFR_UNDERLYING_S			REFRFR,
-									T_RFR_UNDERUNIT_S  			UNDERUNIT,
-									T_RFR_ASSETCLASS_S			ASSET,
-									T_RFR_FACTORTYPE_S			FACTORTY,
-									T_RFR_CURRENCY_S			CCY,
-									T_RFR_UNIT_S				OWNER,
-									T_RFR_ZEROCOUPONTPLT_S		ZCTEMPLATE,
-									T_RFR_CURVEMODTENORTEMP_S 	MODTEMPLATE,
-									T_RFR_CURVEOBSTENORTEMP_S	OBSVTEMPLATE,
-									T_RFR_RETMODEL_S			RETURNMODEL,
-									T_RFR_CREDITSP_S			CREDITSP,
-									T_RFR_SUBTYPE_S				SUBTY,
-                                    T_RFR_ENTITY_S              ENT
-								where
-									RFR.ASSET_CLASS=PKG_RFR_CONST.AC_CS			--4.65
-									and RFR.FACTOR_TYPE=PKG_RFR_CONST.FT_CURVE	--2.65
-									and RFR.ASSET_CLASS=ASSET.PK
-									and RFR.FACTOR_TYPE=FACTORTY.PK
-									and RFR.STATUS 	in (PKG_RFR_CONST.ST_ENABLED,Pkg_RFR_CONST.ST_ACTIVE) --7.65,8.65
-									and (
-										(nIsLive =1 and nvl(RFR.ISHISTDATA,0)=0)
-										or
-										(nIsLive =0 and nvl(RFR.ISHISTDATA,0)=1 and RFR.DATA_DATEPART=I_dDataDatePart)
-										)
-									and UNDERSTATUS.PK=RFR.STATUS	
-									and REFRFR.PK(+)=RFR.UNDERLREF
-									and SUBTY.PK(+)=RFR.RFRSUBTYPE
-									and OWNER.PK(+)=RFR.OWNER_UNIT
-									and CCY.PK(+)=RFR.CURRENCY
-									and ZCTEMPLATE.PK(+)=UNDERUNIT.ZCTEMPLATEFULLREV
-									and MODTEMPLATE.PK(+)=RFR.MTTEMPLATE
-									and OBSVTEMPLATE.PK(+)=RFR.OBSTEMPLATE
-									and RETURNMODEL.PK=UNDERUNIT.RETMODFULLREV
-									and UNDERUNIT.FK_OWNER_OBJ=PKG_RFR_AUX.OBJ_UNDERL_OWN	--1000.65
-									and UNDERUNIT.FK_PARENT=RFR.PK
-									and UNDERUNIT.FK_EXTENSION=PKG_RFR_AUX.UNDERUNIT_EXT --10000703.65
-									and UNDERUNIT.RETMODFULLREV is not null
-									and UNDERUNIT.UNIT=nUnit
-                                    and CREDITSP.ISSUER=ENT.PK(+)
-									and CREDITSP.FK_OWNER_OBJ(+)=PKG_RFR_AUX.OBJ_UNDERL_OWN	--1000.65
-									and CREDITSP.FK_PARENT(+)=RFR.PK
-									and CREDITSP.FK_EXTENSION(+) =	PKG_RFR_AUX.CREDITSPREAD_EXT	--10000151.65 */
-									and PKG_RFR_AUX.F_HasUnderUnitPer(UNDERUNIT.PK,'TRIM')=1
-								order by RFR.CODE;
-		end if;
-
-	exception
-		when others then
-			if O_rUnderlyingList%ISOPEN then
-				close O_rUnderlyingList;
-			end if;
-	end P_GetUnderlyings_CSPCRV;
+select
+    RFR.CODE                                  as Name,
+    RFR.PK                                    as UnderlyingId_Historical,
+    RFR.ASSET_CLASS                           as AssetClassId,
+    ASSET.CODE                                as AssetClass,
+    RFR.FACTOR_TYPE                           as FactorTypeId,
+    FACTORTY.CODE                             as FactorType,
+    RFR.RFRSUBTYPE                            as SubtypeId,
+    SUBTY.CODE                                as FSubtype,
+    RFR.UNDERLREF                             as RefUnderlyingId,
+    REFRFR.CODE                               as RefName,
+    RFR.STATUS                                as StatusId,
+    UNDERSTATUS.DESCRIPTION                   as Status,
+    RFR.CURRENCY                              as CurrencyId,
+    CCY.CODE                                  as Currency,
+    RFR.OWNER_UNIT                            as OwnerUnitId,
+    OWNER.CODE                                as OwnerUnit,
+    RFR.UNIT                                  as UnitId,
+    RFR.DATA_DATEPART                         as DataDatePart,
+    UNDERUNIT.PK                              as UnderUnitId,
+    UNDERUNIT.ZCTEMPLATEFULLREV               as ZCTemplateId,
+    ZCTEMPLATE.CODE                           as ZCTemplate,
+    RFR.MTTEMPLATE                            as ModelabTemplateId,
+    MODTEMPLATE.CODE                          as ModelabTemplate,
+    RFR.OBSTEMPLATE                           as ObservabTemplateId,
+    OBSVTEMPLATE.CODE                         as ObservabTemplate,
+    UNDERUNIT.RETMODFULLREV                   as ReturnModelId,
+    RETURNMODEL.CODE                          as ReturnModel,
+    UNDERUNIT.ADOFULLREV                      as UnitAdoReal,
+    UNDERUNIT.PADOFULLREV                     as UnitAdoProxy,
+    nvl(UNDERUNIT.PADOFULLREV, UNDERUNIT.ADOFULLREV) as UnitAdo,
+    UNDERUNIT.APARAMFULLREV                   as AParameter,
+    CREDITSP.EXTRATING                        as ExternalRating,
+    CREDITSP.SENIORITY                        as Seniority,
+    CREDITSP.SECTOR                           as Sector,
+    CREDITSP.COUNTRY                          as Country,
+    ENT.CODE                                  as Issuer
+from
+    T_RFR_UNDERLYING_S       RFR
+    left join T_RFR_UNDERLYING_S     REFRFR        on REFRFR.PK = RFR.UNDERLREF
+    left join T_RFR_ASSETCLASS_S     ASSET         on RFR.ASSET_CLASS = ASSET.PK
+    left join T_RFR_FACTORTYPE_S     FACTORTY      on RFR.FACTOR_TYPE = FACTORTY.PK
+    left join T_RFR_STATUS_S         UNDERSTATUS   on RFR.STATUS = UNDERSTATUS.PK
+    left join T_RFR_CURRENCY_S       CCY           on RFR.CURRENCY = CCY.PK
+    left join T_RFR_UNIT_S           OWNER         on RFR.OWNER_UNIT = OWNER.PK
+    left join T_RFR_SUBTYPE_S        SUBTY         on RFR.RFRSUBTYPE = SUBTY.PK
+    left join T_RFR_UNDERUNIT_S      UNDERUNIT     on UNDERUNIT.FK_PARENT = RFR.PK
+    left join T_RFR_ZEROCOUPONTPLT_S ZCTEMPLATE    on ZCTEMPLATE.PK = UNDERUNIT.ZCTEMPLATEFULLREV
+    left join T_RFR_CURVEMODTENORTEMP_S MODTEMPLATE on MODTEMPLATE.PK = RFR.MTTEMPLATE
+    left join T_RFR_CURVEOBSTENORTEMP_S OBSVTEMPLATE on OBSVTEMPLATE.PK = RFR.OBSTEMPLATE
+    left join T_RFR_RETMODEL_S       RETURNMODEL   on RETURNMODEL.PK = UNDERUNIT.RETMODFULLREV
+    left join T_RFR_CREDITSP_S       CREDITSP      on CREDITSP.FK_PARENT = RFR.PK
+    left join T_RFR_ENTITY_S         ENT           on CREDITSP.ISSUER = ENT.PK;
