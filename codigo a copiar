@@ -1,3 +1,130 @@
-SELECT owner, name, type, line, text
-FROM all_source
-WHERE UPPER(text) LIKE '%P_GETPROPERTIES%';
+procedure 	P_GetUnderlyings_IRCRV	(
+												I_nUnit					in number,
+												I_dDataDatePart			in date default null,
+												O_rUnderlyingList		out sys_refcursor
+											)
+	is
+		nIsLive number;
+		nProc	number;
+		nUnit	number;
+	begin
+
+		if I_dDataDatePart is null then
+			nIsLive:=1;
+			nUnit:=I_nUnit;
+		else
+			nProc:=PKG_RFR_API.F_IsToExtractHistData(I_dDataDatePart);
+			if nProc=0 then
+				nIsLive:=1;
+				nUnit:=I_nUnit;
+			elsif nProc=1 then
+				nIsLive:=0;
+
+				select
+					PKG_RFR_AUX.F_GetUnitByCode(CODE,1,I_dDataDatePart)
+				into
+					nUnit
+				from
+					T_RFR_UNIT_S
+				where
+					PK=I_nUnit
+				;
+
+				if nUnit is null then
+					nIsLive:=-1;
+				end if;
+
+			else
+				nIsLive:=-1;
+			end if;
+		end if;
+
+		if nIsLive>-1 then
+			if O_rUnderlyingList%ISOPEN then
+				close O_rUnderlyingList;
+			end if;
+
+			open O_rUnderlyingList for
+								select
+									ASSET.CODE																AssetClass,
+									FACTORTY.CODE															FactorType,
+									SUBTY.CODE																FSubtype,
+									RFR.PK																	UnderlyingId,
+									PKG_RFR_AUX.F_GetUnderlyingHistID(RFR.CODE,RFR.ASSET_CLASS,RFR.FACTOR_TYPE,NULL) 	UnderlyingId_Historical,
+									RFR.CODE 																Name,
+									UNDERSTATUS.DESCRIPTION													Status,
+									REFRFR.CODE																RefName,
+									CCY.CODE																Currency,
+									OWNER.CODE																OwnerUnit,
+									null																	ReconstructedFlag,
+									null																	MarketExchange,
+									ZCTEMPLATE.PK															ZCTemplateId,
+									ZCTEMPLATE.CODE															ZCTemplate,
+									MODTEMPLATE.CODE														ModelabTemplate,
+									OBSVTEMPLATE.CODE														ObservabTemplate,
+									PARTEMPLATE.CODE														PARTemplate,
+									nvl(UNDERUNIT.PADOTAYLOR,UNDERUNIT.ADOTAYLOR)							UnitAdo,
+									UNDERUNIT.ADOTAYLOR													UnitAdoReal,
+									UNDERUNIT.PADOTAYLOR													UnitAdoProxy,
+									null																	ActivityScope,
+									null																	ActivityApproval,
+									null																	PriceType,
+									RETURNMODEL.CODE														ReturnModel,
+									decode(UNDERUNIT.RETMODTAYLOR,3.65,UNDERUNIT.APARAMTAYLOR,null)			AParameter,
+									null																	Metric,
+									null																	Isin,
+									null																	ExternalRating,
+									null																	Seniority,
+									null																	Sector,
+									PKG_RFR.F_GetListPerimeterUnit(UNDERUNIT.PK)							PerimeterList
+								from
+									T_RFR_UNDERLYING_S 			RFR,
+									T_RFR_STATUS_S				UNDERSTATUS, --RFR-15948 --Zannon (añadir campos)
+									T_RFR_UNDERLYING_S			REFRFR,
+									T_RFR_UNDERUNIT_S  			UNDERUNIT,
+									T_RFR_ASSETCLASS_S			ASSET,
+									T_RFR_FACTORTYPE_S			FACTORTY,
+									T_RFR_CURRENCY_S			CCY,
+									T_RFR_UNIT_S				OWNER,
+									T_RFR_ZEROCOUPONTPLT_S		ZCTEMPLATE,
+									T_RFR_ZEROCOUPONTPLT_S		PARTEMPLATE,
+									T_RFR_CURVEMODTENORTEMP_S 	MODTEMPLATE,
+									T_RFR_CURVEOBSTENORTEMP_S	OBSVTEMPLATE,
+									T_RFR_RETMODEL_S			RETURNMODEL,
+									T_RFR_SUBTYPE_S				SUBTY
+								where
+									RFR.ASSET_CLASS=PKG_RFR_CONST.AC_IR			--3.65
+									and RFR.FACTOR_TYPE=PKG_RFR_CONST.FT_CURVE	--2.65
+									and RFR.ASSET_CLASS=ASSET.PK
+									and RFR.FACTOR_TYPE=FACTORTY.PK
+									and RFR.STATUS 	in (PKG_RFR_AUX.UNDER_ST_ENABLE,Pkg_RFR_AUX.UNDER_ST_ACTIVE) --7.65,8.65
+									and (
+										(nIsLive =1 and nvl(RFR.ISHISTDATA,0)=0)
+										or
+										(nIsLive =0 and nvl(RFR.ISHISTDATA,0)=1 and RFR.DATA_DATEPART=I_dDataDatePart)
+										)
+									and UNDERSTATUS.PK(+)=RFR.STATUS --RFR-15948 --Zannon (añadir campos)
+									and REFRFR.PK(+)=RFR.UNDERLREF
+									and SUBTY.PK(+)=RFR.RFRSUBTYPE
+									and OWNER.PK(+)=RFR.OWNER_UNIT
+									and CCY.PK(+)=RFR.CURRENCY
+									and ZCTEMPLATE.PK(+)=UNDERUNIT.ZCTEMPLATETAYLOR
+									and MODTEMPLATE.PK(+)=RFR.MTTEMPLATE
+									and OBSVTEMPLATE.PK(+)=RFR.OBSTEMPLATE
+									and PARTEMPLATE.PK(+)=UNDERUNIT.PARTEMPLATETAYLOR
+									and RETURNMODEL.PK=UNDERUNIT.RETMODTAYLOR
+									and UNDERUNIT.FK_OWNER_OBJ=PKG_RFR_AUX.OBJ_UNDERL_OWN	--1000.65
+									and UNDERUNIT.FK_PARENT=RFR.PK
+									and UNDERUNIT.FK_EXTENSION=PKG_RFR_AUX.UNDERUNIT_EXT --10000703.65
+									and UNDERUNIT.RETMODTAYLOR is not null
+									and UNDERUNIT.UNIT=nUnit
+									and PKG_RFR_AUX.F_HasUnderUnitPer(UNDERUNIT.PK,'TAYLOR')=1
+								order by Name;
+		end if;
+
+	exception
+		when others then
+			if O_rUnderlyingList%ISOPEN then
+				close O_rUnderlyingList;
+			end if;
+	end P_GetUnderlyings_IRCRV;
