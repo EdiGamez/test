@@ -54,4 +54,8 @@ from
 where
     RFR.STATUS in (ST_ENABLED, ST_ACTIVE)
     and UNDERUNIT.RETMODFULLREV is not null
-    and PKG_RFR_AUX.F_HasUnderUnitPer(UNDERUNIT.PK, 'TRIM') = 1;
+    and PKG_RFR_AUX.F_HasUnderUnitPer(UNDERUNIT.PK, 'TRIM') = 1
+    and (rfr.unit = :P_Unit or :P_Unit is null)
+    and (rfr.factor_type = :P_FactorType or :P_FactorType is null)
+    and (rfr.asset_class = :P_AssetClass or :P_AssetClass is null)
+    and (rfr.datadatepart = :P_DatePart or :P_DatePart is null);
