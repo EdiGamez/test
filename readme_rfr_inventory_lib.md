@@ -2,14 +2,14 @@
 
 **rfrInventoryLib** es una librería Java que abstrae la obtención de inventarios desde la base de datos, mapeando resultados a objetos de dominio (`Factor`). Se utiliza principalmente en dos proyectos:
 
-- **rfrbatch**
-- **svcrfrInventory**
+* **rfrbatch**
+* **svcrfrInventory**
 
 Ambos proyectos invocan clases específicas de servicio que implementan el método `getInventory(...)`. Estas clases están ligadas a un perímetro y producto específico, por ejemplo:
 
-- `IrCrvTaylorScmInventoryService`
-- `FxSptImaCsmInventoryService`
-- `ComVolFullRevalScmInventoryService`
+* `IrCrvTaylorScmInventoryService`
+* `FxSptImaCsmInventoryService`
+* `ComVolFullRevalScmInventoryService`
 
 ---
 
@@ -20,7 +20,7 @@ sequenceDiagram
     participant Cliente as rfrbatch / svcrfrInventory
     participant Servicio as *Perímetro*InventoryService (getInventory)
     participant Factory as RequestFactory
-    participant RepoMain as rfrPkg*Perímetro*ServicesRfr2Repository
+    participant RepoMain as frAPkg*Perímetro*ServicesRfr2Repository
     participant RepoSub as *Perímetro*UnderlyingsRepository
     participant Proc as call*Perímetro*GetUnderlyingsGeneric
     participant DB as Base de Datos
@@ -77,6 +77,8 @@ Dependiendo del perímetro (Taylor, FullReval, etc.), se elige una clase como `f
 
 Todos estos métodos reciben un `GetUnderlyingsRequest` y devuelven un `GetUnderlyingsResponse` con los resultados de la base de datos.
 
+> **Nota:** Existe una clase (por ejemplo `com.myorg.rfrinventorylib.database.procedures.ProcedureRegistry`) que centraliza todas las cadenas `String` correspondientes a los nombres de los procedimientos almacenados. Esta clase organiza los procedimientos por tipo de dato solicitado (e.g., proxies, properties, underlyings, etc.) y por perímetro (Taylor, FullReval, etc.). Esto permite mantener una referencia clara y centralizada de las operaciones disponibles.
+
 ### 4. Conversión a `UnderlyingDbResponse`
 
 Con el resultado (`GetUnderlyingsResponse`) se llama a `InventoryFactory.getUnderlyingsFromDb(...)`, que transforma este objeto en una lista de `UnderlyingDbResponse`.
@@ -85,18 +87,18 @@ Con el resultado (`GetUnderlyingsResponse`) se llama a `InventoryFactory.getUnde
 
 Se construye un `FactorDb` a partir del `UnderlyingDbResponse` y el `InventoryRequest`, invocando métodos que generan listas internas como:
 
-- `getSigomTemplatePoints(...)`
-- `getSigomNativePoints(...)`
-- `getSigomProxies(...)`
-- `getSigomCrvPropertiesResponse(...)`
-- `getExtraTenors(...)`
+* `getSigomTemplatePoints(...)`
+* `getSigomNativePoints(...)`
+* `getSigomProxies(...)`
+* `getSigomCrvPropertiesResponse(...)`
+* `getExtraTenors(...)`
 
 Luego se usa la clase `ParseTaylorIrCrvService` (o su variante por perímetro/producto) para construir el objeto final `Factor` mediante el método `buildJsonFactor(...)`, que invoca a:
 
-- `buildHeader(...)`: genera `HeaderCtrl`
-- `buildRfBody(...)`: genera `RfBody`
-- `buildRfInfo(...)`: compone la sección de información financiera
-- `buildFactor(...)`: ensambla todo en un `Factor`
+* `buildHeader(...)`: genera `HeaderCtrl`
+* `buildRfBody(...)`: genera `RfBody`
+* `buildRfInfo(...)`: compone la sección de información financiera
+* `buildFactor(...)`: ensambla todo en un `Factor`
 
 Finalmente, se retorna `List<Factor>` al cliente.
 
@@ -128,5 +130,4 @@ public class Factor {
 
 ---
 
-> *Este README documenta el flujo interno y las responsabilidades técnicas de ****rfrInventoryLib****. Puedes expandir secciones específicas o vincular a documentación adicional según sea necesario.*
-
+> *Este README documenta el flujo interno y las responsabilidades técnicas de **rfrInventoryLib**. Puedes expandir secciones específicas o vincular a documentación adicional según sea necesario.*
