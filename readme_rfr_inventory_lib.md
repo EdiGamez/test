@@ -20,7 +20,7 @@ sequenceDiagram
     participant Cliente as rfrbatch / svcrfrInventory
     participant Servicio as *Perímetro*InventoryService (getInventory)
     participant Factory as RequestFactory
-    participant RepoMain as frAPkg*Perímetro*ServicesRfr2Repository
+    participant RepoMain as rfrPkg*Perímetro*ServicesRfr2Repository
     participant RepoSub as *Perímetro*UnderlyingsRepository
     participant Proc as call*Perímetro*GetUnderlyingsGeneric
     participant DB as Base de Datos
