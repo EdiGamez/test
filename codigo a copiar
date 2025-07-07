@@ -1,491 +1,678 @@
+package com.santander.supra.dayonepl.sparkSubmitClasses.rpa
 
-Este es el código: package com.santander.supra.dayonepl.sparkSubmitClasses.rpa  import org.apache.log4j.Logger import org.apache.spark.sql.functions._ import org.apache.spark.sql.{SaveMode, SparkSession} import com.typesafe.config.ConfigFactory  import scala.collection.JavaConverters._ import org.apache.hadoop.fs.{FSDataInputStream, FileSystem, Path}  import java.util.Properties  // To execute in spark-shell // implicit val sparkSession: SparkSession = SparkSession.builder().appName("My App").enableHiveSupport().getOrCreate()  object RpaJob {  private val LOGGER = Logger.getLogger(this.getClass)  def run(parsedArgs: Array[String])(implicit sparkSession: SparkSession): Unit = { import sparkSession.implicits._  
-val env = parsedArgs(0)
-val load_date = parsedArgs(1)
-val country_code = parsedArgs(2)
-val source_system = parsedArgs(3)
-val book = parsedArgs(4)
-LOGGER.info(s"Input params: $env $load_date $country_code $source_system $book ")
+import org.apache.log4j.Logger
+import org.apache.spark.sql.functions._
+import org.apache.spark.sql.{SaveMode, SparkSession}
+import com.typesafe.config.ConfigFactory
 
-val allowedPortfolios = Seq("NY_CR_IR_LRPA", "NY_CR_IR_PRPA")
-val time_frame ="EOD"
+import scala.collection.JavaConverters._
+import org.apache.hadoop.fs.{FSDataInputStream, FileSystem, Path}
 
-val tradeDetails = sparkSession.table("cd_gcb_financial_formalised_contracts.trade_details")
-  .where(col("data_date_part") === load_date
-    && col("source_system") === source_system
-    && col("country_code") === country_code
-    && col("book") === book
-    && col("pnl_type") === time_frame)
+import java.util.Properties
 
-val economicPL = sparkSession.table("cd_gcb_financial_formalised_contracts.economicpl")
-  .where(col("data_date_part") === load_date
-    && col("source_system") === source_system
-    && col("country_code") === country_code
-    && col("book") === book
-    && col("time_frame") === time_frame)
+// To execute in spark-shell
+// implicit val sparkSession: SparkSession = SparkSession.builder().appName("My App").enableHiveSupport().getOrCreate()
 
-val clients = sparkSession.table("cd_mdr_cru.clients")
-  .where(col("data_date_part") === load_date)
+object RpaJob {
 
-val dayoneplV2 = sparkSession.table("bu_dayonepl.dayonepl_v2")
-  .where(col("data_date_part") === load_date
-    && col("source_system") === source_system
-    && col("unit_shname") === country_code
-    && col("book") === book
-    && col("portfolio").isin(allowedPortfolios: _*))
+  private val LOGGER = Logger.getLogger(this.getClass)
 
-val devengoV2 = sparkSession.table("bu_dayonepl.devengo_v2")
-  .where(col("data_date_part") === load_date
-    && col("source_system") === source_system
-    && col("unit_shname") === country_code
-    && col("portfolio").isin(allowedPortfolios: _*))
+  def run(parsedArgs: Array[String])(implicit sparkSession: SparkSession): Unit = {
+    import sparkSession.implicits._
 
-val normalizedFxNy = sparkSession.table("cd_sensibilidades.normalized_fx_ny")
-  .where(col("data_date_part") === load_date)
+    val env = parsedArgs(0)
+    val load_date = parsedArgs(1)
+    val country_code = parsedArgs(2)
+    val source_system = parsedArgs(3)
+    val book = parsedArgs(4)
+    LOGGER.info(s"Input params: $env $load_date $country_code $source_system $book ")
 
-val tradeDetailsFlexModel = sparkSession.table("bu_dayonepl.Input_trade_details_flexmodel_Temp")
-  .where(col("data_date_part") === load_date
-    && col("source_system") === source_system
-    && col("country_code") === country_code
-    && col("portfolio").isin(allowedPortfolios: _*))
+    val allowedPortfolios = Seq("NY_CR_IR_LRPA", "NY_CR_IR_PRPA")
+    val time_frame ="EOD"
 
-val clientsForIssuer = clients.select($"entityglcs".as("issuer_entityglcs"), $"entityfulllegalname".as("client"))
-val clientsForCounterparty = clients.select($"entityglcs".as("counterparty_entityglcs"), $"entityfulllegalname".as("swap_bank_participant_bank"))
+    val tradeDetails = sparkSession.table("cd_gcb_financial_formalised_contracts.trade_details")
+      .where(col("data_date_part") === load_date
+        && col("source_system") === source_system
+        && col("country_code") === country_code
+        && col("book") === book
+        && col("pnl_type") === time_frame)
 
+    val economicPL = sparkSession.table("cd_gcb_financial_formalised_contracts.economicpl")
+      .where(col("data_date_part") === load_date
+        && col("source_system") === source_system
+        && col("country_code") === country_code
+        && col("book") === book
+        && col("time_frame") === time_frame)
 
-val baseResult = tradeDetails
-  .filter(col("portfolio").isin(allowedPortfolios: _*)) // Filtrar por allowedPortfolios
-  .join(
-    economicPL, tradeDetails("data_date_part") === economicPL("data_date_part") &&
-      tradeDetails("country_code") === economicPL("country_code") &&
-      tradeDetails("source_system") === economicPL("source_system") &&
-      tradeDetails("origin_contract_number") === economicPL("contract_origin_reference") &&
-      tradeDetails("portfolio") === economicPL("portfolio"), "left")
-  .join(clientsForIssuer, tradeDetails("issuer") === clientsForIssuer("issuer_entityglcs"), "left")
-  .join(clientsForCounterparty, tradeDetails("counterparty") === clientsForCounterparty("counterparty_entityglcs"), "left")
-  .join(normalizedFxNy, tradeDetails("nominal_unit") === normalizedFxNy("origin"))
+    val clients = sparkSession.table("cd_mdr_cru.clients")
+      .where(col("data_date_part") === load_date)
 
-  .select(
-    tradeDetails("origin_trade_number"),
-    tradeDetails("trade_number"),
-    tradeDetails("contract_number"),
-    tradeDetails("origin_contract_number"),
-    tradeDetails("portfolio"),
-    tradeDetails("internal"),
-    when(economicPL("currency") === tradeDetails("pl_ccy"), economicPL("market_value_ac")).otherwise("Not USD").as("rpa_mtm"),
-    tradeDetails("pl_ccy"),
-    (economicPL("market_value_localavg_ac") + economicPL("market_value_localfx_ac")).as("rpa_mtm_local"),
-    when(economicPL("country_code") === "NY", "USD").otherwise("OTHER").as("publication_currency"),
-    tradeDetails("issuer"),
-    clientsForIssuer("client").as("issuer_description"),
-    tradeDetails("counterparty"),
-    tradeDetails("counterparty_description").as("counterparty_name"),
-    when(tradeDetails("portfolio") === "NY_CR_IR_LRPA", lit("Lead"))
-      .when(tradeDetails("portfolio") === "NY_CR_IR_PRPA", lit("Participant"))
-      .otherwise(lit("portfolio_not_identified")) //Include error treatment for input issues
-      .as("lead_participant"),
-    when(tradeDetails("portfolio") === "NY_CR_IR_LRPA", lit("Santander"))
-      .when(tradeDetails("portfolio") === "NY_CR_IR_PRPA", clientsForCounterparty("swap_bank_participant_bank"))
-      .otherwise(lit("portfolio_not_identified")) //
-      .as("swap_bank"),
-    when(tradeDetails("portfolio") === "NY_CR_IR_PRPA", lit("Santander"))
-      .when(tradeDetails("portfolio") === "NY_CR_IR_LRPA", clientsForCounterparty("swap_bank_participant_bank"))
-      .otherwise(lit("no_entity"))
-      .as("participant_bank"),
-    coalesce(tradeDetails("trade_date"), tradeDetails("start_date")).as("trade_date"),
-    tradeDetails("maturity"),
-    (datediff(tradeDetails("maturity"), economicPL("process_date")) / 365).as("years_risk_guarantee"),
-    (economicPL("p_cash_localavg_ac") + economicPL("p_cash_localfx_ac")).as("premium_cash_local"),
-    tradeDetails("nominal").as("rpa_nominal"),
-    tradeDetails("nominal_unit").as("rpa_nominal_unit"),
-    normalizedFxNy("fxtousd").as("ex_rate"),
-    (tradeDetails("nominal") * normalizedFxNy("fxtousd")).as("rpa_nominal_local"), //
-    tradeDetails("status"),
-    tradeDetails("book"),
-    tradeDetails("country_code"),
-    tradeDetails("source_system"),
-    tradeDetails("data_date_part")
-  )
+    val dayoneplV2 = sparkSession.table("bu_dayonepl.dayonepl_v2")
+      .where(col("data_date_part") === load_date
+        && col("source_system") === source_system
+        && col("unit_shname") === country_code
+        && col("book") === book
+        && col("portfolio").isin(allowedPortfolios: _*))
 
-val day1Mtm = dayoneplV2.groupBy("data_date_part", "unit_shname", "source_system", "book", "contract_origin", "portfolio").agg(sum("dayonepl").as("dayonepl"))
+    val devengoV2 = sparkSession.table("bu_dayonepl.devengo_v2")
+      .where(col("data_date_part") === load_date
+        && col("source_system") === source_system
+        && col("unit_shname") === country_code
+        && col("portfolio").isin(allowedPortfolios: _*))
 
-val day1Pl = devengoV2.groupBy("data_date_part", "unit_shname", "source_system", "contract_origin", "portfolio").agg(sum("trading_alive").as("trading_alive"))
+    val normalizedFxNy = sparkSession.table("cd_sensibilidades.normalized_fx_ny")
+      .where(col("data_date_part") === load_date)
+
+    val tradeDetailsFlexModel = sparkSession.table("bu_dayonepl.Input_trade_details_flexmodel_Temp")
+      .where(col("data_date_part") === load_date
+        && col("source_system") === source_system
+        && col("country_code") === country_code
+        && col("portfolio").isin(allowedPortfolios: _*))
+
+    val clientsForIssuer = clients.select($"entityglcs".as("issuer_entityglcs"), $"entityfulllegalname".as("client"))
+    val clientsForCounterparty = clients.select($"entityglcs".as("counterparty_entityglcs"), $"entityfulllegalname".as("swap_bank_participant_bank"))
 
 
-val rpa_df = baseResult
-  .join(
-    day1Mtm,
-    baseResult("data_date_part") === day1Mtm("data_date_part") &&
-      baseResult("country_code") === day1Mtm("unit_shname") &&
-      baseResult("source_system") === day1Mtm("source_system") &&
-      baseResult("origin_contract_number") === day1Mtm("contract_origin") &&
-      baseResult("portfolio") === day1Mtm("portfolio"), "left")
+    val baseResult = tradeDetails
+      .filter(col("portfolio").isin(allowedPortfolios: _*)) // Filtrar por allowedPortfolios
+      .join(
+        economicPL, tradeDetails("data_date_part") === economicPL("data_date_part") &&
+          tradeDetails("country_code") === economicPL("country_code") &&
+          tradeDetails("source_system") === economicPL("source_system") &&
+          tradeDetails("origin_contract_number") === economicPL("contract_origin_reference") &&
+          tradeDetails("portfolio") === economicPL("portfolio"), "left")
+      .join(clientsForIssuer, tradeDetails("issuer") === clientsForIssuer("issuer_entityglcs"), "left")
+      .join(clientsForCounterparty, tradeDetails("counterparty") === clientsForCounterparty("counterparty_entityglcs"), "left")
+      .join(normalizedFxNy, tradeDetails("nominal_unit") === normalizedFxNy("origin"))
 
-  .join(
-    day1Pl, baseResult("data_date_part") === day1Pl("data_date_part") &&
-      baseResult("country_code") === day1Pl("unit_shname") &&
-      baseResult("source_system") === day1Pl("source_system") &&
-      baseResult("origin_contract_number") === day1Pl("contract_origin") &&
-      baseResult("portfolio") === day1Pl("portfolio"), "left")
+      .select(
+        tradeDetails("origin_trade_number"),
+        tradeDetails("trade_number"),
+        tradeDetails("contract_number"),
+        tradeDetails("origin_contract_number"),
+        tradeDetails("portfolio"),
+        tradeDetails("internal"),
+        when(economicPL("currency") === tradeDetails("pl_ccy"), economicPL("market_value_ac")).otherwise("Not USD").as("rpa_mtm"),
+        tradeDetails("pl_ccy"),
+        (economicPL("market_value_localavg_ac") + economicPL("market_value_localfx_ac")).as("rpa_mtm_local"),
+        when(economicPL("country_code") === "NY", "USD").otherwise("OTHER").as("publication_currency"),
+        tradeDetails("issuer"),
+        clientsForIssuer("client").as("issuer_description"),
+        tradeDetails("counterparty"),
+        tradeDetails("counterparty_description").as("counterparty_name"),
+        when(tradeDetails("portfolio") === "NY_CR_IR_LRPA", lit("Lead"))
+          .when(tradeDetails("portfolio") === "NY_CR_IR_PRPA", lit("Participant"))
+          .otherwise(lit("portfolio_not_identified")) //Include error treatment for input issues
+          .as("lead_participant"),
+        when(tradeDetails("portfolio") === "NY_CR_IR_LRPA", lit("Santander"))
+          .when(tradeDetails("portfolio") === "NY_CR_IR_PRPA", clientsForCounterparty("swap_bank_participant_bank"))
+          .otherwise(lit("portfolio_not_identified")) //
+          .as("swap_bank"),
+        when(tradeDetails("portfolio") === "NY_CR_IR_PRPA", lit("Santander"))
+          .when(tradeDetails("portfolio") === "NY_CR_IR_LRPA", clientsForCounterparty("swap_bank_participant_bank"))
+          .otherwise(lit("no_entity"))
+          .as("participant_bank"),
+        coalesce(tradeDetails("trade_date"), tradeDetails("start_date")).as("trade_date"),
+        tradeDetails("maturity"),
+        (datediff(tradeDetails("maturity"), economicPL("process_date")) / 365).as("years_risk_guarantee"),
+        (economicPL("p_cash_localavg_ac") + economicPL("p_cash_localfx_ac")).as("premium_cash_local"),
+        tradeDetails("nominal").as("rpa_nominal"),
+        tradeDetails("nominal_unit").as("rpa_nominal_unit"),
+        normalizedFxNy("fxtousd").as("ex_rate"),
+        (tradeDetails("nominal") * normalizedFxNy("fxtousd")).as("rpa_nominal_local"), //
+        tradeDetails("status"),
+        tradeDetails("book"),
+        tradeDetails("country_code"),
+        tradeDetails("source_system"),
+        tradeDetails("data_date_part")
+      )
 
+    val day1Mtm = dayoneplV2.groupBy("data_date_part", "unit_shname", "source_system", "book", "contract_origin", "portfolio").agg(sum("dayonepl").as("dayonepl"))
 
-  .select(
-    baseResult("origin_trade_number"),
-    baseResult("trade_number"),
-    baseResult("contract_number"),
-    baseResult("origin_contract_number"),
-    baseResult("portfolio"),
-    baseResult("internal"),
-    baseResult("rpa_mtm"),
-    baseResult("pl_ccy"),
-    baseResult("rpa_mtm_local"),
-    baseResult("publication_currency"),
-    baseResult("issuer"),
-    baseResult("issuer_description"),
-    baseResult("counterparty"),
-    baseResult("counterparty_name"),
-    baseResult("swap_bank"),
-    baseResult("lead_participant"),
-    baseResult("participant_bank"),
-    baseResult("trade_date"),
-    baseResult("maturity"),
-    baseResult("years_risk_guarantee"),
-    baseResult("premium_cash_local"),
-    day1Mtm("dayonepl"),
-    day1Pl("trading_alive"),
-    baseResult("rpa_nominal"),
-    baseResult("rpa_nominal_unit"),
-    baseResult("ex_rate"),
-    baseResult("rpa_nominal_local"), //
-    baseResult("status"),
-    baseResult("book"),
-    baseResult("country_code"),
-    baseResult("source_system"),
-    baseResult("data_date_part")
-  )
-
-//rpa_df.show(Int.MaxValue,truncate=false)
-
-val underlying_list = tradeDetailsFlexModel
-  .filter($"block" === "CCDS" && ($"field_name" === "ORIGI" || $"field_name" === "PORTFO"))
-  .groupBy("contract", "trade_number", "portfolio", "field_position", "country_code", "source_system", "data_date_part")
-  .pivot("field_name", Seq("ORIGI", "PORTFO"))
-  .agg(first("field_value"))
-  .select(
-    col("contract"),
-    col("trade_number"),
-    col("portfolio"),
-    col("ORIGI").as("origin_trade_number_underlying"),
-    col("PORTFO").as("portfolio_underlying"),
-    col("field_position"),
-    col("country_code"),
-    col("source_system"),
-    col("data_date_part")
-  )
-
-//underlying_list.show(Int.MaxValue,truncate=false)
-
-val allowedPortfolios_underlying = Seq("NY_HYP_IR_PART","USD_IR_NY_LRP")
-
-val tradeDetails_underlying_renamed = sparkSession.table("cd_gcb_financial_formalised_contracts.trade_details")
-  .where(col("data_date_part") === load_date
-    && col("source_system") === source_system
-    && col("country_code") === country_code
-    && col("pnl_type") === time_frame
-    && col("portfolio").isin(allowedPortfolios_underlying: _*))
-  .withColumnRenamed("curr_leg1", "curr_leg1_underlying")
-
-//tradeDetails_underlying_renamed.show(Int.MaxValue,truncate=false)
-
-val economicpl_underlying = sparkSession.table("cd_gcb_financial_formalised_contracts.economicpl")
-  .where(col("data_date_part") === load_date
-    && col("source_system") === source_system
-    && col("country_code") === country_code
-    && col("time_frame") === time_frame
-    && col("portfolio").isin(allowedPortfolios_underlying: _*))
-
-//economicpl_underlying.show(Int.MaxValue,truncate=false)
+    val day1Pl = devengoV2.groupBy("data_date_part", "unit_shname", "source_system", "contract_origin", "portfolio").agg(sum("trading_alive").as("trading_alive"))
 
 
-val underlying_rpas_table_without_dayone = underlying_list
-  .join(tradeDetails_underlying_renamed,
-    underlying_list("origin_trade_number_underlying") === tradeDetails_underlying_renamed("origin_trade_number") &&
-    underlying_list("portfolio_underlying") === tradeDetails_underlying_renamed("portfolio") &&
-    underlying_list("country_code") === tradeDetails_underlying_renamed("country_code") &&
-    underlying_list("source_system") === tradeDetails_underlying_renamed("source_system") &&
-    underlying_list("data_date_part") === tradeDetails_underlying_renamed("data_date_part"),
-    "left"
-  )
+    val rpa_df = baseResult
+      .join(
+        day1Mtm,
+        baseResult("data_date_part") === day1Mtm("data_date_part") &&
+          baseResult("country_code") === day1Mtm("unit_shname") &&
+          baseResult("source_system") === day1Mtm("source_system") &&
+          baseResult("origin_contract_number") === day1Mtm("contract_origin") &&
+          baseResult("portfolio") === day1Mtm("portfolio"), "left")
 
-  .join(economicpl_underlying,
-    underlying_list("origin_trade_number_underlying") === economicpl_underlying("initial_deal") &&
-    underlying_list("portfolio_underlying") === economicpl_underlying("portfolio") &&
-    underlying_list("country_code") === economicpl_underlying("country_code") &&
-    underlying_list("source_system") === economicpl_underlying("source_system") &&
-    underlying_list("data_date_part") === economicpl_underlying("data_date_part"),
-    "left"
-  )
-
-  .join(
-    normalizedFxNy,
-    tradeDetails_underlying_renamed("curr_leg1_underlying") === normalizedFxNy("origin"),
-    "left"
-  )
-
-  .select(
-    tradeDetails_underlying_renamed("origin_trade_number").as("rpa_origin_trade_number"),
-    tradeDetails_underlying_renamed("origin_contract_number").as("rpa_origin_contract_number"),
-    underlying_list("contract").as("rpa_contract_number"),
-    underlying_list("trade_number").as("rpa_trade_number"),
-    underlying_list("portfolio").as("rpa_portfolio"),
-    underlying_list("origin_trade_number_underlying").as("underlying_origin_trade_number"),
-    underlying_list("portfolio_underlying").as("underlying_portfolio"),
-    tradeDetails_underlying_renamed("mfamily"),
-    tradeDetails_underlying_renamed("mgroup"),
-    tradeDetails_underlying_renamed("mtype"),
-    tradeDetails_underlying_renamed("label"),
-    tradeDetails_underlying_renamed("nominal").as("underlying_nominal"),
-    tradeDetails_underlying_renamed("curr_leg1_underlying").as("underlying_curr_leg1"),
-    normalizedFxNy("fxtousd").as("ex_rate"),
-    (tradeDetails_underlying_renamed("nominal") * normalizedFxNy("fxtousd")).as("underlying_nominal_local"),
-    (economicpl_underlying("market_value_localavg_ac") + economicpl_underlying("market_value_localfx_ac")).as("underlying_mtm_local"),
-    abs(tradeDetails_underlying_renamed("nominal") * normalizedFxNy("fxtousd")).as("abs_underlying_nominal"),
-    tradeDetails_underlying_renamed("book").as("underlying_book"),
-    tradeDetails_underlying_renamed("source_system").as("underlying_source_system"),
-    tradeDetails_underlying_renamed("country_code"),
-    tradeDetails_underlying_renamed("data_date_part")
-  )
-
-  //underlying_rpas_table_without_dayone.show(Int.MaxValue,truncate=false)
-
-val underlying_rpas_table = underlying_rpas_table_without_dayone
-  .join(
-    day1Mtm,
-    underlying_rpas_table_without_dayone("data_date_part") === day1Mtm("data_date_part") &&
-    underlying_rpas_table_without_dayone("country_code") === day1Mtm("unit_shname") &&
-    underlying_rpas_table_without_dayone("underlying_source_system") === day1Mtm("source_system") &&
-    underlying_rpas_table_without_dayone("rpa_origin_contract_number") === day1Mtm("contract_origin") &&
-    underlying_rpas_table_without_dayone("rpa_portfolio") === day1Mtm("portfolio"), "left")
-
-  .join(
-    day1Pl,
-    underlying_rpas_table_without_dayone("data_date_part") === day1Pl("data_date_part") &&
-    underlying_rpas_table_without_dayone("country_code") === day1Pl("unit_shname") &&
-    underlying_rpas_table_without_dayone("underlying_source_system") === day1Pl("source_system") &&
-    underlying_rpas_table_without_dayone("rpa_origin_contract_number") === day1Pl("contract_origin") &&
-    underlying_rpas_table_without_dayone("rpa_portfolio") === day1Pl("portfolio"), "left")
+      .join(
+        day1Pl, baseResult("data_date_part") === day1Pl("data_date_part") &&
+          baseResult("country_code") === day1Pl("unit_shname") &&
+          baseResult("source_system") === day1Pl("source_system") &&
+          baseResult("origin_contract_number") === day1Pl("contract_origin") &&
+          baseResult("portfolio") === day1Pl("portfolio"), "left")
 
 
-  .select(
-    underlying_rpas_table_without_dayone("rpa_origin_trade_number"),
-    underlying_rpas_table_without_dayone("rpa_origin_contract_number"),
-    underlying_rpas_table_without_dayone("rpa_contract_number"),
-    underlying_rpas_table_without_dayone("rpa_trade_number"),
-    underlying_rpas_table_without_dayone("rpa_portfolio"),
-    underlying_rpas_table_without_dayone("underlying_origin_trade_number"),
-    underlying_rpas_table_without_dayone("underlying_portfolio"),
-    underlying_rpas_table_without_dayone("mfamily"),
-    underlying_rpas_table_without_dayone("mgroup"),
-    underlying_rpas_table_without_dayone("mtype"),
-    underlying_rpas_table_without_dayone("label"),
-    underlying_rpas_table_without_dayone("underlying_nominal"),
-    underlying_rpas_table_without_dayone("underlying_curr_leg1"),
-    underlying_rpas_table_without_dayone("ex_rate"),
-    underlying_rpas_table_without_dayone("underlying_nominal_local"),
-    underlying_rpas_table_without_dayone("underlying_mtm_local"),
-    underlying_rpas_table_without_dayone("abs_underlying_nominal"),
-    underlying_rpas_table_without_dayone("underlying_book"),
-    underlying_rpas_table_without_dayone("underlying_source_system"),
-    underlying_rpas_table_without_dayone("country_code"),
-    underlying_rpas_table_without_dayone("data_date_part"),
-    day1Mtm("dayonepl"),
-    day1Pl("trading_alive")
-  )
+      .select(
+        baseResult("origin_trade_number"),
+        baseResult("trade_number"),
+        baseResult("contract_number"),
+        baseResult("origin_contract_number"),
+        baseResult("portfolio"),
+        baseResult("internal"),
+        baseResult("rpa_mtm"),
+        baseResult("pl_ccy"),
+        baseResult("rpa_mtm_local"),
+        baseResult("publication_currency"),
+        baseResult("issuer"),
+        baseResult("issuer_description"),
+        baseResult("counterparty"),
+        baseResult("counterparty_name"),
+        baseResult("swap_bank"),
+        baseResult("lead_participant"),
+        baseResult("participant_bank"),
+        baseResult("trade_date"),
+        baseResult("maturity"),
+        baseResult("years_risk_guarantee"),
+        baseResult("premium_cash_local"),
+        day1Mtm("dayonepl"),
+        day1Pl("trading_alive"),
+        baseResult("rpa_nominal"),
+        baseResult("rpa_nominal_unit"),
+        baseResult("ex_rate"),
+        baseResult("rpa_nominal_local"), //
+        baseResult("status"),
+        baseResult("book"),
+        baseResult("country_code"),
+        baseResult("source_system"),
+        baseResult("data_date_part")
+      )
 
-//underlying_rpas_table.show(Int.MaxValue,truncate=false)
+    //rpa_df.show(Int.MaxValue,truncate=false)
 
+    val underlying_list = tradeDetailsFlexModel
+      .filter($"block" === "CCDS" && ($"field_name" === "ORIGI" || $"field_name" === "PORTFO"))
+      .groupBy("contract", "trade_number", "portfolio", "field_position", "country_code", "source_system", "data_date_part")
+      .pivot("field_name", Seq("ORIGI", "PORTFO"))
+      .agg(first("field_value"))
+      .select(
+        col("contract"),
+        col("trade_number"),
+        col("portfolio"),
+        col("ORIGI").as("origin_trade_number_underlying"),
+        col("PORTFO").as("portfolio_underlying"),
+        col("field_position"),
+        col("country_code"),
+        col("source_system"),
+        col("data_date_part")
+      )
 
-val underlying_rpas_table_renamed = underlying_rpas_table
-  .withColumnRenamed("mtype", "underlying_mtype")
-  .withColumnRenamed("label", "underlying_label")
-  .withColumnRenamed("mfamily", "underlying_mfamily")
-  .withColumnRenamed("mgroup", "underlying_mgroup")
+    //underlying_list.show(Int.MaxValue,truncate=false)
 
-val reporting_table = rpa_df
-  .join(
-  underlying_rpas_table_renamed,
-  rpa_df("trade_number") === underlying_rpas_table_renamed("rpa_trade_number") &&
-  rpa_df("portfolio") === underlying_rpas_table_renamed("rpa_portfolio") &&
-  rpa_df("country_code") === underlying_rpas_table_renamed("country_code") &&
-  rpa_df("source_system") === underlying_rpas_table_renamed("underlying_source_system") &&
-//baseResult("book") === underlying_rpas_table_renamed("underlying_book") &&
-  rpa_df("data_date_part") === underlying_rpas_table_renamed("data_date_part"),
-  "left"
-  )
-  .select(
-    rpa_df("origin_trade_number"),
-    rpa_df("trade_number"),
-    rpa_df("contract_number"),
-    rpa_df("origin_contract_number"),
-    rpa_df("portfolio"),
-    rpa_df("internal"),
-    rpa_df("rpa_mtm"),
-    rpa_df("pl_ccy"),
-    rpa_df("rpa_mtm_local"),
-    rpa_df("publication_currency"),
-    rpa_df("issuer"),
-    rpa_df("issuer_description"),
-    rpa_df("counterparty"),
-    rpa_df("counterparty_name"),
-    rpa_df("swap_bank"),
-    rpa_df("lead_participant"),
-    rpa_df("participant_bank"),
-    rpa_df("trade_date"),
-    rpa_df("maturity"),
-    rpa_df("years_risk_guarantee"),
-    rpa_df("premium_cash_local"),
-    rpa_df("dayonepl"),
-    rpa_df("trading_alive"),
-    rpa_df("rpa_nominal"),
-    rpa_df("rpa_nominal_unit"),
-    rpa_df("ex_rate"),
-    rpa_df("rpa_nominal_local"),
-    rpa_df("status"),
-    rpa_df("book"),
-    rpa_df("country_code"),
-    rpa_df("source_system"),
-    rpa_df("data_date_part"),
-    underlying_rpas_table_renamed("underlying_origin_trade_number"),
-    underlying_rpas_table_renamed("underlying_portfolio"),
-    underlying_rpas_table_renamed("underlying_mfamily"),
-    underlying_rpas_table_renamed("underlying_mgroup"),
-    underlying_rpas_table_renamed("underlying_mtype"),
-    underlying_rpas_table_renamed("underlying_label"),
-    underlying_rpas_table_renamed("underlying_nominal"),
-    underlying_rpas_table_renamed("underlying_curr_leg1"),
-    underlying_rpas_table_renamed("ex_rate").as("underlying_ex_rate"),
-    underlying_rpas_table_renamed("underlying_nominal_local"),
-    underlying_rpas_table_renamed("underlying_mtm_local"),
-    underlying_rpas_table_renamed("abs_underlying_nominal"),
-    underlying_rpas_table_renamed("underlying_book"),
-    underlying_rpas_table_renamed("underlying_source_system"),
-    underlying_rpas_table_renamed("country_code").as("underlying_country_code"),
-    underlying_rpas_table_renamed("data_date_part").as("underlying_data_date_part")
-  )
+    val allowedPortfolios_underlying = Seq("NY_HYP_IR_PART","USD_IR_NY_LRP")
 
-val grouped_reporting_table = reporting_table
-  .groupBy(
-    "trade_number",
-    "portfolio",
-    "internal",
-    "pl_ccy",
-    "publication_currency",
-    "issuer",
-    "issuer_description",
-    "counterparty",
-    "counterparty_name",
-    "swap_bank",
-    "lead_participant",
-    "participant_bank",
-    "rpa_nominal_unit",
-    "status",
-    "book",
-    "country_code",
-    "source_system",
-    "underlying_origin_trade_number",
-    "underlying_portfolio",
-    "underlying_mfamily",
-    "underlying_mgroup",
-    "underlying_mtype",
-    "underlying_label",
-    "underlying_curr_leg1",
-    "underlying_book",
-    "underlying_source_system",
-    "underlying_country_code",
-    "underlying_data_date_part"
-  )
-  .agg(
-    first("origin_trade_number").alias("origin_trade_number"),
-    first("trade_number"),
-    first("contract_number").alias("contract_number"),
-    first("origin_contract_number").alias("origin_contract_number"),
-    first("rpa_mtm").alias("rpa_mtm"),
-    first("rpa_mtm_local").alias("rpa_mtm_local"),
-    first("trade_date").alias("trade_date"),
-    first("maturity").alias("maturity"),
-    first("years_risk_guarantee").alias("years_risk_guarantee"),
-    first("premium_cash_local").alias("premium_cash_local"),
-    first("dayonepl").alias("dayonepl"),
-    first("trading_alive").alias("trading_alive"),
-    first("rpa_nominal").alias("rpa_nominal"),
-    first("ex_rate").alias("ex_rate"),
-    first("rpa_nominal_local").alias("rpa_nominal_local"),
-    first("data_date_part").alias("data_date_part"),
-    first("underlying_origin_trade_number"),
-    first("underlying_nominal").alias("underlying_nominal"),
-    first("underlying_ex_rate").alias("underlying_ex_rate"),
-    first("underlying_nominal_local").alias("underlying_nominal_local"),
-    first("abs_underlying_nominal").alias("abs_underlying_nominal"),
-    sum("underlying_mtm_local").alias("underlying_mtm_local")
-  )
-  .select(
-    col("origin_trade_number"),
-    col("trade_number"),
-    col("contract_number"),
-    col("origin_contract_number"),
-    col("portfolio"),
-    col("internal"),
-    col("rpa_mtm"),
-    col("pl_ccy"),
-    col("rpa_mtm_local"),
-    col("publication_currency"),
-    col("issuer"),
-    col("issuer_description"),
-    col("counterparty"),
-    col("counterparty_name"),
-    col("swap_bank"),
-    col("lead_participant"),
-    col("participant_bank"),
-    col("trade_date"),
-    col("maturity"),
-    col("years_risk_guarantee"),
-    col("premium_cash_local"),
-    col("dayonepl"),
-    col("trading_alive"),
-    col("rpa_nominal"),
-    col("rpa_nominal_unit"),
-    col("ex_rate"),
-    col("rpa_nominal_local"),
-    col("status"),
-    col("book"),
-    col("country_code"),
-    col("source_system"),
-    col("data_date_part"),
-    col("underlying_origin_trade_number"),
-    col("underlying_portfolio"),
-    col("underlying_mfamily"),
-    col("underlying_mgroup"),
-    col("underlying_mtype"),
-    col("underlying_label"),
-    col("underlying_nominal"),
-    col("underlying_curr_leg1"),
-    col("underlying_ex_rate"),
-    col("underlying_nominal_local"),
-    col("underlying_mtm_local"),
-    col("abs_underlying_nominal"),
-    col("underlying_book"),
-    col("underlying_source_system"),
-    col("underlying_country_code"),
-    col("underlying_data_date_part")
-  )
+    val tradeDetails_underlying_renamed = sparkSession.table("cd_gcb_financial_formalised_contracts.trade_details")
+      .where(col("data_date_part") === load_date
+        && col("source_system") === source_system
+        && col("country_code") === country_code
+        && col("pnl_type") === time_frame
+        && col("portfolio").isin(allowedPortfolios_underlying: _*))
+      .withColumnRenamed("curr_leg1", "curr_leg1_underlying")
 
-grouped_reporting_table.show(Int.MaxValue,truncate=false)
+    //tradeDetails_underlying_renamed.show(Int.MaxValue,truncate=false)
 
-reporting_table.select("origin_trade_number", "trade_number", "contract_number").show(false)
-grouped_reporting_table.printSchema()
-sparkSession.table("bu_dayonepl.rpa_report").printSchema()
-grouped_reporting_table.write.mode("overwrite").insertInto(s"bu_dayonepl.rpa_report")
+    val economicpl_underlying = sparkSession.table("cd_gcb_financial_formalised_contracts.economicpl")
+      .where(col("data_date_part") === load_date
+        && col("source_system") === source_system
+        && col("country_code") === country_code
+        && col("time_frame") === time_frame
+        && col("portfolio").isin(allowedPortfolios_underlying: _*))
+
+    //economicpl_underlying.show(Int.MaxValue,truncate=false)
 
 
-LOGGER.info(s"RpaJob.run has finished")
-}  } Los logs salen así: Logged in as: uimisfo Application Tools Configuration Local logs Server stacks Server metrics  Log Type: stdout  Log Upload Time: Mon Jul 07 18:05:00 +0200 2025  Log Length: 36720  +-------------------+------------+---------------+----------------------+-------------+--------+--------------+------+--------------+--------------------+------+-------------------+------------+-------------------------------------------------------------+-----------------------------------------+----------------+----------------------------------+----------+----------+--------------------+------------------+-----------------+-------------+--------------------------+----------------+-----------------+-----------------+------+------+------------+-------------+--------------+------------------------------+--------------------+------------------+-----------------+----------------+------------------+-------------------------+--------------------+------------------+------------------------+--------------------+----------------------+---------------+------------------------+-----------------------+-------------------------+ |origin_trade_number|trade_number|contract_number|origin_contract_number|portfolio |internal|rpa_mtm |pl_ccy|rpa_mtm_local |publication_currency|issuer|issuer_description |counterparty|counterparty_name |swap_bank |lead_participant|participant_bank |trade_date|maturity |years_risk_guarantee|premium_cash_local|dayonepl |trading_alive|rpa_nominal |rpa_nominal_unit|ex_rate |rpa_nominal_local|status|book |country_code|source_system|data_date_part|underlying_origin_trade_number|underlying_portfolio|underlying_mfamily|underlying_mgroup|underlying_mtype|underlying_label |underlying_nominal |underlying_curr_leg1|underlying_ex_rate|underlying_nominal_local|underlying_mtm_local|abs_underlying_nominal|underlying_book|underlying_source_system|underlying_country_code|underlying_data_date_part| +-------------------+------------+---------------+----------------------+-------------+--------+--------------+------+--------------+--------------------+------+-------------------+------------+-------------------------------------------------------------+-----------------------------------------+----------------+----------------------------------+----------+----------+--------------------+------------------+-----------------+-------------+--------------------------+----------------+-----------------+-----------------+------+------+------------+-------------+--------------+------------------------------+--------------------+------------------+-----------------+----------------+------------------+-------------------------+--------------------+------------------+------------------------+--------------------+----------------------+---------------+------------------------+-----------------------+-------------------------+ |39207276 |39207276 |39226474 |39226474 |NY_CR_IR_PRPA|NO |-1367597.93997|USD |-1367597.93997|USD |SBWO |SANTANDER BANK N.A |SBWO |SANTANDER BANK NA |SANTANDER BANK N.A |Participant |Santander |2024-10-30|2028-09-10|3.421917808219178 |10000.0000000 |-1357396.71853000|null |-92000000.000000000000000 |USD |1.000000000000000|-92000000.000000 |LIVE |CDSHDG|NY |Mx3LT_PAR_01 |2025-04-10 |39134063 |NY_HYP_IR_PART |IRD |CF | |Cap and Floor |46000000.000000000000000 |USD |1.000000000000000 |46000000.000000 |0.0 |46000000.000000 |STMNY |Mx3LT_PAR_01 |NY |2025-04-10 | |39134721 |39164498 |39187955 |39158334 |NY_CR_IR_PRPA|NO |-75959.13441 |USD |-75959.13441 |USD |00U2I9|null |MINN |US BANK NATIONAL ASSOC,MINNEAPOL |US BANK NATIONAL ASSOCIATION |Participant |Santander |2024-10-30|2025-07-07|0.2410958904109589 |-10000.0000000 |-86160.35585000 |null |-80117998.000000000000000 |USD |1.000000000000000|-80117998.000000 |LIVE |CDSHDG|NY |Mx3LT_PAR_01 |2025-04-10 |39134046 |NY_HYP_IR_PART |IRD |CF | |Cap and Floor |1842237.600000000000000 |USD |1.000000000000000 |1842237.600000 |0.0 |1842237.600000 |STMNY |Mx3LT_PAR_01 |NY |2025-04-10 | |39134089 |39134089 |39157889 |39157889 |NY_CR_IR_LRPA|NO |3030600.02075 |USD |3030600.02075 |USD |00IQQZ|null |PNCX |PNC BANK NATIONAL ASSOCIATION |Santander |Lead |PNC BANK NA PITTSBURGH |2024-10-30|2043-05-29|18.145205479452056 |-10000.0000000 |3020398.79931000 |null |13697665.000000000000000 |USD |1.000000000000000|13697665.000000 |LIVE |CDSHDG|NY |Mx3LT_PAR_01 |2025-04-10 |39134065 |USD_IR_NY_LRP |IRD |IRS | |Interest Rate Swap|-13697664.980000000000000|USD |1.000000000000000 |-13697664.980000 |-438206.5530000003 |13697664.980000 |ALCO |Mx3LT_PAR_01 |NY |2025-04-10 | |39207274 |39207274 |39226472 |39226472 |NY_CR_IR_PRPA|NO |-926504.26541 |USD |-926504.26541 |USD |CINZ |COACH INC, NEW YORK|CMFX |JPMORGAN CHASE BANK NATIONAL ASSOCIATION |JP MORGAN CHASE BANK NATIONAL ASSOCIATION|Participant |Santander |2024-10-30|2028-11-27|3.6356164383561644 |10000.0000000 |-916303.04397000 |null |-71658995.000000000000000 |USD |1.000000000000000|-71658995.000000 |LIVE |CDSHDG|NY |Mx3LT_PAR_01 |2025-04-10 |39134060 |NY_HYP_IR_PART |IRD |CS | |Currency Swap |41169374.330000000000000 |GBP |1.296411400000000 |53372446.212279 |1517530.007160008 |53372446.212279 |STMNY |Mx3LT_PAR_01 |NY |2025-04-10 | |39134088 |39134088 |39157888 |39157888 |NY_CR_IR_PRPA|NO |-1367597.93997|USD |-1367597.93997|USD |SBWO |SANTANDER BANK N.A |SBWO |SANTANDER BANK NA |SANTANDER BANK N.A |Participant |Santander |2024-10-30|2028-09-10|3.421917808219178 |-10000.0000000 |-1377799.16141000|null |-92000000.000000000000000 |USD |1.000000000000000|-92000000.000000 |LIVE |CDSHDG|NY |Mx3LT_PAR_01 |2025-04-10 |39134064 |NY_HYP_IR_PART |IRD |CF | |Cap and Floor |-46000000.000000000000000|USD |1.000000000000000 |-46000000.000000 |0.0 |46000000.000000 |STMNY |Mx3LT_PAR_01 |NY |2025-04-10 | |39207278 |39207278 |39226476 |39226476 |NY_CR_IR_PRPA|NO |-75959.13441 |USD |-75959.13441 |USD |00U2I9|null |MINN |US BANK NATIONAL ASSOC,MINNEAPOL |US BANK NATIONAL ASSOCIATION |Participant |Santander |2024-10-30|2025-07-07|0.2410958904109589 |10000.0000000 |-65757.91297000 |null |-80117998.000000000000000 |USD |1.000000000000000|-80117998.000000 |LIVE |CDSHDG|NY |Mx3LT_PAR_01 |2025-04-10 |39134044 |NY_HYP_IR_PART |IRD |CF | |Cap and Floor |-1842237.600000000000000 |USD |1.000000000000000 |-1842237.600000 |0.0 |1842237.600000 |STMNY |Mx3LT_PAR_01 |NY |2025-04-10 | |39134083 |39134083 |39157883 |39157883 |NY_CR_IR_PRPA|NO |-926504.26541 |USD |-926504.26541 |USD |CINZ |COACH INC, NEW YORK|CMFX |JPMORGAN CHASE BANK NATIONAL ASSOCIATION |JP MORGAN CHASE BANK NATIONAL ASSOCIATION|Participant |Santander |2024-10-30|2028-11-27|3.6356164383561644 |-10000.0000000 |-936705.48685000 |null |-71658995.000000000000000 |USD |1.000000000000000|-71658995.000000 |LIVE |CDSHDG|NY |Mx3LT_PAR_01 |2025-04-10 |39134060 |NY_HYP_IR_PART |IRD |CS | |Currency Swap |41169374.330000000000000 |GBP |1.296411400000000 |53372446.212279 |1517530.007160008 |53372446.212279 |STMNY |Mx3LT_PAR_01 |NY |2025-04-10 | |39207275 |39207275 |39226473 |39226473 |NY_CR_IR_PRPA|NO |-713053.13137 |USD |-713053.13137 |USD |CINZ |COACH INC, NEW YORK|CMFX |JPMORGAN CHASE BANK NATIONAL ASSOCIATION |JP MORGAN CHASE BANK NATIONAL ASSOCIATION|Participant |Santander |2024-10-30|2029-11-27|4.635616438356164 |10000.0000000 |-702851.90993000 |null |-35829497.000000000000000 |USD |1.000000000000000|-35829497.000000 |LIVE |CDSHDG|NY |Mx3LT_PAR_01 |2025-04-10 |39134062 |NY_HYP_IR_PART |IRD |CS | |Currency Swap |20584687.200000000000000 |GBP |1.296411400000000 |26686223.151514 |436605.16203071666 |26686223.151514 |STMNY |Mx3LT_PAR_01 |NY |2025-04-10 | |39134077 |39134077 |39157877 |39157877 |NY_CR_IR_PRPA|NO |-990410.08217 |USD |-990410.08217 |USD |VYU3 |null |WACH |WELLS FARGO BANK N.A., CHARLOTTE (FORMERLY KNOWN AS WACHOVIA)|WELLS FARGO BANK NA |Participant |Santander |2024-10-30|2025-12-31|0.726027397260274 |-10000.0000000 |-1000611.30361000|null |-219072310.000000000000000|USD |1.000000000000000|-219072310.000000|LIVE |CDSHDG|NY |Mx3LT_PAR_01 |2025-04-10 |null |null |null |null |null |null |null |null |null |null |null |null |null |null |null |null | |39134090 |39134090 |39157890 |39157890 |NY_CR_IR_LRPA|NO |4112076.81741 |USD |4112076.81741 |USD |00IQR3|null |PNCX |PNC BANK NATIONAL ASSOCIATION |Santander |Lead |PNC BANK NA PITTSBURGH |2024-10-30|2043-07-31|18.317808219178083 |-10000.0000000 |4101875.59597000 |null |18490690.000000000000000 |USD |1.000000000000000|18490690.000000 |LIVE |CDSHDG|NY |Mx3LT_PAR_01 |2025-04-10 |39134066 |USD_IR_NY_LRP |IRD |IRS | |Interest Rate Swap|-18628073.340000000000000|USD |1.000000000000000 |-18628073.340000 |-642818.6919999998 |18628073.340000 |ALCO |Mx3LT_PAR_01 |NY |2025-04-10 | |39134079 |39134716 |39158329 |39157879 |NY_CR_IR_PRPA|NO |-75959.13441 |USD |-75959.13441 |USD |00U2I9|null |MINN |US BANK NATIONAL ASSOC,MINNEAPOL |US BANK NATIONAL ASSOCIATION |Participant |Santander |2024-10-30|2025-07-07|0.2410958904109589 |-10000.0000000 |-86160.35585000 |null |-80117998.000000000000000 |USD |1.000000000000000|-80117998.000000 |LIVE |CDSHDG|NY |Mx3LT_PAR_01 |2025-04-10 |39134044 |NY_HYP_IR_PART |IRD |CF | |Cap and Floor |-1842237.600000000000000 |USD |1.000000000000000 |-1842237.600000 |0.0 |1842237.600000 |STMNY |Mx3LT_PAR_01 |NY |2025-04-10 | |39207276 |39207276 |39226474 |39226474 |NY_CR_IR_PRPA|NO |-1367597.93997|USD |-1367597.93997|USD |SBWO |SANTANDER BANK N.A |SBWO |SANTANDER BANK NA |SANTANDER BANK N.A |Participant |Santander |2024-10-30|2028-09-10|3.421917808219178 |10000.0000000 |-1357396.71853000|null |-92000000.000000000000000 |USD |1.000000000000000|-92000000.000000 |LIVE |CDSHDG|NY |Mx3LT_PAR_01 |2025-04-10 |39134064 |NY_HYP_IR_PART |IRD |CF | |Cap and Floor |-46000000.000000000000000|USD |1.000000000000000 |-46000000.000000 |0.0 |46000000.000000 |STMNY |Mx3LT_PAR_01 |NY |2025-04-10 | |39134083 |39134083 |39157883 |39157883 |NY_CR_IR_PRPA|NO |-926504.26541 |USD |-926504.26541 |USD |CINZ |COACH INC, NEW YORK|CMFX |JPMORGAN CHASE BANK NATIONAL ASSOCIATION |JP MORGAN CHASE BANK NATIONAL ASSOCIATION|Participant |Santander |2024-10-30|2028-11-27|3.6356164383561644 |-10000.0000000 |-936705.48685000 |null |-71658995.000000000000000 |USD |1.000000000000000|-71658995.000000 |LIVE |CDSHDG|NY |Mx3LT_PAR_01 |2025-04-10 |39134057 |NY_HYP_IR_PART |IRD |CS | |Currency Swap |-40000000.000000000000000|GBP |1.296411400000000 |-51856456.000000 |5918872.821518987 |51856456.000000 |STMNY |Mx3LT_PAR_01 |NY |2025-04-10 | |39134087 |39134087 |39157887 |39157887 |NY_CR_IR_PRPA|NO |-713053.13137 |USD |-713053.13137 |USD |CINZ |COACH INC, NEW YORK|CMFX |JPMORGAN CHASE BANK NATIONAL ASSOCIATION |JP MORGAN CHASE BANK NATIONAL ASSOCIATION|Participant |Santander |2024-10-30|2029-11-27|4.635616438356164 |-10000.0000000 |-723254.35281000 |null |-35829497.000000000000000 |USD |1.000000000000000|-35829497.000000 |LIVE |CDSHDG|NY |Mx3LT_PAR_01 |2025-04-10 |39134062 |NY_HYP_IR_PART |IRD |CS | |Currency Swap |20584687.200000000000000 |GBP |1.296411400000000 |26686223.151514 |436605.16203071666 |26686223.151514 |STMNY |Mx3LT_PAR_01 |NY |2025-04-10 | |39134075 |39134136 |39157916 |39157875 |NY_CR_IR_PRPA|NO |-220343.89996 |USD |-220343.89996 |USD |00TQ7G|null |CMFX |JPMORGAN CHASE BANK NATIONAL ASSOCIATION |JP MORGAN CHASE BANK NATIONAL ASSOCIATION|Participant |Santander |2024-10-30|2027-01-31|1.810958904109589 |10000.0000000 |-210142.67852000 |null |-39574980.000000000000000 |USD |1.000000000000000|-39574980.000000 |LIVE |CDSHDG|NY |Mx3LT_PAR_01 |2025-04-10 |39134041 |NY_HYP_IR_PART |IRD |IRS | |Interest Rate Swap|-39574980.000000000000000|USD |1.000000000000000 |-39574980.000000 |-410984.4635999999 |39574980.000000 |STMNY |Mx3LT_PAR_01 |NY |2025-04-10 | |39207272 |39207272 |39226470 |39226470 |NY_CR_IR_PRPA|NO |-87283.03548 |USD |-87283.03548 |USD |00UIG5|null |CIBC |CANADIAN IMPERIAL BANK OF COMMERCE AG |CANADIAN IMPERIAL BANK OF COMMERCE |Participant |Santander |2024-10-30|2026-01-10|0.7534246575342466 |10000.0000000 |-77081.81404000 |null |-28645087.000000000000000 |USD |1.000000000000000|-28645087.000000 |LIVE |CDSHDG|NY |Mx3LT_PAR_01 |2025-04-10 |39134047 |NY_HYP_IR_PART |IRD |IRS | |Interest Rate Swap|28645087.370000000000000 |USD |1.000000000000000 |28645087.370000 |246610.23089999997 |28645087.370000 |STMNY |Mx3LT_PAR_01 |NY |2025-04-10 | |39134079 |39134716 |39158329 |39157879 |NY_CR_IR_PRPA|NO |-75959.13441 |USD |-75959.13441 |USD |00U2I9|null |MINN |US BANK NATIONAL ASSOC,MINNEAPOL |US BANK NATIONAL ASSOCIATION |Participant |Santander |2024-10-30|2025-07-07|0.2410958904109589 |-10000.0000000 |-86160.35585000 |null |-80117998.000000000000000 |USD |1.000000000000000|-80117998.000000 |LIVE |CDSHDG|NY |Mx3LT_PAR_01 |2025-04-10 |39134046 |NY_HYP_IR_PART |IRD |CF | |Cap and Floor |1842237.600000000000000 |USD |1.000000000000000 |1842237.600000 |0.0 |1842237.600000 |STMNY |Mx3LT_PAR_01 |NY |2025-04-10 | |39207275 |39207275 |39226473 |39226473 |NY_CR_IR_PRPA|NO |-713053.13137 |USD |-713053.13137 |USD |CINZ |COACH INC, NEW YORK|CMFX |JPMORGAN CHASE BANK NATIONAL ASSOCIATION |JP MORGAN CHASE BANK NATIONAL ASSOCIATION|Participant |Santander |2024-10-30|2029-11-27|4.635616438356164 |10000.0000000 |-702851.90993000 |null |-35829497.000000000000000 |USD |1.000000000000000|-35829497.000000 |LIVE |CDSHDG|NY |Mx3LT_PAR_01 |2025-04-10 |39134061 |NY_HYP_IR_PART |IRD |CS | |Currency Swap |-20000000.000000000000000|GBP |1.296411400000000 |-25928228.000000 |2922665.517778434 |25928228.000000 |STMNY |Mx3LT_PAR_01 |NY |2025-04-10 | |39134081 |39134081 |39157881 |39157881 |NY_CR_IR_PRPA|NO |-87283.03548 |USD |-87283.03548 |USD |00UIG5|null |CIBC |CANADIAN IMPERIAL BANK OF COMMERCE AG |CANADIAN IMPERIAL BANK OF COMMERCE |Participant |Santander |2024-10-30|2026-01-10|0.7534246575342466 |-10000.0000000 |-97484.25692000 |null |-28645087.000000000000000 |USD |1.000000000000000|-28645087.000000 |LIVE |CDSHDG|NY |Mx3LT_PAR_01 |2025-04-10 |39134047 |NY_HYP_IR_PART |IRD |IRS | |Interest Rate Swap|28645087.370000000000000 |USD |1.000000000000000 |28645087.370000 |246610.23089999997 |28645087.370000 |STMNY |Mx3LT_PAR_01 |NY |2025-04-10 | |39207278 |39207278 |39226476 |39226476 |NY_CR_IR_PRPA|NO |-75959.13441 |USD |-75959.13441 |USD |00U2I9|null |MINN |US BANK NATIONAL ASSOC,MINNEAPOL |US BANK NATIONAL ASSOCIATION |Participant |Santander |2024-10-30|2025-07-07|0.2410958904109589 |10000.0000000 |-65757.91297000 |null |-80117998.000000000000000 |USD |1.000000000000000|-80117998.000000 |LIVE |CDSHDG|NY |Mx3LT_PAR_01 |2025-04-10 |39134046 |NY_HYP_IR_PART |IRD |CF | |Cap and Floor |1842237.600000000000000 |USD |1.000000000000000 |1842237.600000 |0.0 |1842237.600000 |STMNY |Mx3LT_PAR_01 |NY |2025-04-10 | |39207273 |39207273 |39226471 |39226471 |NY_CR_IR_PRPA|NO |-662035.46756 |USD |-662035.46756 |USD |CINZ |COACH INC, NEW YORK|CMFX |JPMORGAN CHASE BANK NATIONAL ASSOCIATION |JP MORGAN CHASE BANK NATIONAL ASSOCIATION|Participant |Santander |2024-10-30|2027-11-27|2.632876712328767 |10000.0000000 |-651834.24612000 |null |-89573743.000000000000000 |USD |1.000000000000000|-89573743.000000 |LIVE |CDSHDG|NY |Mx3LT_PAR_01 |2025-04-10 |null |null |null |null |null |null |null |null |null |null |null |null |null |null |null |null | |39207274 |39207274 |39226472 |39226472 |NY_CR_IR_PRPA|NO |-926504.26541 |USD |-926504.26541 |USD |CINZ |COACH INC, NEW YORK|CMFX |JPMORGAN CHASE BANK NATIONAL ASSOCIATION |JP MORGAN CHASE BANK NATIONAL ASSOCIATION|Participant |Santander |2024-10-30|2028-11-27|3.6356164383561644 |10000.0000000 |-916303.04397000 |null |-71658995.000000000000000 |USD |1.000000000000000|-71658995.000000 |LIVE |CDSHDG|NY |Mx3LT_PAR_01 |2025-04-10 |39134057 |NY_HYP_IR_PART |IRD |CS | |Currency Swap |-40000000.000000000000000|GBP |1.296411400000000 |-51856456.000000 |5918872.821518987 |51856456.000000 |STMNY |Mx3LT_PAR_01 |NY |2025-04-10 | |39207271 |39207271 |39226469 |39226469 |NY_CR_IR_PRPA|NO |-990410.08217 |USD |-990410.08217 |USD |VYU3 |null |WACH |WELLS FARGO BANK N.A., CHARLOTTE (FORMERLY KNOWN AS WACHOVIA)|WELLS FARGO BANK NA |Participant |Santander |2024-10-30|2025-12-31|0.726027397260274 |10000.0000000 |-980208.86073000 |null |-219072310.000000000000000|USD |1.000000000000000|-219072310.000000|LIVE |CDSHDG|NY |Mx3LT_PAR_01 |2025-04-10 |null |null |null |null |null |null |null |null |null |null |null |null |null |null |null |null | |39134088 |39134088 |39157888 |39157888 |NY_CR_IR_PRPA|NO |-1367597.93997|USD |-1367597.93997|USD |SBWO |SANTANDER BANK N.A |SBWO |SANTANDER BANK NA |SANTANDER BANK N.A |Participant |Santander |2024-10-30|2028-09-10|3.421917808219178 |-10000.0000000 |-1377799.16141000|null |-92000000.000000000000000 |USD |1.000000000000000|-92000000.000000 |LIVE |CDSHDG|NY |Mx3LT_PAR_01 |2025-04-10 |39134063 |NY_HYP_IR_PART |IRD |CF | |Cap and Floor |46000000.000000000000000 |USD |1.000000000000000 |46000000.000000 |0.0 |46000000.000000 |STMNY |Mx3LT_PAR_01 |NY |2025-04-10 | |39134721 |39164498 |39187955 |39158334 |NY_CR_IR_PRPA|NO |-75959.13441 |USD |-75959.13441 |USD |00U2I9|null |MINN |US BANK NATIONAL ASSOC,MINNEAPOL |US BANK NATIONAL ASSOCIATION |Participant |Santander |2024-10-30|2025-07-07|0.2410958904109589 |-10000.0000000 |-86160.35585000 |null |-80117998.000000000000000 |USD |1.000000000000000|-80117998.000000 |LIVE |CDSHDG|NY |Mx3LT_PAR_01 |2025-04-10 |39134044 |NY_HYP_IR_PART |IRD |CF | |Cap and Floor |-1842237.600000000000000 |USD |1.000000000000000 |-1842237.600000 |0.0 |1842237.600000 |STMNY |Mx3LT_PAR_01 |NY |2025-04-10 | |39134087 |39134087 |39157887 |39157887 |NY_CR_IR_PRPA|NO |-713053.13137 |USD |-713053.13137 |USD |CINZ |COACH INC, NEW YORK|CMFX |JPMORGAN CHASE BANK NATIONAL ASSOCIATION |JP MORGAN CHASE BANK NATIONAL ASSOCIATION|Participant |Santander |2024-10-30|2029-11-27|4.635616438356164 |-10000.0000000 |-723254.35281000 |null |-35829497.000000000000000 |USD |1.000000000000000|-35829497.000000 |LIVE |CDSHDG|NY |Mx3LT_PAR_01 |2025-04-10 |39134061 |NY_HYP_IR_PART |IRD |CS | |Currency Swap |-20000000.000000000000000|GBP |1.296411400000000 |-25928228.000000 |2922665.517778434 |25928228.000000 |STMNY |Mx3LT_PAR_01 |NY |2025-04-10 | |39134091 |39134091 |39157891 |39157891 |NY_CR_IR_LRPA|NO |2831296.47474 |USD |2831296.47474 |USD |00Y49F|null |CIBC |CANADIAN IMPERIAL BANK OF COMMERCE AG |Santander |Lead |CANADIAN IMPERIAL BANK OF COMMERCE|2024-10-30|2028-09-10|3.421917808219178 |-10000.0000000 |2821095.25330000 |null |92000000.000000000000000 |USD |1.000000000000000|92000000.000000 |LIVE |CDSHDG|NY |Mx3LT_PAR_01 |2025-04-10 |39134067 |USD_IR_NY_LRP |IRD |CF | |Cap and Floor |46000000.000000000000000 |USD |1.000000000000000 |46000000.000000 |0.0 |46000000.000000 |ALCO |Mx3LT_PAR_01 |NY |2025-04-10 | |39134091 |39134091 |39157891 |39157891 |NY_CR_IR_LRPA|NO |2831296.47474 |USD |2831296.47474 |USD |00Y49F|null |CIBC |CANADIAN IMPERIAL BANK OF COMMERCE AG |Santander |Lead |CANADIAN IMPERIAL BANK OF COMMERCE|2024-10-30|2028-09-10|3.421917808219178 |-10000.0000000 |2821095.25330000 |null |92000000.000000000000000 |USD |1.000000000000000|92000000.000000 |LIVE |CDSHDG|NY |Mx3LT_PAR_01 |2025-04-10 |39134068 |USD_IR_NY_LRP |IRD |CF | |Cap and Floor |-46000000.000000000000000|USD |1.000000000000000 |-46000000.000000 |0.0 |46000000.000000 |ALCO |Mx3LT_PAR_01 |NY |2025-04-10 | |39134082 |39134082 |39157882 |39157882 |NY_CR_IR_PRPA|NO |-662035.46756 |USD |-662035.46756 |USD |CINZ |COACH INC, NEW YORK|CMFX |JPMORGAN CHASE BANK NATIONAL ASSOCIATION |JP MORGAN CHASE BANK NATIONAL ASSOCIATION|Participant |Santander |2024-10-30|2027-11-27|2.632876712328767 |-10000.0000000 |-672236.68900000 |null |-89573743.000000000000000 |USD |1.000000000000000|-89573743.000000 |LIVE |CDSHDG|NY |Mx3LT_PAR_01 |2025-04-10 |null |null |null |null |null |null |null |null |null |null |null |null |null |null |null |null | +-------------------+------------+---------------+----------------------+-------------+--------+--------------+------+--------------+--------------------+------+-------------------+------------+-------------------------------------------------------------+-----------------------------------------+----------------+----------------------------------+----------+----------+--------------------+------------------+-----------------+-------------+--------------------------+----------------+-----------------+-----------------+------+------+------------+-------------+--------------+------------------------------+--------------------+------------------+-----------------+----------------+------------------+-------------------------+--------------------+------------------+------------------------+--------------------+----------------------+---------------+------------------------+-----------------------+-------------------------+  +-------------------+------------+---------------+ |origin_trade_number|trade_number|contract_number| +-------------------+------------+---------------+ |39134083 |39134083 |39157883 | |39134083 |39134083 |39157883 | |39134083 |39134083 |39157883 | |39134083 |39134083 |39157883 | |39134079 |39134716 |39158329 | |39134079 |39134716 |39158329 | |39134088 |39134088 |39157888 | |39134088 |39134088 |39157888 | |39207271 |39207271 |39226469 | |39134087 |39134087 |39157887 | |39134087 |39134087 |39157887 | |39134087 |39134087 |39157887 | |39134087 |39134087 |39157887 | |39207278 |39207278 |39226476 | |39207278 |39207278 |39226476 | |39134077 |39134077 |39157877 | |39207275 |39207275 |39226473 | |39207275 |39207275 |39226473 | |39207275 |39207275 |39226473 | |39207275 |39207275 |39226473 | +-------------------+------------+---------------+ only showing top 20 rows  root |-- origin_trade_number: string (nullable = true) |-- trade_number: string (nullable = true) |-- contract_number: string (nullable = true) |-- origin_contract_number: string (nullable = true) |-- portfolio: string (nullable = true) |-- internal: string (nullable = true) |-- rpa_mtm: string (nullable = true) |-- pl_ccy: string (nullable = true) |-- rpa_mtm_local: double (nullable = true) |-- publication_currency: string (nullable = false) |-- issuer: string (nullable = true) |-- issuer_description: string (nullable = true) |-- counterparty: string (nullable = true) |-- counterparty_name: string (nullable = true) |-- swap_bank: string (nullable = true) |-- lead_participant: string (nullable = false) |-- participant_bank: string (nullable = true) |-- trade_date: string (nullable = true) |-- maturity: string (nullable = true) |-- years_risk_guarantee: double (nullable = true) |-- premium_cash_local: decimal(38,7) (nullable = true) |-- dayonepl: decimal(38,8) (nullable = true) |-- trading_alive: decimal(38,8) (nullable = true) |-- rpa_nominal: decimal(38,15) (nullable = true) |-- rpa_nominal_unit: string (nullable = true) |-- ex_rate: decimal(25,15) (nullable = true) |-- rpa_nominal_local: decimal(38,6) (nullable = true) |-- status: string (nullable = true) |-- book: string (nullable = true) |-- country_code: string (nullable = true) |-- source_system: string (nullable = true) |-- data_date_part: string (nullable = true) |-- underlying_origin_trade_number: string (nullable = true) |-- underlying_portfolio: string (nullable = true) |-- underlying_mfamily: string (nullable = true) |-- underlying_mgroup: string (nullable = true) |-- underlying_mtype: string (nullable = true) |-- underlying_label: string (nullable = true) |-- underlying_nominal: decimal(38,15) (nullable = true) |-- underlying_curr_leg1: string (nullable = true) |-- underlying_ex_rate: decimal(25,15) (nullable = true) |-- underlying_nominal_local: decimal(38,6) (nullable = true) |-- underlying_mtm_local: double (nullable = true) |-- abs_underlying_nominal: decimal(38,6) (nullable = true) |-- underlying_book: string (nullable = true) |-- underlying_source_system: string (nullable = true) |-- underlying_country_code: string (nullable = true) |-- underlying_data_date_part: string (nullable = true)  root |-- origin_contract_number: string (nullable = true) |-- portfolio: string (nullable = true) |-- internal: string (nullable = true) |-- rpa_mtm: decimal(38,8) (nullable = true) |-- pl_ccy: string (nullable = true) |-- rpa_mtm_local: decimal(38,8) (nullable = true) |-- publication_currency: string (nullable = true) |-- issuer: string (nullable = true) |-- issuer_description: string (nullable = true) |-- counterparty: string (nullable = true) |-- counterparty_name: string (nullable = true) |-- swap_bank: string (nullable = true) |-- lead_participant: string (nullable = true) |-- participant_bank: string (nullable = true) |-- trade_date: timestamp (nullable = true) |-- maturity: timestamp (nullable = true) |-- years_risk_guarantee: decimal(38,8) (nullable = true) |-- premium_cash_local: decimal(38,8) (nullable = true) |-- dayonepl: decimal(38,8) (nullable = true) |-- trading_alive: string (nullable = true) |-- rpa_nominal: decimal(38,8) (nullable = true) |-- rpa_nominal_unit: string (nullable = true) |-- ex_rate: decimal(38,8) (nullable = true) |-- rpa_nominal_local: decimal(38,8) (nullable = true) |-- status: string (nullable = true) |-- underlying_origin_trade_number: string (nullable = true) |-- underlying_portfolio: string (nullable = true) |-- underlying_mfamily: string (nullable = true) |-- underlying_mgroup: string (nullable = true) |-- underlying_mtype: string (nullable = true) |-- underlying_label: string (nullable = true) |-- underlying_nominal: decimal(38,8) (nullable = true) |-- underlying_curr_leg1: string (nullable = true) |-- underlying_ex_rate: decimal(38,8) (nullable = true) |-- underlying_nominal_local: decimal(38,8) (nullable = true) |-- underlying_mtm_local: decimal(38,8) (nullable = true) |-- abs_underlying_nominal: decimal(38,8) (nullable = true) |-- underlying_book: string (nullable = true) |-- underlying_source_system: string (nullable = true) |-- underlying_country_code: string (nullable = true) |-- underlying_data_date_part: string (nullable = true) |-- origin_trade_number: string (nullable = true) |-- trade_number: string (nullable = true) |-- contract_number: string (nullable = true) |-- book: string (nullable = true) |-- country_code: string (nullable = true) |-- source_system: string (nullable = true) |-- data_date_part: string (nullable = true)  La tabla tiene las columnas: origin_trade_number string 43 trade_number string 44 contract_number string y salen como null las tres
+    val underlying_rpas_table_without_dayone = underlying_list
+      .join(tradeDetails_underlying_renamed,
+        underlying_list("origin_trade_number_underlying") === tradeDetails_underlying_renamed("origin_trade_number") &&
+        underlying_list("portfolio_underlying") === tradeDetails_underlying_renamed("portfolio") &&
+        underlying_list("country_code") === tradeDetails_underlying_renamed("country_code") &&
+        underlying_list("source_system") === tradeDetails_underlying_renamed("source_system") &&
+        underlying_list("data_date_part") === tradeDetails_underlying_renamed("data_date_part"),
+        "left"
+      )
+
+      .join(economicpl_underlying,
+        underlying_list("origin_trade_number_underlying") === economicpl_underlying("initial_deal") &&
+        underlying_list("portfolio_underlying") === economicpl_underlying("portfolio") &&
+        underlying_list("country_code") === economicpl_underlying("country_code") &&
+        underlying_list("source_system") === economicpl_underlying("source_system") &&
+        underlying_list("data_date_part") === economicpl_underlying("data_date_part"),
+        "left"
+      )
+
+      .join(
+        normalizedFxNy,
+        tradeDetails_underlying_renamed("curr_leg1_underlying") === normalizedFxNy("origin"),
+        "left"
+      )
+
+      .select(
+        tradeDetails_underlying_renamed("origin_trade_number").as("rpa_origin_trade_number"),
+        tradeDetails_underlying_renamed("origin_contract_number").as("rpa_origin_contract_number"),
+        underlying_list("contract").as("rpa_contract_number"),
+        underlying_list("trade_number").as("rpa_trade_number"),
+        underlying_list("portfolio").as("rpa_portfolio"),
+        underlying_list("origin_trade_number_underlying").as("underlying_origin_trade_number"),
+        underlying_list("portfolio_underlying").as("underlying_portfolio"),
+        tradeDetails_underlying_renamed("mfamily"),
+        tradeDetails_underlying_renamed("mgroup"),
+        tradeDetails_underlying_renamed("mtype"),
+        tradeDetails_underlying_renamed("label"),
+        tradeDetails_underlying_renamed("nominal").as("underlying_nominal"),
+        tradeDetails_underlying_renamed("curr_leg1_underlying").as("underlying_curr_leg1"),
+        normalizedFxNy("fxtousd").as("ex_rate"),
+        (tradeDetails_underlying_renamed("nominal") * normalizedFxNy("fxtousd")).as("underlying_nominal_local"),
+        (economicpl_underlying("market_value_localavg_ac") + economicpl_underlying("market_value_localfx_ac")).as("underlying_mtm_local"),
+        abs(tradeDetails_underlying_renamed("nominal") * normalizedFxNy("fxtousd")).as("abs_underlying_nominal"),
+        tradeDetails_underlying_renamed("book").as("underlying_book"),
+        tradeDetails_underlying_renamed("source_system").as("underlying_source_system"),
+        tradeDetails_underlying_renamed("country_code"),
+        tradeDetails_underlying_renamed("data_date_part")
+      )
+
+      //underlying_rpas_table_without_dayone.show(Int.MaxValue,truncate=false)
+
+    val underlying_rpas_table = underlying_rpas_table_without_dayone
+      .join(
+        day1Mtm,
+        underlying_rpas_table_without_dayone("data_date_part") === day1Mtm("data_date_part") &&
+        underlying_rpas_table_without_dayone("country_code") === day1Mtm("unit_shname") &&
+        underlying_rpas_table_without_dayone("underlying_source_system") === day1Mtm("source_system") &&
+        underlying_rpas_table_without_dayone("rpa_origin_contract_number") === day1Mtm("contract_origin") &&
+        underlying_rpas_table_without_dayone("rpa_portfolio") === day1Mtm("portfolio"), "left")
+
+      .join(
+        day1Pl,
+        underlying_rpas_table_without_dayone("data_date_part") === day1Pl("data_date_part") &&
+        underlying_rpas_table_without_dayone("country_code") === day1Pl("unit_shname") &&
+        underlying_rpas_table_without_dayone("underlying_source_system") === day1Pl("source_system") &&
+        underlying_rpas_table_without_dayone("rpa_origin_contract_number") === day1Pl("contract_origin") &&
+        underlying_rpas_table_without_dayone("rpa_portfolio") === day1Pl("portfolio"), "left")
+
+
+      .select(
+        underlying_rpas_table_without_dayone("rpa_origin_trade_number"),
+        underlying_rpas_table_without_dayone("rpa_origin_contract_number"),
+        underlying_rpas_table_without_dayone("rpa_contract_number"),
+        underlying_rpas_table_without_dayone("rpa_trade_number"),
+        underlying_rpas_table_without_dayone("rpa_portfolio"),
+        underlying_rpas_table_without_dayone("underlying_origin_trade_number"),
+        underlying_rpas_table_without_dayone("underlying_portfolio"),
+        underlying_rpas_table_without_dayone("mfamily"),
+        underlying_rpas_table_without_dayone("mgroup"),
+        underlying_rpas_table_without_dayone("mtype"),
+        underlying_rpas_table_without_dayone("label"),
+        underlying_rpas_table_without_dayone("underlying_nominal"),
+        underlying_rpas_table_without_dayone("underlying_curr_leg1"),
+        underlying_rpas_table_without_dayone("ex_rate"),
+        underlying_rpas_table_without_dayone("underlying_nominal_local"),
+        underlying_rpas_table_without_dayone("underlying_mtm_local"),
+        underlying_rpas_table_without_dayone("abs_underlying_nominal"),
+        underlying_rpas_table_without_dayone("underlying_book"),
+        underlying_rpas_table_without_dayone("underlying_source_system"),
+        underlying_rpas_table_without_dayone("country_code"),
+        underlying_rpas_table_without_dayone("data_date_part"),
+        day1Mtm("dayonepl"),
+        day1Pl("trading_alive")
+      )
+
+    //underlying_rpas_table.show(Int.MaxValue,truncate=false)
+
+
+    val underlying_rpas_table_renamed = underlying_rpas_table
+      .withColumnRenamed("mtype", "underlying_mtype")
+      .withColumnRenamed("label", "underlying_label")
+      .withColumnRenamed("mfamily", "underlying_mfamily")
+      .withColumnRenamed("mgroup", "underlying_mgroup")
+
+    val reporting_table = rpa_df
+      .join(
+      underlying_rpas_table_renamed,
+      rpa_df("trade_number") === underlying_rpas_table_renamed("rpa_trade_number") &&
+      rpa_df("portfolio") === underlying_rpas_table_renamed("rpa_portfolio") &&
+      rpa_df("country_code") === underlying_rpas_table_renamed("country_code") &&
+      rpa_df("source_system") === underlying_rpas_table_renamed("underlying_source_system") &&
+    //baseResult("book") === underlying_rpas_table_renamed("underlying_book") &&
+      rpa_df("data_date_part") === underlying_rpas_table_renamed("data_date_part"),
+      "left"
+      )
+      .select(
+        rpa_df("origin_trade_number"),
+        rpa_df("trade_number"),
+        rpa_df("contract_number"),
+        rpa_df("origin_contract_number"),
+        rpa_df("portfolio"),
+        rpa_df("internal"),
+        rpa_df("rpa_mtm"),
+        rpa_df("pl_ccy"),
+        rpa_df("rpa_mtm_local"),
+        rpa_df("publication_currency"),
+        rpa_df("issuer"),
+        rpa_df("issuer_description"),
+        rpa_df("counterparty"),
+        rpa_df("counterparty_name"),
+        rpa_df("swap_bank"),
+        rpa_df("lead_participant"),
+        rpa_df("participant_bank"),
+        rpa_df("trade_date"),
+        rpa_df("maturity"),
+        rpa_df("years_risk_guarantee"),
+        rpa_df("premium_cash_local"),
+        rpa_df("dayonepl"),
+        rpa_df("trading_alive"),
+        rpa_df("rpa_nominal"),
+        rpa_df("rpa_nominal_unit"),
+        rpa_df("ex_rate"),
+        rpa_df("rpa_nominal_local"),
+        rpa_df("status"),
+        rpa_df("book"),
+        rpa_df("country_code"),
+        rpa_df("source_system"),
+        rpa_df("data_date_part"),
+        underlying_rpas_table_renamed("underlying_origin_trade_number"),
+        underlying_rpas_table_renamed("underlying_portfolio"),
+        underlying_rpas_table_renamed("underlying_mfamily"),
+        underlying_rpas_table_renamed("underlying_mgroup"),
+        underlying_rpas_table_renamed("underlying_mtype"),
+        underlying_rpas_table_renamed("underlying_label"),
+        underlying_rpas_table_renamed("underlying_nominal"),
+        underlying_rpas_table_renamed("underlying_curr_leg1"),
+        underlying_rpas_table_renamed("ex_rate").as("underlying_ex_rate"),
+        underlying_rpas_table_renamed("underlying_nominal_local"),
+        underlying_rpas_table_renamed("underlying_mtm_local"),
+        underlying_rpas_table_renamed("abs_underlying_nominal"),
+        underlying_rpas_table_renamed("underlying_book"),
+        underlying_rpas_table_renamed("underlying_source_system"),
+        underlying_rpas_table_renamed("country_code").as("underlying_country_code"),
+        underlying_rpas_table_renamed("data_date_part").as("underlying_data_date_part")
+      )
+
+    val grouped_reporting_table = reporting_table
+      .groupBy(
+        "trade_number",
+        "portfolio",
+        "internal",
+        "pl_ccy",
+        "publication_currency",
+        "issuer",
+        "issuer_description",
+        "counterparty",
+        "counterparty_name",
+        "swap_bank",
+        "lead_participant",
+        "participant_bank",
+        "rpa_nominal_unit",
+        "status",
+        "book",
+        "country_code",
+        "source_system",
+        "underlying_origin_trade_number",
+        "underlying_portfolio",
+        "underlying_mfamily",
+        "underlying_mgroup",
+        "underlying_mtype",
+        "underlying_label",
+        "underlying_curr_leg1",
+        "underlying_book",
+        "underlying_source_system",
+        "underlying_country_code",
+        "underlying_data_date_part"
+      )
+      .agg(
+        first("origin_trade_number").alias("origin_trade_number"),
+        first("trade_number"),
+        first("contract_number").alias("contract_number"),
+        first("origin_contract_number").alias("origin_contract_number"),
+        first("rpa_mtm").alias("rpa_mtm"),
+        first("rpa_mtm_local").alias("rpa_mtm_local"),
+        first("trade_date").alias("trade_date"),
+        first("maturity").alias("maturity"),
+        first("years_risk_guarantee").alias("years_risk_guarantee"),
+        first("premium_cash_local").alias("premium_cash_local"),
+        first("dayonepl").alias("dayonepl"),
+        first("trading_alive").alias("trading_alive"),
+        first("rpa_nominal").alias("rpa_nominal"),
+        first("ex_rate").alias("ex_rate"),
+        first("rpa_nominal_local").alias("rpa_nominal_local"),
+        first("data_date_part").alias("data_date_part"),
+        first("underlying_origin_trade_number"),
+        first("underlying_nominal").alias("underlying_nominal"),
+        first("underlying_ex_rate").alias("underlying_ex_rate"),
+        first("underlying_nominal_local").alias("underlying_nominal_local"),
+        first("abs_underlying_nominal").alias("abs_underlying_nominal"),
+        sum("underlying_mtm_local").alias("underlying_mtm_local")
+      )
+      .select(
+        col("origin_trade_number"),
+        col("trade_number"),
+        col("contract_number"),
+        col("origin_contract_number"),
+        col("portfolio"),
+        col("internal"),
+        col("rpa_mtm"),
+        col("pl_ccy"),
+        col("rpa_mtm_local"),
+        col("publication_currency"),
+        col("issuer"),
+        col("issuer_description"),
+        col("counterparty"),
+        col("counterparty_name"),
+        col("swap_bank"),
+        col("lead_participant"),
+        col("participant_bank"),
+        col("trade_date"),
+        col("maturity"),
+        col("years_risk_guarantee"),
+        col("premium_cash_local"),
+        col("dayonepl"),
+        col("trading_alive"),
+        col("rpa_nominal"),
+        col("rpa_nominal_unit"),
+        col("ex_rate"),
+        col("rpa_nominal_local"),
+        col("status"),
+        col("book"),
+        col("country_code"),
+        col("source_system"),
+        col("data_date_part"),
+        col("underlying_origin_trade_number"),
+        col("underlying_portfolio"),
+        col("underlying_mfamily"),
+        col("underlying_mgroup"),
+        col("underlying_mtype"),
+        col("underlying_label"),
+        col("underlying_nominal"),
+        col("underlying_curr_leg1"),
+        col("underlying_ex_rate"),
+        col("underlying_nominal_local"),
+        col("underlying_mtm_local"),
+        col("abs_underlying_nominal"),
+        col("underlying_book"),
+        col("underlying_source_system"),
+        col("underlying_country_code"),
+        col("underlying_data_date_part")
+      )
+
+    grouped_reporting_table.show(Int.MaxValue,truncate=false)
+
+    reporting_table.select("origin_trade_number", "trade_number", "contract_number").show(false)
+    grouped_reporting_table.printSchema()
+    sparkSession.table("bu_dayonepl.rpa_report").printSchema()
+    grouped_reporting_table.write.mode("overwrite").insertInto(s"bu_dayonepl.rpa_report")
+
+
+    LOGGER.info(s"RpaJob.run has finished")
+  }
+
+}
+
+Con logs en consola que se ven así:
+
++-------------------+------------+---------------+----------------------+-------------+--------+--------------+------+--------------+--------------------+------+-------------------+------------+-------------------------------------------------------------+-----------------------------------------+----------------+----------------------------------+----------+----------+--------------------+------------------+-----------------+-------------+--------------------------+----------------+-----------------+-----------------+------+------+------------+-------------+--------------+------------------------------+--------------------+------------------+-----------------+----------------+------------------+-------------------------+--------------------+------------------+------------------------+--------------------+----------------------+---------------+------------------------+-----------------------+-------------------------+
+|origin_trade_number|trade_number|contract_number|origin_contract_number|portfolio    |internal|rpa_mtm       |pl_ccy|rpa_mtm_local |publication_currency|issuer|issuer_description |counterparty|counterparty_name                                            |swap_bank                                |lead_participant|participant_bank                  |trade_date|maturity  |years_risk_guarantee|premium_cash_local|dayonepl         |trading_alive|rpa_nominal               |rpa_nominal_unit|ex_rate          |rpa_nominal_local|status|book  |country_code|source_system|data_date_part|underlying_origin_trade_number|underlying_portfolio|underlying_mfamily|underlying_mgroup|underlying_mtype|underlying_label  |underlying_nominal       |underlying_curr_leg1|underlying_ex_rate|underlying_nominal_local|underlying_mtm_local|abs_underlying_nominal|underlying_book|underlying_source_system|underlying_country_code|underlying_data_date_part|
++-------------------+------------+---------------+----------------------+-------------+--------+--------------+------+--------------+--------------------+------+-------------------+------------+-------------------------------------------------------------+-----------------------------------------+----------------+----------------------------------+----------+----------+--------------------+------------------+-----------------+-------------+--------------------------+----------------+-----------------+-----------------+------+------+------------+-------------+--------------+------------------------------+--------------------+------------------+-----------------+----------------+------------------+-------------------------+--------------------+------------------+------------------------+--------------------+----------------------+---------------+------------------------+-----------------------+-------------------------+
+|39207276           |39207276    |39226474       |39226474              |NY_CR_IR_PRPA|NO      |-1367597.93997|USD   |-1367597.93997|USD                 |SBWO  |SANTANDER BANK N.A |SBWO        |SANTANDER BANK NA                                            |SANTANDER BANK N.A                       |Participant     |Santander                         |2024-10-30|2028-09-10|3.421917808219178   |10000.0000000     |-1357396.71853000|null         |-92000000.000000000000000 |USD             |1.000000000000000|-92000000.000000 |LIVE  |CDSHDG|NY          |Mx3LT_PAR_01 |2025-04-10    |39134063                      |NY_HYP_IR_PART      |IRD               |CF               |                |Cap and Floor     |46000000.000000000000000 |USD                 |1.000000000000000 |46000000.000000         |0.0                 |46000000.000000       |STMNY          |Mx3LT_PAR_01            |NY                     |2025-04-10               |
+|39134721           |39164498    |39187955       |39158334              |NY_CR_IR_PRPA|NO      |-75959.13441  |USD   |-75959.13441  |USD                 |00U2I9|null               |MINN        |US BANK NATIONAL ASSOC,MINNEAPOL                             |US BANK NATIONAL ASSOCIATION             |Participant     |Santander                         |2024-10-30|2025-07-07|0.2410958904109589  |-10000.0000000    |-86160.35585000  |null         |-80117998.000000000000000 |USD             |1.000000000000000|-80117998.000000 |LIVE  |CDSHDG|NY          |Mx3LT_PAR_01 |2025-04-10    |39134046                      |NY_HYP_IR_PART      |IRD               |CF               |                |Cap and Floor     |1842237.600000000000000  |USD                 |1.000000000000000 |1842237.600000          |0.0                 |1842237.600000        |STMNY          |Mx3LT_PAR_01            |NY                     |2025-04-10               |
+|39134089           |39134089    |39157889       |39157889              |NY_CR_IR_LRPA|NO      |3030600.02075 |USD   |3030600.02075 |USD                 |00IQQZ|null               |PNCX        |PNC BANK NATIONAL ASSOCIATION                                |Santander                                |Lead            |PNC BANK NA PITTSBURGH            |2024-10-30|2043-05-29|18.145205479452056  |-10000.0000000    |3020398.79931000 |null         |13697665.000000000000000  |USD             |1.000000000000000|13697665.000000  |LIVE  |CDSHDG|NY          |Mx3LT_PAR_01 |2025-04-10    |39134065                      |USD_IR_NY_LRP       |IRD               |IRS              |                |Interest Rate Swap|-13697664.980000000000000|USD                 |1.000000000000000 |-13697664.980000        |-438206.5530000003  |13697664.980000       |ALCO           |Mx3LT_PAR_01            |NY                     |2025-04-10               |
+|39207274           |39207274    |39226472       |39226472              |NY_CR_IR_PRPA|NO      |-926504.26541 |USD   |-926504.26541 |USD                 |CINZ  |COACH INC, NEW YORK|CMFX        |JPMORGAN CHASE BANK NATIONAL ASSOCIATION                     |JP MORGAN CHASE BANK NATIONAL ASSOCIATION|Participant     |Santander                         |2024-10-30|2028-11-27|3.6356164383561644  |10000.0000000     |-916303.04397000 |null         |-71658995.000000000000000 |USD             |1.000000000000000|-71658995.000000 |LIVE  |CDSHDG|NY          |Mx3LT_PAR_01 |2025-04-10    |39134060                      |NY_HYP_IR_PART      |IRD               |CS               |                |Currency Swap     |41169374.330000000000000 |GBP                 |1.296411400000000 |53372446.212279         |1517530.007160008   |53372446.212279       |STMNY          |Mx3LT_PAR_01            |NY                     |2025-04-10               |
+|39134088           |39134088    |39157888       |39157888              |NY_CR_IR_PRPA|NO      |-1367597.93997|USD   |-1367597.93997|USD                 |SBWO  |SANTANDER BANK N.A |SBWO        |SANTANDER BANK NA                                            |SANTANDER BANK N.A                       |Participant     |Santander                         |2024-10-30|2028-09-10|3.421917808219178   |-10000.0000000    |-1377799.16141000|null         |-92000000.000000000000000 |USD             |1.000000000000000|-92000000.000000 |LIVE  |CDSHDG|NY          |Mx3LT_PAR_01 |2025-04-10    |39134064                      |NY_HYP_IR_PART      |IRD               |CF               |                |Cap and Floor     |-46000000.000000000000000|USD                 |1.000000000000000 |-46000000.000000        |0.0                 |46000000.000000       |STMNY          |Mx3LT_PAR_01            |NY                     |2025-04-10               |
+|39207278           |39207278    |39226476       |39226476              |NY_CR_IR_PRPA|NO      |-75959.13441  |USD   |-75959.13441  |USD                 |00U2I9|null               |MINN        |US BANK NATIONAL ASSOC,MINNEAPOL                             |US BANK NATIONAL ASSOCIATION             |Participant     |Santander                         |2024-10-30|2025-07-07|0.2410958904109589  |10000.0000000     |-65757.91297000  |null         |-80117998.000000000000000 |USD             |1.000000000000000|-80117998.000000 |LIVE  |CDSHDG|NY          |Mx3LT_PAR_01 |2025-04-10    |39134044                      |NY_HYP_IR_PART      |IRD               |CF               |                |Cap and Floor     |-1842237.600000000000000 |USD                 |1.000000000000000 |-1842237.600000         |0.0                 |1842237.600000        |STMNY          |Mx3LT_PAR_01            |NY                     |2025-04-10               |
+|39134083           |39134083    |39157883       |39157883              |NY_CR_IR_PRPA|NO      |-926504.26541 |USD   |-926504.26541 |USD                 |CINZ  |COACH INC, NEW YORK|CMFX        |JPMORGAN CHASE BANK NATIONAL ASSOCIATION                     |JP MORGAN CHASE BANK NATIONAL ASSOCIATION|Participant     |Santander                         |2024-10-30|2028-11-27|3.6356164383561644  |-10000.0000000    |-936705.48685000 |null         |-71658995.000000000000000 |USD             |1.000000000000000|-71658995.000000 |LIVE  |CDSHDG|NY          |Mx3LT_PAR_01 |2025-04-10    |39134060                      |NY_HYP_IR_PART      |IRD               |CS               |                |Currency Swap     |41169374.330000000000000 |GBP                 |1.296411400000000 |53372446.212279         |1517530.007160008   |53372446.212279       |STMNY          |Mx3LT_PAR_01            |NY                     |2025-04-10               |
+|39207275           |39207275    |39226473       |39226473              |NY_CR_IR_PRPA|NO      |-713053.13137 |USD   |-713053.13137 |USD                 |CINZ  |COACH INC, NEW YORK|CMFX        |JPMORGAN CHASE BANK NATIONAL ASSOCIATION                     |JP MORGAN CHASE BANK NATIONAL ASSOCIATION|Participant     |Santander                         |2024-10-30|2029-11-27|4.635616438356164   |10000.0000000     |-702851.90993000 |null         |-35829497.000000000000000 |USD             |1.000000000000000|-35829497.000000 |LIVE  |CDSHDG|NY          |Mx3LT_PAR_01 |2025-04-10    |39134062                      |NY_HYP_IR_PART      |IRD               |CS               |                |Currency Swap     |20584687.200000000000000 |GBP                 |1.296411400000000 |26686223.151514         |436605.16203071666  |26686223.151514       |STMNY          |Mx3LT_PAR_01            |NY                     |2025-04-10               |
+|39134077           |39134077    |39157877       |39157877              |NY_CR_IR_PRPA|NO      |-990410.08217 |USD   |-990410.08217 |USD                 |VYU3  |null               |WACH        |WELLS FARGO BANK N.A., CHARLOTTE (FORMERLY KNOWN AS WACHOVIA)|WELLS FARGO BANK NA                      |Participant     |Santander                         |2024-10-30|2025-12-31|0.726027397260274   |-10000.0000000    |-1000611.30361000|null         |-219072310.000000000000000|USD             |1.000000000000000|-219072310.000000|LIVE  |CDSHDG|NY          |Mx3LT_PAR_01 |2025-04-10    |null                          |null                |null              |null             |null            |null              |null                     |null                |null              |null                    |null                |null                  |null           |null                    |null                   |null                     |
+|39134090           |39134090    |39157890       |39157890              |NY_CR_IR_LRPA|NO      |4112076.81741 |USD   |4112076.81741 |USD                 |00IQR3|null               |PNCX        |PNC BANK NATIONAL ASSOCIATION                                |Santander                                |Lead            |PNC BANK NA PITTSBURGH            |2024-10-30|2043-07-31|18.317808219178083  |-10000.0000000    |4101875.59597000 |null         |18490690.000000000000000  |USD             |1.000000000000000|18490690.000000  |LIVE  |CDSHDG|NY          |Mx3LT_PAR_01 |2025-04-10    |39134066                      |USD_IR_NY_LRP       |IRD               |IRS              |                |Interest Rate Swap|-18628073.340000000000000|USD                 |1.000000000000000 |-18628073.340000        |-642818.6919999998  |18628073.340000       |ALCO           |Mx3LT_PAR_01            |NY                     |2025-04-10               |
+|39134079           |39134716    |39158329       |39157879              |NY_CR_IR_PRPA|NO      |-75959.13441  |USD   |-75959.13441  |USD                 |00U2I9|null               |MINN        |US BANK NATIONAL ASSOC,MINNEAPOL                             |US BANK NATIONAL ASSOCIATION             |Participant     |Santander                         |2024-10-30|2025-07-07|0.2410958904109589  |-10000.0000000    |-86160.35585000  |null         |-80117998.000000000000000 |USD             |1.000000000000000|-80117998.000000 |LIVE  |CDSHDG|NY          |Mx3LT_PAR_01 |2025-04-10    |39134044                      |NY_HYP_IR_PART      |IRD               |CF               |                |Cap and Floor     |-1842237.600000000000000 |USD                 |1.000000000000000 |-1842237.600000         |0.0                 |1842237.600000        |STMNY          |Mx3LT_PAR_01            |NY                     |2025-04-10               |
+|39207276           |39207276    |39226474       |39226474              |NY_CR_IR_PRPA|NO      |-1367597.93997|USD   |-1367597.93997|USD                 |SBWO  |SANTANDER BANK N.A |SBWO        |SANTANDER BANK NA                                            |SANTANDER BANK N.A                       |Participant     |Santander                         |2024-10-30|2028-09-10|3.421917808219178   |10000.0000000     |-1357396.71853000|null         |-92000000.000000000000000 |USD             |1.000000000000000|-92000000.000000 |LIVE  |CDSHDG|NY          |Mx3LT_PAR_01 |2025-04-10    |39134064                      |NY_HYP_IR_PART      |IRD               |CF               |                |Cap and Floor     |-46000000.000000000000000|USD                 |1.000000000000000 |-46000000.000000        |0.0                 |46000000.000000       |STMNY          |Mx3LT_PAR_01            |NY                     |2025-04-10               |
+|39134083           |39134083    |39157883       |39157883              |NY_CR_IR_PRPA|NO      |-926504.26541 |USD   |-926504.26541 |USD                 |CINZ  |COACH INC, NEW YORK|CMFX        |JPMORGAN CHASE BANK NATIONAL ASSOCIATION                     |JP MORGAN CHASE BANK NATIONAL ASSOCIATION|Participant     |Santander                         |2024-10-30|2028-11-27|3.6356164383561644  |-10000.0000000    |-936705.48685000 |null         |-71658995.000000000000000 |USD             |1.000000000000000|-71658995.000000 |LIVE  |CDSHDG|NY          |Mx3LT_PAR_01 |2025-04-10    |39134057                      |NY_HYP_IR_PART      |IRD               |CS               |                |Currency Swap     |-40000000.000000000000000|GBP                 |1.296411400000000 |-51856456.000000        |5918872.821518987   |51856456.000000       |STMNY          |Mx3LT_PAR_01            |NY                     |2025-04-10               |
+|39134087           |39134087    |39157887       |39157887              |NY_CR_IR_PRPA|NO      |-713053.13137 |USD   |-713053.13137 |USD                 |CINZ  |COACH INC, NEW YORK|CMFX        |JPMORGAN CHASE BANK NATIONAL ASSOCIATION                     |JP MORGAN CHASE BANK NATIONAL ASSOCIATION|Participant     |Santander                         |2024-10-30|2029-11-27|4.635616438356164   |-10000.0000000    |-723254.35281000 |null         |-35829497.000000000000000 |USD             |1.000000000000000|-35829497.000000 |LIVE  |CDSHDG|NY          |Mx3LT_PAR_01 |2025-04-10    |39134062                      |NY_HYP_IR_PART      |IRD               |CS               |                |Currency Swap     |20584687.200000000000000 |GBP                 |1.296411400000000 |26686223.151514         |436605.16203071666  |26686223.151514       |STMNY          |Mx3LT_PAR_01            |NY                     |2025-04-10               |
+|39134075           |39134136    |39157916       |39157875              |NY_CR_IR_PRPA|NO      |-220343.89996 |USD   |-220343.89996 |USD                 |00TQ7G|null               |CMFX        |JPMORGAN CHASE BANK NATIONAL ASSOCIATION                     |JP MORGAN CHASE BANK NATIONAL ASSOCIATION|Participant     |Santander                         |2024-10-30|2027-01-31|1.810958904109589   |10000.0000000     |-210142.67852000 |null         |-39574980.000000000000000 |USD             |1.000000000000000|-39574980.000000 |LIVE  |CDSHDG|NY          |Mx3LT_PAR_01 |2025-04-10    |39134041                      |NY_HYP_IR_PART      |IRD               |IRS              |                |Interest Rate Swap|-39574980.000000000000000|USD                 |1.000000000000000 |-39574980.000000        |-410984.4635999999  |39574980.000000       |STMNY          |Mx3LT_PAR_01            |NY                     |2025-04-10               |
+|39207272           |39207272    |39226470       |39226470              |NY_CR_IR_PRPA|NO      |-87283.03548  |USD   |-87283.03548  |USD                 |00UIG5|null               |CIBC        |CANADIAN IMPERIAL BANK OF COMMERCE AG                        |CANADIAN IMPERIAL BANK OF COMMERCE       |Participant     |Santander                         |2024-10-30|2026-01-10|0.7534246575342466  |10000.0000000     |-77081.81404000  |null         |-28645087.000000000000000 |USD             |1.000000000000000|-28645087.000000 |LIVE  |CDSHDG|NY          |Mx3LT_PAR_01 |2025-04-10    |39134047                      |NY_HYP_IR_PART      |IRD               |IRS              |                |Interest Rate Swap|28645087.370000000000000 |USD                 |1.000000000000000 |28645087.370000         |246610.23089999997  |28645087.370000       |STMNY          |Mx3LT_PAR_01            |NY                     |2025-04-10               |
+|39134079           |39134716    |39158329       |39157879              |NY_CR_IR_PRPA|NO      |-75959.13441  |USD   |-75959.13441  |USD                 |00U2I9|null               |MINN        |US BANK NATIONAL ASSOC,MINNEAPOL                             |US BANK NATIONAL ASSOCIATION             |Participant     |Santander                         |2024-10-30|2025-07-07|0.2410958904109589  |-10000.0000000    |-86160.35585000  |null         |-80117998.000000000000000 |USD             |1.000000000000000|-80117998.000000 |LIVE  |CDSHDG|NY          |Mx3LT_PAR_01 |2025-04-10    |39134046                      |NY_HYP_IR_PART      |IRD               |CF               |                |Cap and Floor     |1842237.600000000000000  |USD                 |1.000000000000000 |1842237.600000          |0.0                 |1842237.600000        |STMNY          |Mx3LT_PAR_01            |NY                     |2025-04-10               |
+|39207275           |39207275    |39226473       |39226473              |NY_CR_IR_PRPA|NO      |-713053.13137 |USD   |-713053.13137 |USD                 |CINZ  |COACH INC, NEW YORK|CMFX        |JPMORGAN CHASE BANK NATIONAL ASSOCIATION                     |JP MORGAN CHASE BANK NATIONAL ASSOCIATION|Participant     |Santander                         |2024-10-30|2029-11-27|4.635616438356164   |10000.0000000     |-702851.90993000 |null         |-35829497.000000000000000 |USD             |1.000000000000000|-35829497.000000 |LIVE  |CDSHDG|NY          |Mx3LT_PAR_01 |2025-04-10    |39134061                      |NY_HYP_IR_PART      |IRD               |CS               |                |Currency Swap     |-20000000.000000000000000|GBP                 |1.296411400000000 |-25928228.000000        |2922665.517778434   |25928228.000000       |STMNY          |Mx3LT_PAR_01            |NY                     |2025-04-10               |
+|39134081           |39134081    |39157881       |39157881              |NY_CR_IR_PRPA|NO      |-87283.03548  |USD   |-87283.03548  |USD                 |00UIG5|null               |CIBC        |CANADIAN IMPERIAL BANK OF COMMERCE AG                        |CANADIAN IMPERIAL BANK OF COMMERCE       |Participant     |Santander                         |2024-10-30|2026-01-10|0.7534246575342466  |-10000.0000000    |-97484.25692000  |null         |-28645087.000000000000000 |USD             |1.000000000000000|-28645087.000000 |LIVE  |CDSHDG|NY          |Mx3LT_PAR_01 |2025-04-10    |39134047                      |NY_HYP_IR_PART      |IRD               |IRS              |                |Interest Rate Swap|28645087.370000000000000 |USD                 |1.000000000000000 |28645087.370000         |246610.23089999997  |28645087.370000       |STMNY          |Mx3LT_PAR_01            |NY                     |2025-04-10               |
+|39207278           |39207278    |39226476       |39226476              |NY_CR_IR_PRPA|NO      |-75959.13441  |USD   |-75959.13441  |USD                 |00U2I9|null               |MINN        |US BANK NATIONAL ASSOC,MINNEAPOL                             |US BANK NATIONAL ASSOCIATION             |Participant     |Santander                         |2024-10-30|2025-07-07|0.2410958904109589  |10000.0000000     |-65757.91297000  |null         |-80117998.000000000000000 |USD             |1.000000000000000|-80117998.000000 |LIVE  |CDSHDG|NY          |Mx3LT_PAR_01 |2025-04-10    |39134046                      |NY_HYP_IR_PART      |IRD               |CF               |                |Cap and Floor     |1842237.600000000000000  |USD                 |1.000000000000000 |1842237.600000          |0.0                 |1842237.600000        |STMNY          |Mx3LT_PAR_01            |NY                     |2025-04-10               |
+|39207273           |39207273    |39226471       |39226471              |NY_CR_IR_PRPA|NO      |-662035.46756 |USD   |-662035.46756 |USD                 |CINZ  |COACH INC, NEW YORK|CMFX        |JPMORGAN CHASE BANK NATIONAL ASSOCIATION                     |JP MORGAN CHASE BANK NATIONAL ASSOCIATION|Participant     |Santander                         |2024-10-30|2027-11-27|2.632876712328767   |10000.0000000     |-651834.24612000 |null         |-89573743.000000000000000 |USD             |1.000000000000000|-89573743.000000 |LIVE  |CDSHDG|NY          |Mx3LT_PAR_01 |2025-04-10    |null                          |null                |null              |null             |null            |null              |null                     |null                |null              |null                    |null                |null                  |null           |null                    |null                   |null                     |
+|39207274           |39207274    |39226472       |39226472              |NY_CR_IR_PRPA|NO      |-926504.26541 |USD   |-926504.26541 |USD                 |CINZ  |COACH INC, NEW YORK|CMFX        |JPMORGAN CHASE BANK NATIONAL ASSOCIATION                     |JP MORGAN CHASE BANK NATIONAL ASSOCIATION|Participant     |Santander                         |2024-10-30|2028-11-27|3.6356164383561644  |10000.0000000     |-916303.04397000 |null         |-71658995.000000000000000 |USD             |1.000000000000000|-71658995.000000 |LIVE  |CDSHDG|NY          |Mx3LT_PAR_01 |2025-04-10    |39134057                      |NY_HYP_IR_PART      |IRD               |CS               |                |Currency Swap     |-40000000.000000000000000|GBP                 |1.296411400000000 |-51856456.000000        |5918872.821518987   |51856456.000000       |STMNY          |Mx3LT_PAR_01            |NY                     |2025-04-10               |
+|39207271           |39207271    |39226469       |39226469              |NY_CR_IR_PRPA|NO      |-990410.08217 |USD   |-990410.08217 |USD                 |VYU3  |null               |WACH        |WELLS FARGO BANK N.A., CHARLOTTE (FORMERLY KNOWN AS WACHOVIA)|WELLS FARGO BANK NA                      |Participant     |Santander                         |2024-10-30|2025-12-31|0.726027397260274   |10000.0000000     |-980208.86073000 |null         |-219072310.000000000000000|USD             |1.000000000000000|-219072310.000000|LIVE  |CDSHDG|NY          |Mx3LT_PAR_01 |2025-04-10    |null                          |null                |null              |null             |null            |null              |null                     |null                |null              |null                    |null                |null                  |null           |null                    |null                   |null                     |
+|39134088           |39134088    |39157888       |39157888              |NY_CR_IR_PRPA|NO      |-1367597.93997|USD   |-1367597.93997|USD                 |SBWO  |SANTANDER BANK N.A |SBWO        |SANTANDER BANK NA                                            |SANTANDER BANK N.A                       |Participant     |Santander                         |2024-10-30|2028-09-10|3.421917808219178   |-10000.0000000    |-1377799.16141000|null         |-92000000.000000000000000 |USD             |1.000000000000000|-92000000.000000 |LIVE  |CDSHDG|NY          |Mx3LT_PAR_01 |2025-04-10    |39134063                      |NY_HYP_IR_PART      |IRD               |CF               |                |Cap and Floor     |46000000.000000000000000 |USD                 |1.000000000000000 |46000000.000000         |0.0                 |46000000.000000       |STMNY          |Mx3LT_PAR_01            |NY                     |2025-04-10               |
+|39134721           |39164498    |39187955       |39158334              |NY_CR_IR_PRPA|NO      |-75959.13441  |USD   |-75959.13441  |USD                 |00U2I9|null               |MINN        |US BANK NATIONAL ASSOC,MINNEAPOL                             |US BANK NATIONAL ASSOCIATION             |Participant     |Santander                         |2024-10-30|2025-07-07|0.2410958904109589  |-10000.0000000    |-86160.35585000  |null         |-80117998.000000000000000 |USD             |1.000000000000000|-80117998.000000 |LIVE  |CDSHDG|NY          |Mx3LT_PAR_01 |2025-04-10    |39134044                      |NY_HYP_IR_PART      |IRD               |CF               |                |Cap and Floor     |-1842237.600000000000000 |USD                 |1.000000000000000 |-1842237.600000         |0.0                 |1842237.600000        |STMNY          |Mx3LT_PAR_01            |NY                     |2025-04-10               |
+|39134087           |39134087    |39157887       |39157887              |NY_CR_IR_PRPA|NO      |-713053.13137 |USD   |-713053.13137 |USD                 |CINZ  |COACH INC, NEW YORK|CMFX        |JPMORGAN CHASE BANK NATIONAL ASSOCIATION                     |JP MORGAN CHASE BANK NATIONAL ASSOCIATION|Participant     |Santander                         |2024-10-30|2029-11-27|4.635616438356164   |-10000.0000000    |-723254.35281000 |null         |-35829497.000000000000000 |USD             |1.000000000000000|-35829497.000000 |LIVE  |CDSHDG|NY          |Mx3LT_PAR_01 |2025-04-10    |39134061                      |NY_HYP_IR_PART      |IRD               |CS               |                |Currency Swap     |-20000000.000000000000000|GBP                 |1.296411400000000 |-25928228.000000        |2922665.517778434   |25928228.000000       |STMNY          |Mx3LT_PAR_01            |NY                     |2025-04-10               |
+|39134091           |39134091    |39157891       |39157891              |NY_CR_IR_LRPA|NO      |2831296.47474 |USD   |2831296.47474 |USD                 |00Y49F|null               |CIBC        |CANADIAN IMPERIAL BANK OF COMMERCE AG                        |Santander                                |Lead            |CANADIAN IMPERIAL BANK OF COMMERCE|2024-10-30|2028-09-10|3.421917808219178   |-10000.0000000    |2821095.25330000 |null         |92000000.000000000000000  |USD             |1.000000000000000|92000000.000000  |LIVE  |CDSHDG|NY          |Mx3LT_PAR_01 |2025-04-10    |39134067                      |USD_IR_NY_LRP       |IRD               |CF               |                |Cap and Floor     |46000000.000000000000000 |USD                 |1.000000000000000 |46000000.000000         |0.0                 |46000000.000000       |ALCO           |Mx3LT_PAR_01            |NY                     |2025-04-10               |
+|39134091           |39134091    |39157891       |39157891              |NY_CR_IR_LRPA|NO      |2831296.47474 |USD   |2831296.47474 |USD                 |00Y49F|null               |CIBC        |CANADIAN IMPERIAL BANK OF COMMERCE AG                        |Santander                                |Lead            |CANADIAN IMPERIAL BANK OF COMMERCE|2024-10-30|2028-09-10|3.421917808219178   |-10000.0000000    |2821095.25330000 |null         |92000000.000000000000000  |USD             |1.000000000000000|92000000.000000  |LIVE  |CDSHDG|NY          |Mx3LT_PAR_01 |2025-04-10    |39134068                      |USD_IR_NY_LRP       |IRD               |CF               |                |Cap and Floor     |-46000000.000000000000000|USD                 |1.000000000000000 |-46000000.000000        |0.0                 |46000000.000000       |ALCO           |Mx3LT_PAR_01            |NY                     |2025-04-10               |
+|39134082           |39134082    |39157882       |39157882              |NY_CR_IR_PRPA|NO      |-662035.46756 |USD   |-662035.46756 |USD                 |CINZ  |COACH INC, NEW YORK|CMFX        |JPMORGAN CHASE BANK NATIONAL ASSOCIATION                     |JP MORGAN CHASE BANK NATIONAL ASSOCIATION|Participant     |Santander                         |2024-10-30|2027-11-27|2.632876712328767   |-10000.0000000    |-672236.68900000 |null         |-89573743.000000000000000 |USD             |1.000000000000000|-89573743.000000 |LIVE  |CDSHDG|NY          |Mx3LT_PAR_01 |2025-04-10    |null                          |null                |null              |null             |null            |null              |null                     |null                |null              |null                    |null                |null                  |null           |null                    |null                   |null                     |
++-------------------+------------+---------------+----------------------+-------------+--------+--------------+------+--------------+--------------------+------+-------------------+------------+-------------------------------------------------------------+-----------------------------------------+----------------+----------------------------------+----------+----------+--------------------+------------------+-----------------+-------------+--------------------------+----------------+-----------------+-----------------+------+------+------------+-------------+--------------+------------------------------+--------------------+------------------+-----------------+----------------+------------------+-------------------------+--------------------+------------------+------------------------+--------------------+----------------------+---------------+------------------------+-----------------------+-------------------------+
+
++-------------------+------------+---------------+
+|origin_trade_number|trade_number|contract_number|
++-------------------+------------+---------------+
+|39134083           |39134083    |39157883       |
+|39134083           |39134083    |39157883       |
+|39134083           |39134083    |39157883       |
+|39134083           |39134083    |39157883       |
+|39134079           |39134716    |39158329       |
+|39134079           |39134716    |39158329       |
+|39134088           |39134088    |39157888       |
+|39134088           |39134088    |39157888       |
+|39207271           |39207271    |39226469       |
+|39134087           |39134087    |39157887       |
+|39134087           |39134087    |39157887       |
+|39134087           |39134087    |39157887       |
+|39134087           |39134087    |39157887       |
+|39207278           |39207278    |39226476       |
+|39207278           |39207278    |39226476       |
+|39134077           |39134077    |39157877       |
+|39207275           |39207275    |39226473       |
+|39207275           |39207275    |39226473       |
+|39207275           |39207275    |39226473       |
+|39207275           |39207275    |39226473       |
++-------------------+------------+---------------+
+only showing top 20 rows
+
+root
+ |-- origin_trade_number: string (nullable = true)
+ |-- trade_number: string (nullable = true)
+ |-- contract_number: string (nullable = true)
+ |-- origin_contract_number: string (nullable = true)
+ |-- portfolio: string (nullable = true)
+ |-- internal: string (nullable = true)
+ |-- rpa_mtm: string (nullable = true)
+ |-- pl_ccy: string (nullable = true)
+ |-- rpa_mtm_local: double (nullable = true)
+ |-- publication_currency: string (nullable = false)
+ |-- issuer: string (nullable = true)
+ |-- issuer_description: string (nullable = true)
+ |-- counterparty: string (nullable = true)
+ |-- counterparty_name: string (nullable = true)
+ |-- swap_bank: string (nullable = true)
+ |-- lead_participant: string (nullable = false)
+ |-- participant_bank: string (nullable = true)
+ |-- trade_date: string (nullable = true)
+ |-- maturity: string (nullable = true)
+ |-- years_risk_guarantee: double (nullable = true)
+ |-- premium_cash_local: decimal(38,7) (nullable = true)
+ |-- dayonepl: decimal(38,8) (nullable = true)
+ |-- trading_alive: decimal(38,8) (nullable = true)
+ |-- rpa_nominal: decimal(38,15) (nullable = true)
+ |-- rpa_nominal_unit: string (nullable = true)
+ |-- ex_rate: decimal(25,15) (nullable = true)
+ |-- rpa_nominal_local: decimal(38,6) (nullable = true)
+ |-- status: string (nullable = true)
+ |-- book: string (nullable = true)
+ |-- country_code: string (nullable = true)
+ |-- source_system: string (nullable = true)
+ |-- data_date_part: string (nullable = true)
+ |-- underlying_origin_trade_number: string (nullable = true)
+ |-- underlying_portfolio: string (nullable = true)
+ |-- underlying_mfamily: string (nullable = true)
+ |-- underlying_mgroup: string (nullable = true)
+ |-- underlying_mtype: string (nullable = true)
+ |-- underlying_label: string (nullable = true)
+ |-- underlying_nominal: decimal(38,15) (nullable = true)
+ |-- underlying_curr_leg1: string (nullable = true)
+ |-- underlying_ex_rate: decimal(25,15) (nullable = true)
+ |-- underlying_nominal_local: decimal(38,6) (nullable = true)
+ |-- underlying_mtm_local: double (nullable = true)
+ |-- abs_underlying_nominal: decimal(38,6) (nullable = true)
+ |-- underlying_book: string (nullable = true)
+ |-- underlying_source_system: string (nullable = true)
+ |-- underlying_country_code: string (nullable = true)
+ |-- underlying_data_date_part: string (nullable = true)
+
+root
+ |-- origin_contract_number: string (nullable = true)
+ |-- portfolio: string (nullable = true)
+ |-- internal: string (nullable = true)
+ |-- rpa_mtm: decimal(38,8) (nullable = true)
+ |-- pl_ccy: string (nullable = true)
+ |-- rpa_mtm_local: decimal(38,8) (nullable = true)
+ |-- publication_currency: string (nullable = true)
+ |-- issuer: string (nullable = true)
+ |-- issuer_description: string (nullable = true)
+ |-- counterparty: string (nullable = true)
+ |-- counterparty_name: string (nullable = true)
+ |-- swap_bank: string (nullable = true)
+ |-- lead_participant: string (nullable = true)
+ |-- participant_bank: string (nullable = true)
+ |-- trade_date: timestamp (nullable = true)
+ |-- maturity: timestamp (nullable = true)
+ |-- years_risk_guarantee: decimal(38,8) (nullable = true)
+ |-- premium_cash_local: decimal(38,8) (nullable = true)
+ |-- dayonepl: decimal(38,8) (nullable = true)
+ |-- trading_alive: string (nullable = true)
+ |-- rpa_nominal: decimal(38,8) (nullable = true)
+ |-- rpa_nominal_unit: string (nullable = true)
+ |-- ex_rate: decimal(38,8) (nullable = true)
+ |-- rpa_nominal_local: decimal(38,8) (nullable = true)
+ |-- status: string (nullable = true)
+ |-- underlying_origin_trade_number: string (nullable = true)
+ |-- underlying_portfolio: string (nullable = true)
+ |-- underlying_mfamily: string (nullable = true)
+ |-- underlying_mgroup: string (nullable = true)
+ |-- underlying_mtype: string (nullable = true)
+ |-- underlying_label: string (nullable = true)
+ |-- underlying_nominal: decimal(38,8) (nullable = true)
+ |-- underlying_curr_leg1: string (nullable = true)
+ |-- underlying_ex_rate: decimal(38,8) (nullable = true)
+ |-- underlying_nominal_local: decimal(38,8) (nullable = true)
+ |-- underlying_mtm_local: decimal(38,8) (nullable = true)
+ |-- abs_underlying_nominal: decimal(38,8) (nullable = true)
+ |-- underlying_book: string (nullable = true)
+ |-- underlying_source_system: string (nullable = true)
+ |-- underlying_country_code: string (nullable = true)
+ |-- underlying_data_date_part: string (nullable = true)
+ |-- origin_trade_number: string (nullable = true)
+ |-- trade_number: string (nullable = true)
+ |-- contract_number: string (nullable = true)
+ |-- book: string (nullable = true)
+ |-- country_code: string (nullable = true)
+ |-- source_system: string (nullable = true)
+ |-- data_date_part: string (nullable = true)
+ Pero en la tabla en estas columnas: origin_trade_number	string	
+43	trade_number	string	
+44	contract_number	string salen como null pero en el log si sale con informaicón. ayudame a saber porque salen como null esas tres
