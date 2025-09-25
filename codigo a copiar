@@ -1,1 +1,81 @@
+Crear la tabla “accrual_control_report_summary” con los siguientes campos, completandose cada uno según se especifica:
 
+-data_date_part
+
+-unit_shname
+
+-book
+
+-trades_in: registros en adjusted_deals_v2 en D que cumplen los siguientes requisitos:
+
+book not in “lista BB”
+
+internal=NO
+
+event_id in (ALTA,EVENT,INCR,DECR,MODI)
+
+level_ind in (L3_YES,L3_DC,L3_SWTI,L3_SWTIPRE)
+
++
+
+book not in “lista BB”
+
+internal=NO
+
+event_id in (ALTA,EVENT,INCR,DECR,MODI)
+
+level_ind=NA
+
+registro is in devengo_v2 en D-1
+
+-trades_out: registros en devengo_2 en D-1 que cumplen lo siguiente: abs(trading_alive)+abs(markup_alive)+abs(salescredit_alive)=0
+
+-calculated_trade_variation: trades_in- trades_out
+
+-real_trade_variation: registros en devengo_v2 en D - registros en devengo_v2 en D-1
+
+-recon_trade_variation: calculated_differences - real_differences
+
+-alive_zero_maturity: registros en devengo_v2 en D que cumplen lo siguiente: maturity_date = data_date_part
+
+-alive_zero_level: registros en adjusted_deals_v2 en D que cumplan lo siguiente:
+
+event_id<>OTRO
+
+level_ind in (L1_NO,L2_NO,L3_NO)
+
+registro is in devengo_v2 en D-1
+
+-alive_zero_baja: registros en adjusted_deals_v2 en D que cumplen lo siguiente:
+
+event_id is in (BAJA, UNWD)
+
+registro is in devengo_v2 en D-1
+
+-calculated_alive_zero = alive_zero_maturity + alive_zero_level + alive_zero_event
+
+-real_alive_zero = registros en devengo_2 en D que cumplen lo siguiente: abs(trading_alive)+abs(markup_alive)+abs(salescredit_alive)=0
+
+-recon_alive_zero_differences = calculated_alive_zero - real_alive_zero 
+
+___________________________________
+
+Añadir sobre la lógica ya existente (ver con Dali) que genera la tabla perimeter_control_report_deail los siguientes registros que cumplan los requisitos de los conteos de los campos anteriores:
+
+-campo report siempre igual a “accrual control”
+
+-campo tabla =
+
+“trades in” si muestro los registros del conteo del campo trades_in
+
+“trades out” si muestro los registros del conteo del campo trades_out
+
+“alive zero maturity” si muestro los registros del conteo del campo alive_zero_maturity
+
+“alive zero level” si muestro los registros del conteo del campo alive_zero_level
+
+“alive zero baja” si muestro los registros del conteo del campo alive_zero_baja
+
+-resto de campos, coger el campo del mismo nombre de la tabla correspondiente de day1
+
+-campo level igual a vacío
